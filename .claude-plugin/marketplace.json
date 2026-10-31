@@ -1,0 +1,12 @@
+{
+  "name": "sawbuck",
+  "description": "Sawbuck plugins for Claude Code: the above-prompt guide band (Reins).",
+  "owner": { "name": "Matthew Owens", "url": "https://github.com/sawbuck-ai" },
+  "plugins": [
+    {
+      "name": "sawbuck-reins",
+      "source": "./plugins/sawbuck-reins",
+      "description": "Sawbuck guide status above the prompt: watching, or N caught. Reads the repo's .sawbuck record; never blocks."
+    }
+  ]
+}

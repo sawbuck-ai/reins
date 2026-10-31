@@ -1,0 +1,8 @@
+{
+  "name": "sawbuck-reins",
+  "version": "0.1.0",
+  "description": "Sawbuck guide status above the prompt: watching, or N caught.",
+  "license": "MIT",
+  "author": { "name": "Matthew Owens" },
+  "types": "./types/index.d.ts"
+}
