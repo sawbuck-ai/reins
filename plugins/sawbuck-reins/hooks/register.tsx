@@ -63,6 +63,7 @@ export const register: Register = on => {
       await $.command.register({ name: 'sawbuck-check', description: 'Verify your latest change right now (zero-config, no setup)' })
       await $.command.register({ name: 'sawbuck-watch', description: 'Watch every turn in this repo (arm the sawbuck Stop hook)' })
       await $.command.register({ name: 'sawbuck-context', description: 'Ranked history for the files you are touching (reverts, weakened tests, hot spots)' })
+      await $.command.register({ name: 'sawbuck-debt', description: 'Surface this repo\'s live suppression debt: what is still silenced in HEAD now, disabled tests first' })
     } catch { /* commands are a bonus; never fail the session over them */ }
     return next(e)
   })
@@ -82,6 +83,12 @@ export const register: Register = on => {
   // `context` stays silent for the every-turn UserPromptSubmit hook).
   on('command.run', { command: 'sawbuck-context' }, async ($) => {
     return { text: await runSawbuck($, await $.session.cwd(), ['context', '--speak']) }
+  })
+
+  // the whole-repo debt ledger (the study's headline: current live debt is the under-surfaced
+  // signal). On-demand; it greps HEAD, so never run it per turn.
+  on('command.run', { command: 'sawbuck-debt' }, async ($) => {
+    return { text: await runSawbuck($, await $.session.cwd(), ['debt']) }
   })
 
   on('prompt.submit', async ($, e, next) => {

@@ -1,7 +1,7 @@
 {
   "name": "sawbuck-reins",
-  "version": "0.2.3",
-  "description": "Sawbuck in Claude Code, one install: the guide band (watching / N caught / last verdict) plus /sawbuck-check (try it now), /sawbuck-watch (arm the Stop hook), and /sawbuck-context (ranked history for the files you touch).",
+  "version": "0.2.4",
+  "description": "Sawbuck in Claude Code, one install: the guide band (watching / N caught / last verdict) plus /sawbuck-check (try it now), /sawbuck-watch (arm the Stop hook), /sawbuck-context (ranked history for the files you touch), and /sawbuck-debt (surface the repo's live suppression debt).",
   "license": "MIT",
   "author": {
     "name": "Matthew Owens"
