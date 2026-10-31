@@ -3,6 +3,7 @@ export type Summary = {
   latest: { kind: string; file: string } | null
   armed: boolean
   active: boolean
+  mem: boolean
   last: string
 }
 

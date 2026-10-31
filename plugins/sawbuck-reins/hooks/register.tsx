@@ -18,7 +18,11 @@ async function readSummary($: any): Promise<Summary | null> {
     let armed = false
     try { await $.fs.read(cwd + '/promptwheel.config.json'); armed = true } catch {}
     if (!armed) { try { await $.fs.read(cwd + '/package.json'); armed = true } catch {} }
-    if (!active && !armed) return null
+    // memory-only: logbook history is here, but no check contract (history recall without the gate)
+    let mem = false
+    try { await $.fs.read(cwd + '/LOGBOOK.md'); mem = true } catch {}
+    if (!mem) { try { await $.fs.read(cwd + '/events.jsonl'); mem = true } catch {} }
+    if (!active && !armed && !mem) return null
     let caught = 0
     let latest: Summary['latest'] = null
     try {
@@ -34,7 +38,7 @@ async function readSummary($: any): Promise<Summary | null> {
       const lines = (await $.fs.read(cwd + '/.sawbuck/activity.jsonl')).trim().split('\n')
       last = String(JSON.parse(lines[lines.length - 1]).kind || '')
     } catch {}
-    return { caught, latest, armed, active, last }
+    return { caught, latest, armed, active, mem, last }
   } catch {
     return null
   }
@@ -107,9 +111,17 @@ export const register: Register = on => {
       )
     }
 
+    if (s.armed) {
+      return (
+        <Box>
+          <Text dimColor>🐴 sawbuck · ready · /sawbuck-watch to arm</Text>
+        </Box>
+      )
+    }
+
     return (
       <Box>
-        <Text dimColor>🐴 sawbuck · ready · /sawbuck-watch to arm</Text>
+        <Text dimColor>🐴 sawbuck · memory</Text>
       </Box>
     )
   })
