@@ -64,6 +64,7 @@ export const register: Register = on => {
       await $.command.register({ name: 'sawbuck-watch', description: 'Watch every turn in this repo (arm the sawbuck Stop hook)' })
       await $.command.register({ name: 'sawbuck-context', description: 'Ranked history for the files you are touching (reverts, weakened tests, hot spots)' })
       await $.command.register({ name: 'sawbuck-debt', description: 'Surface this repo\'s live suppression debt: what is still silenced in HEAD now, disabled tests first' })
+      await $.command.register({ name: 'sawbuck-status', description: 'The inventory: everything sawbuck has here in one view (caught over time + debt accruing now + armed state)' })
     } catch { /* commands are a bonus; never fail the session over them */ }
     return next(e)
   })
@@ -89,6 +90,12 @@ export const register: Register = on => {
   // signal). On-demand; it greps HEAD, so never run it per turn.
   on('command.run', { command: 'sawbuck-debt' }, async ($) => {
     return { text: await runSawbuck($, await $.session.cwd(), ['debt']) }
+  })
+
+  // the inventory: one view unioning what the check has caught over time, the debt accruing now, and
+  // whether it is armed here. On-demand (it runs the whole-repo debt scan); never per turn.
+  on('command.run', { command: 'sawbuck-status' }, async ($) => {
+    return { text: await runSawbuck($, await $.session.cwd(), ['status']) }
   })
 
   on('prompt.submit', async ($, e, next) => {
