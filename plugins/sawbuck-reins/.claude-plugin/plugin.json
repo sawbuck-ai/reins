@@ -1,7 +1,7 @@
 {
   "name": "sawbuck-reins",
-  "version": "0.1.0",
-  "description": "Sawbuck guide status above the prompt: watching, or N caught.",
+  "version": "0.2.0",
+  "description": "Sawbuck in Claude Code, one install: the guide band (watching / N caught / last verdict) plus /sawbuck-check (try it now) and /sawbuck-watch (arm the Stop hook).",
   "license": "MIT",
   "author": { "name": "Matthew Owens" },
   "types": "./types/index.d.ts"

@@ -1,12 +1,12 @@
 {
   "name": "sawbuck",
-  "description": "Sawbuck plugins for Claude Code: the above-prompt guide band (Reins).",
+  "description": "Sawbuck for Claude Code: catch your agent gaming the metric, in one install.",
   "owner": { "name": "Matthew Owens", "url": "https://github.com/sawbuck-ai" },
   "plugins": [
     {
       "name": "sawbuck-reins",
       "source": "./plugins/sawbuck-reins",
-      "description": "Sawbuck guide status above the prompt: watching, or N caught. Reads the repo's .sawbuck record; never blocks."
+      "description": "One install wires the sawbuck guide band (watching / N caught / last verdict) plus /sawbuck-check to verify your latest change now and /sawbuck-watch to arm the Stop hook. No npm install, no manual attach."
     }
   ]
 }
