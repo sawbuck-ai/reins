@@ -92,7 +92,7 @@ export const register: Register = on => {
     }
 
     const { Box, Text } = $.ui.resolve(e)
-    const icon = ({ verified: '✓', gamed: '🚩', regression: '✗', inconclusive: '≈' } as Record<string, string>)[s.last] || ''
+    const icon = ({ verified: '✓', gamed: '🚩', regression: '✗', inconclusive: '≈', allowed: '✎' } as Record<string, string>)[s.last] || ''
 
     if (s.caught > 0) {
       return (
