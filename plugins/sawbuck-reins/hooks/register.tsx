@@ -62,6 +62,7 @@ export const register: Register = on => {
     try {
       await $.command.register({ name: 'sawbuck-check', description: 'Verify your latest change right now (zero-config, no setup)' })
       await $.command.register({ name: 'sawbuck-watch', description: 'Watch every turn in this repo (arm the sawbuck Stop hook)' })
+      await $.command.register({ name: 'sawbuck-context', description: 'Ranked history for the files you are touching (reverts, weakened tests, hot spots)' })
     } catch { /* commands are a bonus; never fail the session over them */ }
     return next(e)
   })
@@ -73,6 +74,12 @@ export const register: Register = on => {
   on('command.run', { command: 'sawbuck-watch' }, async ($) => {
     const out = await runSawbuck($, await $.session.cwd(), ['attach', '--claude'])
     return { text: (out ? out + '\n\n' : '') + '🐴 sawbuck is watching this repo now. A win that does not survive a source-only re-run is caught, and the agent is sent back to earn it. Remove it anytime with: sawbuck detach.' }
+  })
+
+  // on-demand (never per turn): the band never shells, so the ranked history is one
+  // command away instead of a per-turn firehose. Run it before touching a hot spot.
+  on('command.run', { command: 'sawbuck-context' }, async ($) => {
+    return { text: await runSawbuck($, await $.session.cwd(), ['context']) }
   })
 
   on('prompt.submit', async ($, e, next) => {
@@ -121,7 +128,7 @@ export const register: Register = on => {
 
     return (
       <Box>
-        <Text dimColor>🐴 sawbuck · memory</Text>
+        <Text dimColor>🐴 sawbuck · memory · /sawbuck-context for history</Text>
       </Box>
     )
   })
