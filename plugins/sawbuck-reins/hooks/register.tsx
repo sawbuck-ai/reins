@@ -78,8 +78,10 @@ export const register: Register = on => {
 
   // on-demand (never per turn): the band never shells, so the ranked history is one
   // command away instead of a per-turn firehose. Run it before touching a hot spot.
+  // --speak: this is an explicit ask, so reply even when the trail is clean (the bare
+  // `context` stays silent for the every-turn UserPromptSubmit hook).
   on('command.run', { command: 'sawbuck-context' }, async ($) => {
-    return { text: await runSawbuck($, await $.session.cwd(), ['context']) }
+    return { text: await runSawbuck($, await $.session.cwd(), ['context', '--speak']) }
   })
 
   on('prompt.submit', async ($, e, next) => {
