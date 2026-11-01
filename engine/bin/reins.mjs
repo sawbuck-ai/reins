@@ -15,7 +15,7 @@ const has = (n) => argv.includes(n);
 if (has("--help") || has("-h")) {
   process.stdout.write(`reins: measure how much you steer your agent this session
 
-Usage: reins [--session <path.jsonl>] [--judge <backend>] [-n N] [--json] [--write [path]]
+Usage: reins [--session <path.jsonl>] [--judge <backend>] [-n N] [--json] [--write [path]] [--share [--label <term>]]
 
   --session <path>   a Claude Code transcript (default: your newest session)
   --judge <backend>  override SAWBUCK_JUDGE: ollama:<model> | haiku | anthropic:<model> | openai:<model>
@@ -23,6 +23,9 @@ Usage: reins [--session <path.jsonl>] [--judge <backend>] [-n N] [--json] [--wri
   --json             machine-readable output
   --write [path]     also write the summary JSON (default .sawbuck/steer.json) for the
                      offline sawbuck statusline to read - run it on a cadence for a live readout
+  --share            print a paste-ready card for posting (LinkedIn / X / Reddit)
+  --label <term>     the word for the stat on the share card (default "steer rate";
+                     e.g. "yank rate" for a playful channel - keep it neutral for LinkedIn)
 
 Backend is SAWBUCK_JUDGE (default ollama:qwen2.5:7b). Local = free + private.
 `);
@@ -51,6 +54,31 @@ if (has("--write")) {
 }
 
 if (has("--json")) { process.stdout.write(JSON.stringify({ backend: backend(), ...r }) + "\n"); process.exit(0); }
+
+// --share: a tasteful, paste-anywhere card (plain text works on LinkedIn / X / Reddit).
+// --label swaps the stat's word; default stays neutral ("steer rate") so it's safe for a
+// professional feed, e.g. --label "yank rate" for a playful channel.
+if (has("--share")) {
+  if (r.scored === 0) { process.stdout.write("reins: nothing to share yet (no turns scored).\n"); process.exit(0); }
+  const lf = flag("--label");
+  const label = lf && !lf.startsWith("--") ? lf : "steer rate";
+  const pct = Math.round(r.steeringRate * 100);
+  const d = r.distribution;
+  const texture = d[1] >= d[2] + d[3] ? "mostly light refinements" : d[3] > 0 ? "a few hard pulls" : "real redirects";
+  const grip = pct >= 60 ? "hands-on" : pct >= 30 ? "a steady hand" : "a loose rein";
+  process.stdout.write(
+`my ${label} this session 🐴
+
+  ${r.seismograph}
+  · let it ride   - nudge   + redirect   # hard pull
+
+I steered ${r.steering} of ${r.scored} turns (${pct}%) — ${grip}, ${texture}.
+The ${r.scored - r.steering} I let ride, the check had my back.
+
+— measured with reins · sawbuck
+`);
+  process.exit(0);
+}
 
 const pct = Math.round(r.steeringRate * 100);
 const d = r.distribution;
