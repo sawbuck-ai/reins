@@ -16,14 +16,16 @@ Claude Code asks two things on install: a **scope** (choose **user** so the band
 
 ## What you get
 
-- **A guide band** above the prompt, read from the repo's local `.sawbuck/` record each turn:
+- **A guide band** above the prompt, set off by a thin rule so it reads as its own area (not agent output), read from the repo's local `.sawbuck/` record each turn:
   a quiet `🐴 sawbuck · watching` (with the last verdict, `✓` verified / `🚩` gamed) when armed,
   `🐴 sawbuck · ready · /sawbuck-watch to arm` when the repo is checkable but not yet armed, and a
   bold `🐴 N caught` (with the latest item) when the check flags a regression or a faked, "gamed"
   win. It never blocks your prompt and hides itself where Sawbuck is not relevant.
-- **A live steering readout** on the band (`🐎 steer X%`, taut `🪢` once you steer more than half your turns): each turn it scores how much you
-  redirected the agent (a light refine, a redirect, or a hard yank) and shows the running rate, so
-  you watch your own steering trend toward a loose rein. It scores the newest turn in the
+- **A live steering readout** on the band (`🐎 steer X%`, taut `🪢` once you are steering more than half of your recent turns): each turn it scores how much you
+  redirected the agent (a light refine, a redirect, or a hard yank) and shows a **recent-window rate**
+  (an EMA over roughly your last 20 scored turns), so it tracks how you are steering lately and falls
+  toward a loose rein as the agent learns your cues, instead of a lifetime average that old turns
+  anchor. Set the window with `SAWBUCK_STEER_WINDOW` (default 20). It scores the newest turn in the
   background and never blocks a turn. The judge has three modes (set `judge` in
   `/plugin configure sawbuck-reins@sawbuck` or `/config`):
   - **`native`** (default): a tiny Claude (Haiku) call on your **own** Claude plan. Zero setup:

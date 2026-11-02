@@ -29,6 +29,14 @@ const summaryAtom = atom({ plugin: 'sawbuck-reins', key: 'summary' } as const, n
 let pendingAnswer: string | null = null   // agent's answer, stashed on turn.complete, scored on the next prompt.submit
 let nativeBroken = false                   // $.model threw (missing / org-blocked) -> fall back to the engine shell-out
 
+// recent-window steer gauge: an EMA over ~STEER_SPAN scored turns, seeded on the first sample so
+// there is no cold-start bias. The band shows how you have steered LATELY, not a lifetime average
+// that old high-steering turns anchor - so it reflects the fall toward a loose rein as cues land.
+// Mirrors the engine's SAWBUCK_STEER_WINDOW default so native + engine write one steer.json shape;
+// the --share card still reports the lifetime rate.
+const STEER_SPAN = 20
+const STEER_ALPHA = 2 / (STEER_SPAN + 1)
+
 // EXACT copy of engine/judge.mjs PROMPT (the 600/800 slicing that lives in
 // scan.mjs pairs() is applied inline here since we score a live pair, not the transcript).
 const PROMPT = (a: string, u: string) =>
@@ -80,8 +88,8 @@ async function judgeMode($: any, options: any): Promise<'native' | 'engine' | 'o
 // we still bump lastPairs so an engine fallback resumes from the right place.
 async function recordNativePair($: any, cwd: string, s: { pressure: number } | null): Promise<void> {
   const out = cwd.replace(/\/$/, '') + '/.sawbuck/steer.json'
-  const prior: { lastPairs: number; scored: number; steering: number; wsum: number; distribution: Record<number, number> } =
-    { lastPairs: 0, scored: 0, steering: 0, wsum: 0, distribution: { 0: 0, 1: 0, 2: 0, 3: 0 } }
+  const prior: { lastPairs: number; scored: number; steering: number; wsum: number; ema: number; distribution: Record<number, number> } =
+    { lastPairs: 0, scored: 0, steering: 0, wsum: 0, ema: 0, distribution: { 0: 0, 1: 0, 2: 0, 3: 0 } }
   try {
     const p = JSON.parse(await $.fs.read(out))
     if (p && p.lastPairs != null) {
@@ -89,6 +97,7 @@ async function recordNativePair($: any, cwd: string, s: { pressure: number } | n
       prior.scored = p.scored || 0
       prior.steering = p.steering || 0
       prior.wsum = p._wsum || 0
+      prior.ema = p.ema || 0
       prior.distribution = p.distribution || prior.distribution
     }
   } catch { /* no prior tally = fresh */ }
@@ -97,13 +106,16 @@ async function recordNativePair($: any, cwd: string, s: { pressure: number } | n
     prior.distribution[s.pressure] = (prior.distribution[s.pressure] || 0) + 1
     prior.scored++
     prior.wsum += s.pressure
-    if (s.pressure >= 1) prior.steering++
+    const x = s.pressure >= 1 ? 1 : 0
+    if (x) prior.steering++
+    // EMA seeded on the first scored turn (no cold-start bias); same shape the engine writes
+    prior.ema = prior.scored === 1 ? x : STEER_ALPHA * x + (1 - STEER_ALPHA) * prior.ema
   }
-  const rate = prior.scored ? prior.steering / prior.scored : 0
+  const rate = prior.scored ? prior.steering / prior.scored : 0   // lifetime (for the --share card)
   const rec = {
     at: new Date().toISOString(), backend: 'native',
     lastPairs: prior.lastPairs, turns: prior.lastPairs,
-    scored: prior.scored, steering: prior.steering, steeringRate: rate,
+    scored: prior.scored, steering: prior.steering, steeringRate: rate, ema: prior.ema,
     meanPressure: prior.scored ? prior.wsum / prior.scored : 0,
     distribution: prior.distribution, _wsum: prior.wsum,
   }
@@ -170,7 +182,8 @@ async function readSummary($: any): Promise<Summary | null> {
     let steer: number | null = null
     try {
       const sj = JSON.parse(await $.fs.read(cwd + '/.sawbuck/steer.json'))
-      if (sj && sj.scored) steer = Math.round((sj.steeringRate || 0) * 100)
+      // recent-window gauge (EMA) when present; fall back to the lifetime rate for older files.
+      if (sj && sj.scored) steer = Math.round(((sj.ema != null ? sj.ema : sj.steeringRate) || 0) * 100)
     } catch {}
     return { caught, latest, armed, active, mem, last, steer }
   } catch {
@@ -290,39 +303,48 @@ export const register: Register = (on, options) => {
 
     const { Box, Text } = $.ui.resolve(e)
     const icon = ({ verified: '✓', gamed: '🚩', regression: '✗', inconclusive: '≈', allowed: '✎' } as Record<string, string>)[s.last] || ''
-    // the steer icon is a glance, not a gauge (the % beside it carries the detail): reins slack
-    // (🐎) when under half your turns are steers, reins taut (🪢) when you steer more than half.
-    const grip = s.steer >= 50 ? '🪢' : '🐎'
+    // the steer icon is a glance, not a gauge (the % beside it carries the detail), and it reads the
+    // RECENT rate: reins slack (🐎) when under half your recent turns are steers, taut (🪢) past half.
+    const grip = (s.steer ?? 0) >= 50 ? '🪢' : '🐎'
+    const steerSeg = s.steer != null ? ` · ${grip} steer ${s.steer}%` : ''
 
+    // the band is its own area: a dim rule above it separates the HUD from the agent output above.
+    const W = Math.max(24, Math.min(Number((e.props as any)?.width) || 56, 100))
+    const rule = '─'.repeat(W)
+
+    let body
     if (s.caught > 0) {
-      return (
+      body = (
         <Box>
           <Text color="yellow" weight="bold">🐴 sawbuck · {s.caught} caught</Text>
           {s.latest ? <Text dimColor> · {s.latest.kind} on {s.latest.file}</Text> : null}
-          {s.steer != null ? <Text dimColor> · {grip} steer {s.steer}%</Text> : null}
+          {steerSeg ? <Text dimColor>{steerSeg}</Text> : null}
         </Box>
       )
-    }
-
-    if (s.active) {
-      return (
+    } else if (s.active) {
+      body = (
         <Box>
-          <Text dimColor>🐴 sawbuck · watching{icon ? ' · ' + icon : ''}{s.steer != null ? ' · ' + grip + ' steer ' + s.steer + '%' : ''}</Text>
+          <Text dimColor>🐴 sawbuck · watching{icon ? ' · ' + icon : ''}{steerSeg}</Text>
         </Box>
       )
-    }
-
-    if (s.armed) {
-      return (
+    } else if (s.armed) {
+      body = (
         <Box>
           <Text dimColor>🐴 sawbuck · ready · /sawbuck-watch to arm</Text>
+        </Box>
+      )
+    } else {
+      body = (
+        <Box>
+          <Text dimColor>🐴 sawbuck · memory · /sawbuck-context for history</Text>
         </Box>
       )
     }
 
     return (
-      <Box>
-        <Text dimColor>🐴 sawbuck · memory · /sawbuck-context for history</Text>
+      <Box flexDirection="column">
+        <Text dimColor>{rule}</Text>
+        {body}
       </Box>
     )
   })

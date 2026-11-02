@@ -164,10 +164,12 @@ try { text = readFileSync(sess, "utf8"); } catch { process.stderr.write("reins: 
 // quadratic over a session). The sawbuck statusline reads the same steer.json offline.
 if (has("--append")) {
   const out = join(process.cwd(), ".sawbuck", "steer.json");
-  let prior = { lastPairs: 0, scored: 0, steering: 0, wsum: 0, distribution: { 0: 0, 1: 0, 2: 0, 3: 0 } };
+  const span = Number(process.env.SAWBUCK_STEER_WINDOW) || 20;   // recent-window span (turns); alpha below
+  const alpha = 2 / (span + 1);
+  let prior = { lastPairs: 0, scored: 0, steering: 0, wsum: 0, ema: 0, distribution: { 0: 0, 1: 0, 2: 0, 3: 0 } };
   try {
     const p = JSON.parse(readFileSync(out, "utf8"));
-    if (p && p.lastPairs != null) prior = { lastPairs: p.lastPairs, scored: p.scored || 0, steering: p.steering || 0, wsum: p._wsum || 0, distribution: p.distribution || prior.distribution };
+    if (p && p.lastPairs != null) prior = { lastPairs: p.lastPairs, scored: p.scored || 0, steering: p.steering || 0, wsum: p._wsum || 0, ema: p.ema || 0, distribution: p.distribution || prior.distribution };
   } catch { /* no prior tally = fresh */ }
   const all = H.pairs(text);
   let added = 0;
@@ -181,13 +183,16 @@ if (has("--append")) {
     if (!s) continue;
     prior.distribution[s.pressure] = (prior.distribution[s.pressure] || 0) + 1;
     prior.scored++; prior.wsum += s.pressure; added++;
-    if (s.pressure >= 1) prior.steering++;
+    const x = s.pressure >= 1 ? 1 : 0;
+    if (x) prior.steering++;
+    // EMA of the steer indicator, seeded on the first scored turn so there is no cold-start bias toward 0
+    prior.ema = prior.scored === 1 ? x : alpha * x + (1 - alpha) * prior.ema;
   }
-  const rate = prior.scored ? prior.steering / prior.scored : 0;
-  const rec = { at: new Date().toISOString(), backend: backend(), lastPairs: consumed, turns: all.length, scored: prior.scored, steering: prior.steering, steeringRate: rate, meanPressure: prior.scored ? prior.wsum / prior.scored : 0, distribution: prior.distribution, _wsum: prior.wsum };
+  const rate = prior.scored ? prior.steering / prior.scored : 0;   // lifetime rate (the --share card uses this)
+  const rec = { at: new Date().toISOString(), backend: backend(), lastPairs: consumed, turns: all.length, scored: prior.scored, steering: prior.steering, steeringRate: rate, ema: prior.ema, meanPressure: prior.scored ? prior.wsum / prior.scored : 0, distribution: prior.distribution, _wsum: prior.wsum };
   try { mkdirSync(dirname(out), { recursive: true }); writeFileSync(out, JSON.stringify(rec) + "\n"); } catch { process.stderr.write("reins: could not write " + out + "\n"); }
   if (has("--json")) process.stdout.write(JSON.stringify(rec) + "\n");
-  else process.stdout.write(`reins: +${added} new turn(s), steer rate ${Math.round(rate * 100)}% over ${prior.scored} turns\n`);
+  else process.stdout.write(`reins: +${added} new turn(s), recent steer ${Math.round(prior.ema * 100)}% (${prior.steering}/${prior.scored} lifetime)\n`);
   process.exit(0);
 }
 
