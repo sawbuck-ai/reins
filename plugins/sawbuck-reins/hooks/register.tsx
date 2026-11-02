@@ -301,8 +301,10 @@ export const register: Register = (on, options) => {
       return next(e)
     }
     // opt out of the above-prompt band (e.g. you show sawbuck in your own statusline instead).
-    // Best-effort env read; the judge still runs each turn, so .sawbuck/steer.json keeps updating
-    // for the statusline to read. SAWBUCK_BAND=off|0|false|none hides the band.
+    // Primary switch is the `band` userConfig (reliable, applies on reload, no restart); the
+    // SAWBUCK_BAND env is a no-config fallback. The judge still runs each turn either way, so
+    // .sawbuck/steer.json keeps updating for the statusline to read.
+    if (options && options.band === 'off') return next(e)
     try {
       const bv = await $.env.get('SAWBUCK_BAND')
       const v = bv == null ? '' : String(bv).trim().toLowerCase()
