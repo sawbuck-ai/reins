@@ -290,13 +290,16 @@ export const register: Register = (on, options) => {
 
     const { Box, Text } = $.ui.resolve(e)
     const icon = ({ verified: '✓', gamed: '🚩', regression: '✗', inconclusive: '≈', allowed: '✎' } as Record<string, string>)[s.last] || ''
+    // the steer icon rides the grip tiers (same 30/60 thresholds the --share card uses): reins
+    // slack when you barely steer, in the saddle at a steady hand, reins taut when you correct a lot.
+    const grip = s.steer == null ? '🤠' : s.steer >= 60 ? '🪢' : s.steer >= 30 ? '🤠' : '🐎'
 
     if (s.caught > 0) {
       return (
         <Box>
           <Text color="yellow" weight="bold">🐴 sawbuck · {s.caught} caught</Text>
           {s.latest ? <Text dimColor> · {s.latest.kind} on {s.latest.file}</Text> : null}
-          {s.steer != null ? <Text dimColor> · 🤠 steer {s.steer}%</Text> : null}
+          {s.steer != null ? <Text dimColor> · {grip} steer {s.steer}%</Text> : null}
         </Box>
       )
     }
@@ -304,7 +307,7 @@ export const register: Register = (on, options) => {
     if (s.active) {
       return (
         <Box>
-          <Text dimColor>🐴 sawbuck · watching{icon ? ' · ' + icon : ''}{s.steer != null ? ' · 🤠 steer ' + s.steer + '%' : ''}</Text>
+          <Text dimColor>🐴 sawbuck · watching{icon ? ' · ' + icon : ''}{s.steer != null ? ' · ' + grip + ' steer ' + s.steer + '%' : ''}</Text>
         </Box>
       )
     }
