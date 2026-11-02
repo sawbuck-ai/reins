@@ -290,9 +290,9 @@ export const register: Register = (on, options) => {
 
     const { Box, Text } = $.ui.resolve(e)
     const icon = ({ verified: '✓', gamed: '🚩', regression: '✗', inconclusive: '≈', allowed: '✎' } as Record<string, string>)[s.last] || ''
-    // the steer icon rides the grip tiers (same 30/60 thresholds the --share card uses): reins
-    // slack when you barely steer, in the saddle at a steady hand, reins taut when you correct a lot.
-    const grip = s.steer == null ? '🏇' : s.steer >= 60 ? '🪢' : s.steer >= 30 ? '🏇' : '🐎'
+    // the steer icon is a glance, not a gauge (the % beside it carries the detail): reins slack
+    // (🐎) when under half your turns are steers, reins taut (🪢) when you steer more than half.
+    const grip = s.steer >= 50 ? '🪢' : '🐎'
 
     if (s.caught > 0) {
       return (
