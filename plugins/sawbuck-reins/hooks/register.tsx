@@ -300,6 +300,14 @@ export const register: Register = (on, options) => {
     if (e.props.hasSurvey || s === null) {
       return next(e)
     }
+    // opt out of the above-prompt band (e.g. you show sawbuck in your own statusline instead).
+    // Best-effort env read; the judge still runs each turn, so .sawbuck/steer.json keeps updating
+    // for the statusline to read. SAWBUCK_BAND=off|0|false|none hides the band.
+    try {
+      const bv = await $.env.get('SAWBUCK_BAND')
+      const v = bv == null ? '' : String(bv).trim().toLowerCase()
+      if (v === 'off' || v === '0' || v === 'false' || v === 'none') return next(e)
+    } catch { /* $.env is best-effort; default to showing the band */ }
 
     const { Box, Text } = $.ui.resolve(e)
     const icon = ({ verified: '✓', gamed: '🚩', regression: '✗', inconclusive: '≈', allowed: '✎' } as Record<string, string>)[s.last] || ''
