@@ -16,7 +16,7 @@ Claude Code asks two things on install: a **scope** (choose **user** so the band
 
 ## What you get
 
-- **A guide band** above the prompt, set off by a thin rule so it reads as its own area (not agent output), read from the repo's local `.sawbuck/` record each turn:
+- **A guide band** above the prompt, read from the repo's local `.sawbuck/` record each turn:
   a quiet `🐴 sawbuck · watching` (with the last verdict, `✓` verified / `🚩` gamed) when armed,
   `🐴 sawbuck · ready · /sawbuck-watch to arm` when the repo is checkable but not yet armed, and a
   bold `🐴 N caught` (with the latest item) when the check flags a regression or a faked, "gamed"

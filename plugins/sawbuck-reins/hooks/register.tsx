@@ -303,48 +303,37 @@ export const register: Register = (on, options) => {
 
     const { Box, Text } = $.ui.resolve(e)
     const icon = ({ verified: '✓', gamed: '🚩', regression: '✗', inconclusive: '≈', allowed: '✎' } as Record<string, string>)[s.last] || ''
-    // the steer icon is a glance, not a gauge (the % beside it carries the detail), and it reads the
-    // RECENT rate: reins slack (🐎) when under half your recent turns are steers, taut (🪢) past half.
+    // the steer icon reads the RECENT rate (the % beside it carries the detail): reins slack (🐎)
+    // when under half your recent turns are steers, taut (🪢) past half.
     const grip = (s.steer ?? 0) >= 50 ? '🪢' : '🐎'
     const steerSeg = s.steer != null ? ` · ${grip} steer ${s.steer}%` : ''
 
-    // the band is its own area: a dim rule above it separates the HUD from the agent output above.
-    const W = Math.max(24, Math.min(Number((e.props as any)?.width) || 56, 100))
-    const rule = '─'.repeat(W)
-
-    let body
     if (s.caught > 0) {
-      body = (
+      return (
         <Box>
           <Text color="yellow" weight="bold">🐴 sawbuck · {s.caught} caught</Text>
           {s.latest ? <Text dimColor> · {s.latest.kind} on {s.latest.file}</Text> : null}
           {steerSeg ? <Text dimColor>{steerSeg}</Text> : null}
         </Box>
       )
-    } else if (s.active) {
-      body = (
+    }
+    if (s.active) {
+      return (
         <Box>
           <Text dimColor>🐴 sawbuck · watching{icon ? ' · ' + icon : ''}{steerSeg}</Text>
         </Box>
       )
-    } else if (s.armed) {
-      body = (
+    }
+    if (s.armed) {
+      return (
         <Box>
           <Text dimColor>🐴 sawbuck · ready · /sawbuck-watch to arm</Text>
         </Box>
       )
-    } else {
-      body = (
-        <Box>
-          <Text dimColor>🐴 sawbuck · memory · /sawbuck-context for history</Text>
-        </Box>
-      )
     }
-
     return (
-      <Box flexDirection="column">
-        <Text dimColor>{rule}</Text>
-        {body}
+      <Box>
+        <Text dimColor>🐴 sawbuck · memory · /sawbuck-context for history</Text>
       </Box>
     )
   })
