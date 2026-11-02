@@ -95,14 +95,24 @@ async function complete(promptStr, schema) {
   throw new Error("unknown SAWBUCK_JUDGE backend: " + b + " (use ollama:<model> | haiku | anthropic:<model> | openai:<model>)");
 }
 
-async function ollama(model, promptStr, schema) {
-  const host = process.env.OLLAMA_HOST || "http://localhost:11434";
+async function ollamaCall(host, model, promptStr, format) {
+  const body = { model, prompt: promptStr, stream: false, options: { temperature: 0, num_predict: 800 } };
+  if (format) body.format = format;
   const res = await fetch(host + "/api/generate", {
     method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ model, prompt: promptStr, stream: false, format: schema, options: { temperature: 0, num_predict: 800 } }),
+    body: JSON.stringify(body),
   });
   const j = await res.json();
   return j.response || "";
+}
+async function ollama(model, promptStr, schema) {
+  const host = process.env.OLLAMA_HOST || "http://localhost:11434";
+  // Grammar-constrained first: clean JSON on most models (qwen2.5, llama). But reasoning models
+  // (gpt-oss, deepseek-r1) spend their budget in a hidden channel and return an EMPTY response
+  // under a format grammar - so on empty we retry free-form; the parser lifts JSON from raw text.
+  let out = await ollamaCall(host, model, promptStr, schema);
+  if (!out.trim()) out = await ollamaCall(host, model, promptStr, null);
+  return out;
 }
 async function anthropic(model, promptStr) {
   const key = process.env.ANTHROPIC_API_KEY;

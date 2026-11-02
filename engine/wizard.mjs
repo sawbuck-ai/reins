@@ -15,12 +15,16 @@ import { pairs, resolveSessions } from "./scan.mjs";
 // one-session spike never outranks a cue you give across many sessions - the study's lesson).
 export function aggregateCues(items) {
   const clusters = new Map();
+  const axisTally = new Map();   // the robust signal: WHICH axes you steer on (research: the fingerprint
+                                  // replicates across judges; exact cue text does not, so it rarely clusters)
   let scored = 0, steers = 0, fails = 0;
   for (const { session, result } of items) {
     if (!result) { fails++; continue; }
     scored++;
     if (!result.steer) continue;
     steers++;
+    const ax = result.axis || "other";
+    axisTally.set(ax, (axisTally.get(ax) || 0) + 1);
     const key = (result.axis || "other") + "|" + String(result.cue || "").toLowerCase().replace(/\s+/g, " ").trim().slice(0, 40);
     const c = clusters.get(key) || { axis: result.axis || "other", cue: result.cue || "", count: 0, gen: 0, sessions: new Set(), mag: { refine: 0, redirect: 0, "hard-stop": 0 } };
     c.count++;
@@ -34,7 +38,8 @@ export function aggregateCues(items) {
   const cues = [...clusters.values()]
     .map((c) => ({ axis: c.axis, cue: c.cue, count: c.count, gen: c.gen, genShare: c.count ? +(c.gen / c.count).toFixed(2) : 0, sessions: c.sessions.size, magnitude: c.mag }))
     .sort((a, b) => (b.sessions - a.sessions) || (b.gen - a.gen) || (b.count - a.count));
-  return { scored, steers, fails, steerRate: scored ? +(steers / scored).toFixed(3) : 0, cues };
+  const axes = [...axisTally.entries()].map(([axis, count]) => ({ axis, count })).sort((a, b) => b.count - a.count);
+  return { scored, steers, fails, steerRate: scored ? +(steers / scored).toFixed(3) : 0, axes, cues };
 }
 
 // harvest(scoreFn, { sessions, maxPairs }) -> aggregateCues over the pairs in those session

@@ -27,6 +27,27 @@ test("aggregateCues: clusters, counts, and ranks by session spread then gen", ()
   assert.equal(r.cues[1].count, 2);
   assert.equal(r.cues[1].gen, 1);          // one of two was generalizable
   assert.equal(r.cues[1].genShare, 0.5);
+  // axis fingerprint: rigor steered 2x, scope 2x
+  assert.equal(r.axes.length, 2);
+  assert.equal(r.axes.find((a) => a.axis === "rigor").count, 2);
+  assert.equal(r.axes.find((a) => a.axis === "scope").count, 2);
+});
+
+test("aggregateCues: axis fingerprint survives when cue text never clusters", () => {
+  // the real-world case the demo exposed: the judge phrases each steer differently, so no
+  // single cue reaches count>=2, but the AXIS repeats - the durable signal the study validated.
+  const items = [
+    { session: "A", result: { steer: true, axis: "complexity", magnitude: "refine", generalizable: true, cue: "simpler please" } },
+    { session: "B", result: { steer: true, axis: "complexity", magnitude: "refine", generalizable: true, cue: "that is overengineered" } },
+    { session: "C", result: { steer: true, axis: "complexity", magnitude: "refine", generalizable: true, cue: "drop the abstraction" } },
+    { session: "A", result: { steer: true, axis: "rigor", magnitude: "refine", generalizable: true, cue: "prove it first" } },
+  ];
+  const r = aggregateCues(items);
+  assert.ok(r.cues.every((c) => c.count === 1));   // no cue text clusters
+  assert.equal(r.axes[0].axis, "complexity");      // but the fingerprint is unambiguous
+  assert.equal(r.axes[0].count, 3);
+  assert.equal(r.axes[1].axis, "rigor");
+  assert.equal(r.axes[1].count, 1);
 });
 
 test("aggregateCues: empty input is clean, not a crash", () => {

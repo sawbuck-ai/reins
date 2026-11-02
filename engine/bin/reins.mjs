@@ -4,12 +4,16 @@
 // the seismograph + distribution. The check guards the turns you did not steer.
 
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
-import { join, dirname } from "node:path";
+import { join, dirname, relative } from "node:path";
 import * as claudeHarness from "../scan.mjs";
 import * as codexHarness from "../codex.mjs";
 import { scan } from "../scan.mjs";
 import { score, backend, harvestScore } from "../judge.mjs";
 import { harvest, aggregateCues } from "../wizard.mjs";
+
+// show a path relative to the cwd when it lives under it (clean output, no leaked home dir);
+// fall back to the absolute path for anything outside the tree.
+const rel = (p) => { const r = relative(process.cwd(), p); return r && !r.startsWith("..") ? r : p; };
 
 const argv = process.argv.slice(2);
 const flag = (n) => { const i = argv.indexOf(n); return i > -1 ? argv[i + 1] : null; };
@@ -60,14 +64,16 @@ It reads every turn-pair with a model. On the local ollama default that is free;
   if (has("--json")) { process.stdout.write(JSON.stringify({ backend: b, ...rw }, null, 2) + "\n"); process.exit(0); }
   const pct = rw.scored ? Math.round((rw.steers / rw.scored) * 100) : 0;
   process.stdout.write(`\n  reins · wizard   (judge: ${b})\n`);
-  process.stdout.write(`  read ${rw.pairs} turn-pairs from ${rw.sessionsRead} session(s) · ${rw.steers} steers (${pct}%)\n\n`);
+  process.stdout.write(`  read ${rw.pairs} turn-pairs from ${rw.sessionsRead} session(s) · ${rw.steers} steers (${pct}%)\n`);
+  if (rw.axes && rw.axes.length) process.stdout.write(`  you steer most on: ${rw.axes.slice(0, 5).map((a) => `${a.axis} (${a.count})`).join(" · ")}\n`);
+  process.stdout.write("\n");
   const top = rw.cues.filter((c) => c.count >= 2 || c.gen > 0).slice(0, 12);
-  if (!top.length) { process.stdout.write("  no repeated cues surfaced yet - harvest more sessions (--sessions, --since).\n\n"); process.exit(0); }
+  if (!top.length) { process.stdout.write("  no repeated specific cues yet (the axis fingerprint above is the durable signal) - harvest more with --sessions / --since.\n\n"); process.exit(0); }
   process.stdout.write("  your top cues (candidates from your history, review before trusting):\n");
   for (const c of top) {
     process.stdout.write(`    ${("[" + c.axis + "]").padEnd(13)} ${(c.cue || "(unnamed)").padEnd(34)} · ${c.sessions} sess · gen ${c.genShare} · ${c.count}x\n`);
   }
-  process.stdout.write(`\n  wrote ${out}\n  these are LEADS. Promote the ones that are really you; the check still guards the rest.\n\n`);
+  process.stdout.write(`\n  wrote ${rel(out)}\n  these are LEADS. Promote the ones that are really you; the check still guards the rest.\n\n`);
   process.exit(0);
 }
 
@@ -115,9 +121,10 @@ Free on the local ollama default. Seed from your whole history once with: reins 
   try { mkdirSync(dirname(cout), { recursive: true }); writeFileSync(cout, JSON.stringify(rec, null, 2) + "\n"); } catch { process.stderr.write("reins cues: could not write " + cout + "\n"); }
   if (has("--json")) { const { items: _omit, ...pub } = rec; process.stdout.write(JSON.stringify(pub, null, 2) + "\n"); process.exit(0); }
   const top = agg.cues.filter((c) => c.count >= 2 || c.gen > 0).slice(0, 10);
-  process.stdout.write(`\n  reins · cues   (judge: ${b})\n  ${agg.steers} steers over ${agg.scored} scored turns · ${top.length} cues\n`);
-  for (const c of top) process.stdout.write(`    ${("[" + c.axis + "]").padEnd(12)} ${(c.cue || "(unnamed)").padEnd(32)} · ${c.sessions} sess · ${c.count}x\n`);
-  process.stdout.write(`  wrote ${cout}\n\n`);
+  process.stdout.write(`\n  reins · cues   (judge: ${b})\n  ${agg.steers} steers over ${agg.scored} scored turns\n`);
+  if (agg.axes && agg.axes.length) process.stdout.write(`  you steer most on: ${agg.axes.slice(0, 4).map((a) => `${a.axis} (${a.count})`).join(" · ")}\n`);
+  if (top.length) { process.stdout.write(`  candidate cues (review before trusting):\n`); for (const c of top) process.stdout.write(`    ${("[" + c.axis + "]").padEnd(12)} ${(c.cue || "(unnamed)").padEnd(32)} · ${c.count}x\n`); }
+  process.stdout.write(`  wrote ${rel(cout)}\n\n`);
   process.exit(0);
 }
 
@@ -217,10 +224,10 @@ if (has("--share")) {
   ${r.seismograph}
   · let it ride   - nudge   + redirect   # hard pull
 
-I steered ${r.steering} of ${r.scored} turns (${pct}%) — ${grip}, ${texture}.
+I steered ${r.steering} of ${r.scored} turns (${pct}%): ${grip}, ${texture}.
 The ${r.scored - r.steering} I let ride, the check had my back.
 
-— measured with reins · sawbuck
+measured with reins · sawbuck
 `);
   process.exit(0);
 }
