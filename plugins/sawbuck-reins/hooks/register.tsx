@@ -38,7 +38,14 @@ async function readSummary($: any): Promise<Summary | null> {
       const lines = (await $.fs.read(cwd + '/.sawbuck/activity.jsonl')).trim().split('\n')
       last = String(JSON.parse(lines[lines.length - 1]).kind || '')
     } catch {}
-    return { caught, latest, armed, active, mem, last }
+    // live steering rate from the reins engine's file (written by the turn.complete
+    // background --append); null when unknown so the band stays quiet.
+    let steer: number | null = null
+    try {
+      const sj = JSON.parse(await $.fs.read(cwd + '/.sawbuck/steer.json'))
+      if (sj && sj.scored) steer = Math.round((sj.steeringRate || 0) * 100)
+    } catch {}
+    return { caught, latest, armed, active, mem, last, steer }
   } catch {
     return null
   }
@@ -104,7 +111,19 @@ export const register: Register = on => {
   })
 
   on('turn.complete', async ($, e, next) => {
-    try { const s = await readSummary($); await update($, summaryAtom, () => s) } catch { /* the band never blocks a turn */ }
+    try {
+      const s = await readSummary($)
+      await update($, summaryAtom, () => s)
+      // live watcher: score the newest turn in the BACKGROUND (never block the turn). The
+      // engine's --append is incremental (one new pair) and writes .sawbuck/steer.json for
+      // the band + the sawbuck statusline to read. The trailing `&` detaches it so this
+      // returns immediately; tries a global `reins`, then npx. Best-effort - a missing judge
+      // just leaves the steer rate unknown, never an error.
+      if (s && (s.active || s.armed)) {
+        const cwd = await $.session.cwd()
+        try { await $.process.run(['sh', '-c', '{ reins --append || npx -y @sawbuck/reins --append; } >/dev/null 2>&1 &'], { cwd }) } catch {}
+      }
+    } catch { /* the band never blocks a turn */ }
     return next(e)
   })
 
@@ -122,6 +141,7 @@ export const register: Register = on => {
         <Box>
           <Text color="yellow" weight="bold">🐴 sawbuck · {s.caught} caught</Text>
           {s.latest ? <Text dimColor> · {s.latest.kind} on {s.latest.file}</Text> : null}
+          {s.steer != null ? <Text dimColor> · 🤠 steer {s.steer}%</Text> : null}
         </Box>
       )
     }
@@ -129,7 +149,7 @@ export const register: Register = on => {
     if (s.active) {
       return (
         <Box>
-          <Text dimColor>🐴 sawbuck · watching{icon ? ' · ' + icon : ''}</Text>
+          <Text dimColor>🐴 sawbuck · watching{icon ? ' · ' + icon : ''}{s.steer != null ? ' · 🤠 steer ' + s.steer + '%' : ''}</Text>
         </Box>
       )
     }

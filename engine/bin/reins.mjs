@@ -5,7 +5,7 @@
 
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { join, dirname } from "node:path";
-import { scan, resolveSessionPath } from "../scan.mjs";
+import { scan, resolveSessionPath, pairs } from "../scan.mjs";
 import { score, backend } from "../judge.mjs";
 
 const argv = process.argv.slice(2);
@@ -38,6 +38,34 @@ if (!sess) { process.stderr.write("reins: no session transcript found (pass --se
 
 let text = "";
 try { text = readFileSync(sess, "utf8"); } catch { process.stderr.write("reins: cannot read " + sess + "\n"); process.exit(2); }
+
+// --append: incremental, BOUNDED per-turn scoring for the live watcher. Reads the
+// prior tally from .sawbuck/steer.json, scores only the NEW turn-pairs since the last
+// run, merges, rewrites. One new pair per turn - not a full re-scan (which would be
+// quadratic over a session). The sawbuck statusline reads the same steer.json offline.
+if (has("--append")) {
+  const out = join(process.cwd(), ".sawbuck", "steer.json");
+  let prior = { lastPairs: 0, scored: 0, steering: 0, wsum: 0, distribution: { 0: 0, 1: 0, 2: 0, 3: 0 } };
+  try {
+    const p = JSON.parse(readFileSync(out, "utf8"));
+    if (p && p.lastPairs != null) prior = { lastPairs: p.lastPairs, scored: p.scored || 0, steering: p.steering || 0, wsum: p._wsum || 0, distribution: p.distribution || prior.distribution };
+  } catch { /* no prior tally = fresh */ }
+  const all = pairs(text);
+  let added = 0;
+  for (const { prior: a, user: u } of all.slice(prior.lastPairs)) {
+    let s = null; try { s = await score(a, u); } catch {}
+    if (!s) continue;
+    prior.distribution[s.pressure] = (prior.distribution[s.pressure] || 0) + 1;
+    prior.scored++; prior.wsum += s.pressure; added++;
+    if (s.pressure >= 1) prior.steering++;
+  }
+  const rate = prior.scored ? prior.steering / prior.scored : 0;
+  const rec = { at: new Date().toISOString(), backend: backend(), lastPairs: all.length, turns: all.length, scored: prior.scored, steering: prior.steering, steeringRate: rate, meanPressure: prior.scored ? prior.wsum / prior.scored : 0, distribution: prior.distribution, _wsum: prior.wsum };
+  try { mkdirSync(dirname(out), { recursive: true }); writeFileSync(out, JSON.stringify(rec) + "\n"); } catch { process.stderr.write("reins: could not write " + out + "\n"); }
+  if (has("--json")) process.stdout.write(JSON.stringify(rec) + "\n");
+  else process.stdout.write(`reins: +${added} new turn(s), steer rate ${Math.round(rate * 100)}% over ${prior.scored} turns\n`);
+  process.exit(0);
+}
 
 const n = parseInt(flag("-n"), 10) || 0;
 const r = await scan(text, score, { limit: n });
