@@ -1,4 +1,4 @@
-# @sawbuck/reins (engine)
+# reins (engine)
 
 The engine behind reins: measure how much you steer your AI coding agent. It reads
 a Claude Code session transcript, scores each of your turns for **steering
