@@ -121,7 +121,7 @@ export const register: Register = on => {
       // just leaves the steer rate unknown, never an error.
       if (s && (s.active || s.armed)) {
         const cwd = await $.session.cwd()
-        try { await $.process.run(['sh', '-c', '{ reins --append || npx -y @promptwheel/reins --append; } >/dev/null 2>&1 &'], { cwd }) } catch {}
+        try { await $.process.run(['sh', '-c', '{ reins --append || npx -y @sawbuck/reins --append; } >/dev/null 2>&1 &'], { cwd }) } catch {}
       }
     } catch { /* the band never blocks a turn */ }
     return next(e)
