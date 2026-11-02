@@ -2,6 +2,14 @@
 // reading: score each of your turns (given the agent action it followed) and
 // aggregate into a distribution + a seismograph. The scorer is injected so the
 // aggregation is testable without a live model.
+//
+// HARNESS ADAPTER SEAM. This file is the CLAUDE CODE adapter: humanText/assistantText/
+// noise parse Claude Code's .jsonl schema, and resolveSessions finds them under
+// ~/.claude/projects. Everything downstream (the judge in judge.mjs, the cue aggregation
+// in wizard.mjs, the CLI) operates ONLY on the abstract { prior, user } turn-pairs that
+// pairs() emits and knows nothing about Claude Code. So supporting another harness (Codex,
+// Cursor, ...) is a PARALLEL module that produces the same { prior, user } pairs + its own
+// session resolver, not a refactor. pairs() is the seam; keep it harness-agnostic.
 
 import { readFileSync, readdirSync, statSync, existsSync } from "node:fs";
 import { join } from "node:path";

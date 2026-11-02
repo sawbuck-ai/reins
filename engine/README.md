@@ -21,6 +21,13 @@ $ reins
   the check guards the 7 turns you didn't steer - a miss there is the risk.
 ```
 
+## Harnesses
+
+reins reads **Claude Code** transcripts today. The parser lives in `scan.mjs`; everything
+downstream works on abstract `{ prior, user }` turn-pairs, so another harness (Codex, Cursor)
+is a parallel module that emits the same pairs plus its own session resolver, not a rewrite.
+`pairs()` is the seam.
+
 ## Backend (SAWBUCK_JUDGE)
 
 The judge model is a socket. Set `SAWBUCK_JUDGE` (default `ollama:qwen2.5:7b`):
