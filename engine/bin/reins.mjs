@@ -7,7 +7,7 @@ import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { scan, resolveSessionPath, pairs } from "../scan.mjs";
 import { score, backend, harvestScore } from "../judge.mjs";
-import { harvest, resolveSessions } from "../wizard.mjs";
+import { harvest, resolveSessions, aggregateCues } from "../wizard.mjs";
 
 const argv = process.argv.slice(2);
 const flag = (n) => { const i = argv.indexOf(n); return i > -1 ? argv[i + 1] : null; };
@@ -64,6 +64,52 @@ It reads every turn-pair with a model. On the local ollama default that is free;
     process.stdout.write(`    ${("[" + c.axis + "]").padEnd(13)} ${(c.cue || "(unnamed)").padEnd(34)} · ${c.sessions} sess · gen ${c.genShare} · ${c.count}x\n`);
   }
   process.stdout.write(`\n  wrote ${out}\n  these are LEADS. Promote the ones that are really you; the check still guards the rest.\n\n`);
+  process.exit(0);
+}
+
+// ---- `reins cues`: real-time cue inventory. Classify THIS session's turns into the cue
+// structure and accumulate .sawbuck/cues.json. --append scores only the new turns since last
+// run (the per-turn path), and carries cues across sessions in this repo. One judge call per
+// new turn; free on local ollama. The batch cross-session cold-start is `reins wizard`. ----
+if (argv[0] === "cues") {
+  if (has("--help") || has("-h")) {
+    process.stdout.write(`reins cues: accumulate your cue inventory as you work
+
+Usage: reins cues [--append] [--session <path>] [--judge <b>] [--max N] [--json]
+
+  --append    score only the new turns since the last run, merge into .sawbuck/cues.json
+              (the per-turn path; carries cues across sessions in this repo)
+  --max N     without --append, cap the turns scored (default 400)
+  --judge <b> ollama:<model> (default, free, local) | haiku | anthropic:<model> | openai:<model>
+
+Free on the local ollama default. Seed from your whole history once with: reins wizard.
+`);
+    process.exit(0);
+  }
+  if (flag("--judge")) process.env.SAWBUCK_JUDGE = flag("--judge");
+  const b = backend();
+  const sess = resolveSessionPath(flag("--session"));
+  if (!sess) { process.stderr.write("reins cues: no session transcript found\n"); process.exit(2); }
+  let ctext = ""; try { ctext = readFileSync(sess, "utf8"); } catch { process.stderr.write("reins cues: cannot read " + sess + "\n"); process.exit(2); }
+  const allC = pairs(ctext);
+  const cout = join(process.cwd(), ".sawbuck", "cues.json");
+  let prior = { session: "", lastPairs: 0, items: [] };
+  if (has("--append")) { try { const p = JSON.parse(readFileSync(cout, "utf8")); if (p && Array.isArray(p.items)) prior = { session: p.session || "", lastPairs: p.lastPairs || 0, items: p.items }; } catch { /* fresh */ } }
+  const startIdx = has("--append") && prior.session === sess ? prior.lastPairs : 0;   // same session = resume; new session = score all its pairs
+  let fresh = allC.slice(startIdx);
+  if (!has("--append")) { const m = parseInt(flag("--max"), 10) || 400; if (fresh.length > m) fresh = fresh.slice(-m); }
+  const items = has("--append") ? prior.items.slice() : [];
+  const sid = sess.split("/").pop();
+  for (const { prior: a, user: u } of fresh) { let r = null; try { r = await harvestScore(a, u); } catch {} items.push({ session: sid, result: r }); }
+  const capped = items.slice(-1500);
+  const agg = aggregateCues(capped);
+  const rec = { at: new Date().toISOString(), backend: b, session: sess, lastPairs: allC.length, pairs: capped.length, ...agg, items: capped };
+  try { mkdirSync(dirname(cout), { recursive: true }); writeFileSync(cout, JSON.stringify(rec, null, 2) + "\n"); } catch { process.stderr.write("reins cues: could not write " + cout + "\n"); }
+  if (has("--json")) { const { items: _omit, ...pub } = rec; process.stdout.write(JSON.stringify(pub, null, 2) + "\n"); process.exit(0); }
+  const top = agg.cues.filter((c) => c.count >= 2 || c.gen > 0).slice(0, 10);
+  process.stdout.write(`\n  reins · cues   (judge: ${b})\n  ${agg.steers} steers over ${agg.scored} scored turns · ${top.length} cues\n`);
+  for (const c of top) process.stdout.write(`    ${("[" + c.axis + "]").padEnd(12)} ${(c.cue || "(unnamed)").padEnd(32)} · ${c.sessions} sess · ${c.count}x\n`);
+  process.stdout.write(`  wrote ${cout}\n\n`);
   process.exit(0);
 }
 

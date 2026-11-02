@@ -270,7 +270,13 @@ export const register: Register = (on, options) => {
           const cwd = await $.session.cwd()
           try { await $.process.run(['sh', '-c', '{ reins --append || npx -y @sawbuck/reins --append; } >/dev/null 2>&1 &'], { cwd }) } catch {}
         }
-        // mode === 'off' -> nothing
+        // real-time cue inventory (separate from the steer meter): accumulate .sawbuck/cues.json in
+        // the background, so your cues build up as you work. Best-effort and detached; free on local
+        // ollama, and a no-op when no judge backend is reachable, so it never blocks or errors.
+        if (mode !== 'off') {
+          const cwdC = await $.session.cwd()
+          try { await $.process.run(['sh', '-c', '{ reins cues --append || npx -y @sawbuck/reins cues --append; } >/dev/null 2>&1 &'], { cwd: cwdC }) } catch {}
+        }
       }
     } catch { /* the band never blocks a turn */ }
     return next(e)
