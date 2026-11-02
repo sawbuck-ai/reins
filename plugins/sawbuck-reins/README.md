@@ -12,6 +12,8 @@ you can catch your agent gaming a metric without leaving the session or touching
 
 (`sawbuck` is the marketplace name defined in `.claude-plugin/marketplace.json`.)
 
+Claude Code asks two things on install: a **scope** (choose **user** so the band follows you across your repos) and the **steering judge** (it defaults to a zero-setup `native` one, a tiny Claude call per turn; switch it to a free local model or turn it off, see below).
+
 ## What you get
 
 - **A guide band** above the prompt, read from the repo's local `.sawbuck/` record each turn:
