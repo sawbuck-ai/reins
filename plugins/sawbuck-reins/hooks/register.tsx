@@ -7,7 +7,7 @@ import type { Summary } from '../types'
 const summaryAtom = atom({ plugin: 'sawbuck-reins', key: 'summary' } as const, null)
 
 // --- the live steering judge ------------------------------------------------
-// The band's "🤠 steer X%" comes from .sawbuck/steer.json. Two ways to fill it:
+// The band's "🐎/🪢 steer X%" comes from .sawbuck/steer.json. Two ways to fill it:
 //
 //   native (DEFAULT): score the newest turn-pair with a tiny Claude (Haiku) call
 //     via $.model.complete - zero setup, no ollama, no key. It bills the user's

@@ -47,7 +47,7 @@ structured outputs), so a thinking model can't break the parse.
 ## Live on the statusline
 
 `--write [path]` writes the summary JSON (default `.sawbuck/steer.json`). The
-offline `sawbuck statusline` reads that file and shows `🤠 steer 76%` next to its
+offline `sawbuck statusline` reads that file and shows `🪢 steer 76%` next to its
 own segment, the LLM work happens here, sawbuck's core stays model-free (it only
 reads a file). Keep it fresh by running `reins --write` on a cadence (a `/loop`, a
 watch, or a post-turn hook):

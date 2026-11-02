@@ -21,7 +21,7 @@ Claude Code asks two things on install: a **scope** (choose **user** so the band
   `🐴 sawbuck · ready · /sawbuck-watch to arm` when the repo is checkable but not yet armed, and a
   bold `🐴 N caught` (with the latest item) when the check flags a regression or a faked, "gamed"
   win. It never blocks your prompt and hides itself where Sawbuck is not relevant.
-- **A live steering readout** on the band (`🤠 steer X%`): each turn it scores how much you
+- **A live steering readout** on the band (`🐎 steer X%`, taut `🪢` once you steer more than half your turns): each turn it scores how much you
   redirected the agent (a light refine, a redirect, or a hard yank) and shows the running rate, so
   you watch your own steering trend toward a loose rein. It scores the newest turn in the
   background and never blocks a turn. The judge has three modes (set `judge` in
