@@ -95,15 +95,19 @@ Free on the local ollama default. Seed from your whole history once with: reins 
   const cout = join(process.cwd(), ".sawbuck", "cues.json");
   let prior = { session: "", lastPairs: 0, items: [] };
   if (has("--append")) { try { const p = JSON.parse(readFileSync(cout, "utf8")); if (p && Array.isArray(p.items)) prior = { session: p.session || "", lastPairs: p.lastPairs || 0, items: p.items }; } catch { /* fresh */ } }
-  const startIdx = has("--append") && prior.session === sess ? prior.lastPairs : 0;   // same session = resume; new session = score all its pairs
+  const startIdx = has("--append") && prior.session === sess ? Math.min(prior.lastPairs, allC.length) : 0;   // same session = resume; new/changed session = score from its start
   let fresh = allC.slice(startIdx);
-  if (!has("--append")) { const m = parseInt(flag("--max"), 10) || 400; if (fresh.length > m) fresh = fresh.slice(-m); }
+  // bounded per call: --append scores at most PER new pairs (oldest-first, so a backlog drains over
+  // turns); a full scan caps at --max newest. Keeps the per-turn background call cheap.
+  const PER = has("--append") ? 40 : (parseInt(flag("--max"), 10) || 400);
+  if (fresh.length > PER) fresh = has("--append") ? fresh.slice(0, PER) : fresh.slice(-PER);
+  const consumed = startIdx + fresh.length;
   const items = has("--append") ? prior.items.slice() : [];
   const sid = sess.split("/").pop();
   for (const { prior: a, user: u } of fresh) { let r = null; try { r = await harvestScore(a, u); } catch {} items.push({ session: sid, result: r }); }
   const capped = items.slice(-1500);
   const agg = aggregateCues(capped);
-  const rec = { at: new Date().toISOString(), backend: b, session: sess, lastPairs: allC.length, pairs: capped.length, ...agg, items: capped };
+  const rec = { at: new Date().toISOString(), backend: b, session: sess, lastPairs: has("--append") ? consumed : allC.length, pairs: capped.length, ...agg, items: capped };
   try { mkdirSync(dirname(cout), { recursive: true }); writeFileSync(cout, JSON.stringify(rec, null, 2) + "\n"); } catch { process.stderr.write("reins cues: could not write " + cout + "\n"); }
   if (has("--json")) { const { items: _omit, ...pub } = rec; process.stdout.write(JSON.stringify(pub, null, 2) + "\n"); process.exit(0); }
   const top = agg.cues.filter((c) => c.count >= 2 || c.gen > 0).slice(0, 10);
@@ -153,7 +157,12 @@ if (has("--append")) {
   } catch { /* no prior tally = fresh */ }
   const all = pairs(text);
   let added = 0;
-  for (const { prior: a, user: u } of all.slice(prior.lastPairs)) {
+  // bounded per call (graceful): at most PER new pairs this run, so the first --append on a long
+  // session never blocks on hundreds of judge calls at once; a backlog drains over the next turns.
+  const PER = 40;
+  const start = Math.min(prior.lastPairs, all.length);
+  const consumed = Math.min(start + PER, all.length);
+  for (const { prior: a, user: u } of all.slice(start, consumed)) {
     let s = null; try { s = await score(a, u); } catch {}
     if (!s) continue;
     prior.distribution[s.pressure] = (prior.distribution[s.pressure] || 0) + 1;
@@ -161,7 +170,7 @@ if (has("--append")) {
     if (s.pressure >= 1) prior.steering++;
   }
   const rate = prior.scored ? prior.steering / prior.scored : 0;
-  const rec = { at: new Date().toISOString(), backend: backend(), lastPairs: all.length, turns: all.length, scored: prior.scored, steering: prior.steering, steeringRate: rate, meanPressure: prior.scored ? prior.wsum / prior.scored : 0, distribution: prior.distribution, _wsum: prior.wsum };
+  const rec = { at: new Date().toISOString(), backend: backend(), lastPairs: consumed, turns: all.length, scored: prior.scored, steering: prior.steering, steeringRate: rate, meanPressure: prior.scored ? prior.wsum / prior.scored : 0, distribution: prior.distribution, _wsum: prior.wsum };
   try { mkdirSync(dirname(out), { recursive: true }); writeFileSync(out, JSON.stringify(rec) + "\n"); } catch { process.stderr.write("reins: could not write " + out + "\n"); }
   if (has("--json")) process.stdout.write(JSON.stringify(rec) + "\n");
   else process.stdout.write(`reins: +${added} new turn(s), steer rate ${Math.round(rate * 100)}% over ${prior.scored} turns\n`);
