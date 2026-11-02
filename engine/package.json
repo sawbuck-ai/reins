@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "Reins: measure how much you steer your AI coding agent. A per-turn steering-pressure judge over your session transcript, pluggable backend (Haiku / local ollama / any OpenAI-compatible). The LLM half of the reins steering layer; keeps sawbuck's core offline.",
   "type": "module",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "bin": {
     "reins": "bin/reins.mjs"
   },
@@ -14,6 +14,8 @@
     "bin/reins.mjs",
     "judge.mjs",
     "scan.mjs",
-    "README.md"
+    "README.md",
+    "LICENSE",
+    "NOTICE"
   ]
 }
