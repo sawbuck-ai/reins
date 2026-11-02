@@ -5,13 +5,17 @@
 
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { join, dirname } from "node:path";
-import { scan, resolveSessionPath, pairs } from "../scan.mjs";
+import * as claudeHarness from "../scan.mjs";
+import * as codexHarness from "../codex.mjs";
+import { scan } from "../scan.mjs";
 import { score, backend, harvestScore } from "../judge.mjs";
-import { harvest, resolveSessions, aggregateCues } from "../wizard.mjs";
+import { harvest, aggregateCues } from "../wizard.mjs";
 
 const argv = process.argv.slice(2);
 const flag = (n) => { const i = argv.indexOf(n); return i > -1 ? argv[i + 1] : null; };
 const has = (n) => argv.includes(n);
+// harness adapter: whose transcripts to read. --harness codex (or SAWBUCK_HARNESS=codex); default Claude Code.
+const H = (flag("--harness") || process.env.SAWBUCK_HARNESS) === "codex" ? codexHarness : claudeHarness;
 
 // ---- `reins wizard` / `reins harvest`: read your old chats, rank the cues you keep giving ----
 if (argv[0] === "wizard" || argv[0] === "harvest") {
@@ -38,7 +42,7 @@ It reads every turn-pair with a model. On the local ollama default that is free;
   const maxPairs = parseInt(flag("--max"), 10) || 400;
   const sinceDays = parseInt(flag("--since"), 10) || 0;
   const sinceMs = sinceDays > 0 ? Date.now() - sinceDays * 86400000 : 0;
-  const sessions = resolveSessions({ limit: sessionsN, sinceMs });
+  const sessions = H.resolveSessions({ limit: sessionsN, sinceMs });
   if (!sessions.length) { process.stderr.write("reins wizard: no Claude Code sessions found under ~/.claude/projects\n"); process.exit(2); }
   const hosted = !b.startsWith("ollama:");
   if (hosted && !has("--yes")) {
@@ -46,7 +50,7 @@ It reads every turn-pair with a model. On the local ollama default that is free;
     process.exit(2);
   }
   process.stderr.write(`reins wizard: harvesting up to ${maxPairs} turn-pairs from ${sessions.length} session(s) via ${b}${hosted ? " (hosted, paid)" : " (local, free)"}...\n`);
-  const rw = await harvest(harvestScore, { sessions, maxPairs });
+  const rw = await harvest(harvestScore, { sessions, maxPairs, pairsFn: H.pairs });
   const wf = flag("--write");
   const out = wf && !wf.startsWith("--") ? wf : join(process.cwd(), ".sawbuck", "cues.json");
   if (has("--write") || !has("--json")) {
@@ -88,10 +92,10 @@ Free on the local ollama default. Seed from your whole history once with: reins 
   }
   if (flag("--judge")) process.env.SAWBUCK_JUDGE = flag("--judge");
   const b = backend();
-  const sess = resolveSessionPath(flag("--session"));
+  const sess = H.resolveSessionPath(flag("--session"));
   if (!sess) { process.stderr.write("reins cues: no session transcript found\n"); process.exit(2); }
   let ctext = ""; try { ctext = readFileSync(sess, "utf8"); } catch { process.stderr.write("reins cues: cannot read " + sess + "\n"); process.exit(2); }
-  const allC = pairs(ctext);
+  const allC = H.pairs(ctext);
   const cout = join(process.cwd(), ".sawbuck", "cues.json");
   let prior = { session: "", lastPairs: 0, items: [] };
   if (has("--append")) { try { const p = JSON.parse(readFileSync(cout, "utf8")); if (p && Array.isArray(p.items)) prior = { session: p.session || "", lastPairs: p.lastPairs || 0, items: p.items }; } catch { /* fresh */ } }
@@ -132,13 +136,16 @@ Usage: reins [--session <path.jsonl>] [--judge <backend>] [-n N] [--json] [--wri
   --label <term>     the word for the stat on the share card (default "steer rate";
                      e.g. "yank rate" for a playful channel - keep it neutral for LinkedIn)
 
+  --harness <h>      whose transcripts to read: claude (default) | codex (reads ~/.codex/sessions)
+
+Commands: 'reins wizard' (harvest history into cues), 'reins cues' (the live cue inventory). --help on each.
 Backend is SAWBUCK_JUDGE (default ollama:qwen2.5:7b). Local = free + private.
 `);
   process.exit(0);
 }
 
 if (flag("--judge")) process.env.SAWBUCK_JUDGE = flag("--judge");
-const sess = resolveSessionPath(flag("--session"));
+const sess = H.resolveSessionPath(flag("--session"));
 if (!sess) { process.stderr.write("reins: no session transcript found (pass --session <path.jsonl>)\n"); process.exit(2); }
 
 let text = "";
@@ -155,7 +162,7 @@ if (has("--append")) {
     const p = JSON.parse(readFileSync(out, "utf8"));
     if (p && p.lastPairs != null) prior = { lastPairs: p.lastPairs, scored: p.scored || 0, steering: p.steering || 0, wsum: p._wsum || 0, distribution: p.distribution || prior.distribution };
   } catch { /* no prior tally = fresh */ }
-  const all = pairs(text);
+  const all = H.pairs(text);
   let added = 0;
   // bounded per call (graceful): at most PER new pairs this run, so the first --append on a long
   // session never blocks on hundreds of judge calls at once; a backlog drains over the next turns.
@@ -178,7 +185,7 @@ if (has("--append")) {
 }
 
 const n = parseInt(flag("-n"), 10) || 0;
-const r = await scan(text, score, { limit: n });
+const r = await scan(text, score, { limit: n, pairsFn: H.pairs });
 
 // --write [path]: persist the summary so an OFFLINE reader (the sawbuck statusline)
 // can display the live steering number without ever calling a model itself.

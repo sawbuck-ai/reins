@@ -39,12 +39,12 @@ export function aggregateCues(items) {
 
 // harvest(scoreFn, { sessions, maxPairs }) -> aggregateCues over the pairs in those session
 // files, newest first, capped at maxPairs (cost control). scoreFn(prior, user) -> result | null.
-export async function harvest(scoreFn, { sessions = [], maxPairs = 400 } = {}) {
+export async function harvest(scoreFn, { sessions = [], maxPairs = 400, pairsFn = pairs } = {}) {
   const items = [];
   const gathered = [];
   for (const path of sessions) {
     let text = ""; try { text = readFileSync(path, "utf8"); } catch { continue; }
-    for (const p of pairs(text)) {
+    for (const p of pairsFn(text)) {
       gathered.push({ ...p, session: path });
       if (gathered.length >= maxPairs) break;
     }

@@ -61,8 +61,8 @@ export function pairs(text) {
 const GLYPH = { 0: ".", 1: "-", 2: "+", 3: "#" };
 
 // scan(text, scoreFn) -> aggregate. scoreFn(prior, user) -> {pressure, axis, nudge} | null.
-export async function scan(text, scoreFn, { limit = 0 } = {}) {
-  let ps = pairs(text);
+export async function scan(text, scoreFn, { limit = 0, pairsFn = pairs } = {}) {
+  let ps = pairsFn(text);
   if (limit > 0 && ps.length > limit) ps = ps.slice(-limit);   // most recent N
   const dist = { 0: 0, 1: 0, 2: 0, 3: 0 };
   let scored = 0, fails = 0, wsum = 0, spark = "";
