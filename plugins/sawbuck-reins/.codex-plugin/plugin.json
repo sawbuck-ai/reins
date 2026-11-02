@@ -1,0 +1,23 @@
+{
+  "name": "sawbuck-reins",
+  "version": "0.1.0",
+  "description": "Catch your coding agent gaming a check, and read how you steer, inside Codex.",
+  "author": {
+    "name": "Matthew Owens"
+  },
+  "homepage": "https://sawbuck.ai",
+  "repository": "https://github.com/sawbuck-ai/reins",
+  "license": "Apache-2.0",
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Sawbuck",
+    "shortDescription": "Verify wins, read your steering",
+    "longDescription": "A deterministic, zero-LLM check re-proves every win from your source edits alone, so a green that came from editing the test, the grader, or the config is caught and sent back to earn it. Plus a cue inventory of how you steer, harvested from your Codex history. It uses your own tools, and the check never calls a model.",
+    "developerName": "Matthew Owens",
+    "brandColor": "#e3b23c",
+    "category": "Developer Tools",
+    "capabilities": ["Verify changes", "Surface history", "Learn your steering"],
+    "websiteURL": "https://sawbuck.ai",
+    "supportURL": "https://github.com/sawbuck-ai/reins/issues"
+  }
+}

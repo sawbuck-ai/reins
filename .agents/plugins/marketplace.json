@@ -1,0 +1,17 @@
+{
+  "name": "sawbuck",
+  "interface": {
+    "displayName": "Sawbuck"
+  },
+  "plugins": [
+    {
+      "name": "sawbuck-reins",
+      "source": "./plugins/sawbuck-reins",
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    }
+  ]
+}
