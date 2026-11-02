@@ -6,11 +6,66 @@
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { scan, resolveSessionPath, pairs } from "../scan.mjs";
-import { score, backend } from "../judge.mjs";
+import { score, backend, harvestScore } from "../judge.mjs";
+import { harvest, resolveSessions } from "../wizard.mjs";
 
 const argv = process.argv.slice(2);
 const flag = (n) => { const i = argv.indexOf(n); return i > -1 ? argv[i + 1] : null; };
 const has = (n) => argv.includes(n);
+
+// ---- `reins wizard` / `reins harvest`: read your old chats, rank the cues you keep giving ----
+if (argv[0] === "wizard" || argv[0] === "harvest") {
+  if (has("--help") || has("-h")) {
+    process.stdout.write(`reins wizard: harvest your old Claude Code chats into a cue inventory
+
+Usage: reins wizard [--judge <backend>] [--sessions N] [--max N] [--since DAYS] [--json] [--write [path]] [--yes]
+
+  --sessions N   scan the N most recent sessions (default: all)
+  --max N        cap the turn-pairs scored, for cost/time control (default 400)
+  --since DAYS   only sessions touched in the last DAYS days
+  --judge <b>    ollama:<model> (default, free, local) | haiku | anthropic:<model> | openai:<model>
+  --yes          proceed without the confirm on a HOSTED (paid) backend
+  --write [path] write the cue inventory (default .sawbuck/cues.json)
+  --json         machine-readable output
+
+It reads every turn-pair with a model. On the local ollama default that is free; a hosted backend costs a little.
+`);
+    process.exit(0);
+  }
+  if (flag("--judge")) process.env.SAWBUCK_JUDGE = flag("--judge");
+  const b = backend();
+  const sessionsN = parseInt(flag("--sessions"), 10) || 0;
+  const maxPairs = parseInt(flag("--max"), 10) || 400;
+  const sinceDays = parseInt(flag("--since"), 10) || 0;
+  const sinceMs = sinceDays > 0 ? Date.now() - sinceDays * 86400000 : 0;
+  const sessions = resolveSessions({ limit: sessionsN, sinceMs });
+  if (!sessions.length) { process.stderr.write("reins wizard: no Claude Code sessions found under ~/.claude/projects\n"); process.exit(2); }
+  const hosted = !b.startsWith("ollama:");
+  if (hosted && !has("--yes")) {
+    process.stderr.write(`reins wizard: ${b} is a HOSTED backend and will make up to ${maxPairs} calls (a small cost).\n  re-run with --yes to proceed, or use the free local default (omit --judge).\n`);
+    process.exit(2);
+  }
+  process.stderr.write(`reins wizard: harvesting up to ${maxPairs} turn-pairs from ${sessions.length} session(s) via ${b}${hosted ? " (hosted, paid)" : " (local, free)"}...\n`);
+  const rw = await harvest(harvestScore, { sessions, maxPairs });
+  const wf = flag("--write");
+  const out = wf && !wf.startsWith("--") ? wf : join(process.cwd(), ".sawbuck", "cues.json");
+  if (has("--write") || !has("--json")) {
+    try { mkdirSync(dirname(out), { recursive: true }); writeFileSync(out, JSON.stringify({ at: new Date().toISOString(), backend: b, ...rw }, null, 2) + "\n"); }
+    catch { process.stderr.write("reins wizard: could not write " + out + "\n"); }
+  }
+  if (has("--json")) { process.stdout.write(JSON.stringify({ backend: b, ...rw }, null, 2) + "\n"); process.exit(0); }
+  const pct = rw.scored ? Math.round((rw.steers / rw.scored) * 100) : 0;
+  process.stdout.write(`\n  reins · wizard   (judge: ${b})\n`);
+  process.stdout.write(`  read ${rw.pairs} turn-pairs from ${rw.sessionsRead} session(s) · ${rw.steers} steers (${pct}%)\n\n`);
+  const top = rw.cues.filter((c) => c.count >= 2 || c.gen > 0).slice(0, 12);
+  if (!top.length) { process.stdout.write("  no repeated cues surfaced yet - harvest more sessions (--sessions, --since).\n\n"); process.exit(0); }
+  process.stdout.write("  your top cues (candidates from your history, review before trusting):\n");
+  for (const c of top) {
+    process.stdout.write(`    ${("[" + c.axis + "]").padEnd(13)} ${(c.cue || "(unnamed)").padEnd(34)} · ${c.sessions} sess · gen ${c.genShare} · ${c.count}x\n`);
+  }
+  process.stdout.write(`\n  wrote ${out}\n  these are LEADS. Promote the ones that are really you; the check still guards the rest.\n\n`);
+  process.exit(0);
+}
 
 if (has("--help") || has("-h")) {
   process.stdout.write(`reins: measure how much you steer your agent this session

@@ -58,6 +58,22 @@ reins [--session <path.jsonl>] [--judge <backend>] [-n N] [--json] [--write [pat
 Defaults to your newest Claude Code session. `-n` scores only the most recent N
 turns. `--json` is machine-readable. Zero-dep, Node 18+.
 
+## The wizard: harvest your cues
+
+```
+reins wizard [--sessions N] [--max N] [--since DAYS] [--judge <backend>] [--json] [--write [path]] [--yes]
+```
+
+Reads your old Claude Code chats, finds the steers you keep giving (a correction of HOW
+the agent works, not a new task), and ranks them into a cue inventory, so a fresh saddle
+already knows your style. It writes `.sawbuck/cues.json` and prints your top cues, ranked by
+how many distinct sessions they span, then how generalizable they are.
+
+It reads every turn-pair with a model, so on the default local ollama it is free (just
+compute); a hosted backend (`haiku`, `openai:`) costs a little, and the command asks for
+`--yes` before it spends. `--max` caps the pairs scored (default 400). The cues are LEADS,
+candidates from your history to review, not rules it adopts for you.
+
 ## Honest limits
 
 A single-turn judge: it sees the agent action and your reply, not the whole thread.

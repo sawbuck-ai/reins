@@ -101,3 +101,26 @@ export function resolveSessionPath(explicit, cwd = process.cwd()) {
   }
   return best;
 }
+
+// Enumerate recent Claude Code session transcripts across ALL projects, newest first.
+// For the wizard's harvest ("read my old chats"). { limit } caps the count; { sinceMs }
+// drops anything older. Best-effort; returns [] if the projects dir is missing.
+export function resolveSessions({ limit = 0, sinceMs = 0 } = {}) {
+  const root = join(homedir(), ".claude", "projects");
+  if (!existsSync(root)) return [];
+  let dirs = [];
+  try { dirs = readdirSync(root).map((d) => join(root, d)).filter((p) => { try { return statSync(p).isDirectory(); } catch { return false; } }); }
+  catch { return []; }
+  const found = [];
+  for (const d of dirs) {
+    let files = []; try { files = readdirSync(d); } catch { continue; }
+    for (const f of files) {
+      if (!f.endsWith(".jsonl")) continue;
+      const p = join(d, f);
+      try { const st = statSync(p); if (sinceMs && st.mtimeMs < sinceMs) continue; found.push({ path: p, mtime: st.mtimeMs }); } catch {}
+    }
+  }
+  found.sort((a, b) => b.mtime - a.mtime);
+  const sliced = limit > 0 ? found.slice(0, limit) : found;
+  return sliced.map((f) => f.path);
+}
