@@ -7,8 +7,8 @@ and prints a seismograph of the session plus the distribution.
 
 This is the LLM half of reins. The deterministic brake-slam counter (`sawbuck yank`)
 lives in sawbuck's offline core; the continuous pressure judge needs a model, so it
-lives here, keeping sawbuck's core model-free. (The reins *plugin* — the Claude Code
-surface — lives alongside this in `plugins/sawbuck-reins/`.)
+lives here, keeping sawbuck's core model-free. (The reins *plugin*, the Claude Code
+surface, lives alongside this in `plugins/sawbuck-reins/`.)
 
 ```
 $ reins
@@ -25,13 +25,13 @@ $ reins
 
 The judge model is a socket. Set `SAWBUCK_JUDGE` (default `ollama:qwen2.5:7b`):
 
-- `ollama:<model>` — local, free, private (nothing leaves your box). `OLLAMA_HOST`
+- `ollama:<model>`, local, free, private (nothing leaves your box). `OLLAMA_HOST`
   overrides the endpoint. Benchmarked default `qwen2.5:7b`: fastest, smallest, and
-  tied-best accuracy against an opus-labeled gold — model size did not help.
-- `haiku` — Anthropic `claude-haiku-5-5` (needs `ANTHROPIC_API_KEY`); zero VRAM,
+  tied-best accuracy against an opus-labeled gold, model size did not help.
+- `haiku`, Anthropic `claude-haiku-5-5` (needs `ANTHROPIC_API_KEY`); zero VRAM,
   about $0.00005 per turn.
-- `anthropic:<model>` — any Anthropic model.
-- `openai:<model>` — any OpenAI-compatible endpoint (`OPENAI_BASE_URL`,
+- `anthropic:<model>`, any Anthropic model.
+- `openai:<model>`, any OpenAI-compatible endpoint (`OPENAI_BASE_URL`,
   `OPENAI_API_KEY`).
 
 Output is constrained to a JSON schema where the backend supports it (ollama
@@ -41,7 +41,7 @@ structured outputs), so a thinking model can't break the parse.
 
 `--write [path]` writes the summary JSON (default `.sawbuck/steer.json`). The
 offline `sawbuck statusline` reads that file and shows `🤠 steer 76%` next to its
-own segment — the LLM work happens here, sawbuck's core stays model-free (it only
+own segment, the LLM work happens here, sawbuck's core stays model-free (it only
 reads a file). Keep it fresh by running `reins --write` on a cadence (a `/loop`, a
 watch, or a post-turn hook):
 

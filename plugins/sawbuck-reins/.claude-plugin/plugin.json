@@ -1,6 +1,6 @@
 {
   "name": "sawbuck-reins",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Sawbuck in Claude Code, one install: the guide band (watching / N caught / last verdict / live 🤠 steer rate) plus /sawbuck-check (try it now), /sawbuck-watch (arm the Stop hook), /sawbuck-context (ranked history for the files you touch), /sawbuck-debt (surface the repo's live suppression debt), and /sawbuck-status (the inventory of everything it has accumulated here).",
   "license": "Apache-2.0",
   "author": {
@@ -11,7 +11,7 @@
     "judge": {
       "type": "string",
       "title": "Live steering judge",
-      "description": "How the band's 🤠 steer rate is scored each turn. native: a tiny Claude (Haiku) call on your own plan — zero setup, no key, a fraction of a cent per turn. engine: shell the reins CLI (free local ollama, or your own key, via SAWBUCK_JUDGE). off: no live steer rate.",
+      "description": "How the band's 🤠 steer rate is scored each turn. native: a tiny Claude (Haiku) call on your own plan, zero setup, no key, a fraction of a cent per turn. engine: shell the reins CLI (free local ollama, or your own key, via SAWBUCK_JUDGE). off: no live steer rate.",
       "options": ["native", "engine", "off"],
       "default": "native"
     }

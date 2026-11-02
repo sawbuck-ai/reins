@@ -24,14 +24,14 @@ you can catch your agent gaming a metric without leaving the session or touching
   you watch your own steering trend toward a loose rein. It scores the newest turn in the
   background and never blocks a turn. The judge has three modes (set `judge` in
   `/plugin configure sawbuck-reins@sawbuck` or `/config`):
-  - **`native`** (default) — a tiny Claude (Haiku) call on your **own** Claude plan. Zero setup:
+  - **`native`** (default): a tiny Claude (Haiku) call on your **own** Claude plan. Zero setup:
     no ollama, no key. It's a separate cheap Haiku classify call (not your session's main model),
     on the order of a fraction of a cent per turn, billed to your plan. If your build or org
     blocks model calls, it falls back to the engine automatically.
-  - **`engine`** — shell the `reins` CLI instead, whose backend is a socket: `SAWBUCK_JUDGE` picks
-    a local model (`ollama:qwen2.5:7b` — free, private) or `haiku` (needs `ANTHROPIC_API_KEY`).
+  - **`engine`**: shell the `reins` CLI instead, whose backend is a socket: `SAWBUCK_JUDGE` picks
+    a local model (`ollama:qwen2.5:7b`, free, private) or `haiku` (needs `ANTHROPIC_API_KEY`).
     Pick this to keep scoring off your Claude plan.
-  - **`off`** — no live steer rate.
+  - **`off`**: no live steer rate.
 
   (Leaving `judge` at `native` but setting `SAWBUCK_JUDGE` in your shell is read as a preference for
   the engine path, so an existing local-ollama setup isn't silently billed.)
