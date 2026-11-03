@@ -193,13 +193,12 @@ async function readSummary($: any): Promise<Summary | null> {
   }
 }
 
-// Run sawbuck through npx, pinned to an exact version (the directory's policy: one program, by name,
-// fixed arguments, no shell). npx caches it after the first run.
-const SAWBUCK_PKG = 'sawbuck@0.1.26'
-const REINS_PKG = '@sawbuck/reins@0.4.3'
-async function runSawbuck($: any, cwd: string, args: string[]): Promise<string> {
+// Run sawbuck through npx, pinned to an exact version. The directory reads each call as fixed
+// text, so every call site below spells out the whole argv literally: one program, by name, pinned,
+// fixed arguments, no shell. npx caches the package after the first run.
+async function run($: any, cwd: string, argv: string[]): Promise<string> {
   try {
-    const { exitCode, stdout, stderr } = await $.process.run(['npx', '-y', SAWBUCK_PKG, ...args], { cwd })
+    const { exitCode, stdout, stderr } = await $.process.run(argv, { cwd })
     const out = (stdout || '').trim() || (stderr || '').trim()
     if (exitCode === 0 || out) return out
   } catch {}
@@ -220,11 +219,11 @@ export const register: Register = (on, options) => {
   })
 
   on('command.run', { command: 'sawbuck-check' }, async ($) => {
-    return { text: await runSawbuck($, await $.session.cwd(), ['check']) }
+    return { text: await run($, await $.session.cwd(), ['npx', '-y', 'sawbuck@0.1.26', 'check']) }
   })
 
   on('command.run', { command: 'sawbuck-watch' }, async ($) => {
-    const out = await runSawbuck($, await $.session.cwd(), ['attach', '--claude'])
+    const out = await run($, await $.session.cwd(), ['npx', '-y', 'sawbuck@0.1.26', 'attach', '--claude'])
     return { text: (out ? out + '\n\n' : '') + '🐴 sawbuck is watching this repo now. A win that does not survive a source-only re-run is caught, and the agent is sent back to earn it. Remove it anytime with: sawbuck detach.' }
   })
 
@@ -233,19 +232,19 @@ export const register: Register = (on, options) => {
   // --speak: this is an explicit ask, so reply even when the trail is clean (the bare
   // `context` stays silent for the every-turn UserPromptSubmit hook).
   on('command.run', { command: 'sawbuck-context' }, async ($) => {
-    return { text: await runSawbuck($, await $.session.cwd(), ['context', '--speak']) }
+    return { text: await run($, await $.session.cwd(), ['npx', '-y', 'sawbuck@0.1.26', 'context', '--speak']) }
   })
 
   // the whole-repo debt ledger (the study's headline: current live debt is the under-surfaced
   // signal). On-demand; it greps HEAD, so never run it per turn.
   on('command.run', { command: 'sawbuck-debt' }, async ($) => {
-    return { text: await runSawbuck($, await $.session.cwd(), ['debt']) }
+    return { text: await run($, await $.session.cwd(), ['npx', '-y', 'sawbuck@0.1.26', 'debt']) }
   })
 
   // the inventory: one view unioning what the check has caught over time, the debt accruing now, and
   // whether it is armed here. On-demand (it runs the whole-repo debt scan); never per turn.
   on('command.run', { command: 'sawbuck-status' }, async ($) => {
-    return { text: await runSawbuck($, await $.session.cwd(), ['status']) }
+    return { text: await run($, await $.session.cwd(), ['npx', '-y', 'sawbuck@0.1.26', 'status']) }
   })
 
   on('prompt.submit', async ($, e, next) => {
@@ -285,7 +284,7 @@ export const register: Register = (on, options) => {
           // waits on a judge. One program, by name, pinned, fixed arguments, no shell.
           // Best-effort: a missing judge just leaves the steer rate unknown, never an error.
           const cwd = await $.session.cwd()
-          try { void $.process.run(['npx', '-y', REINS_PKG, '--append'], { cwd }).catch(() => {}) } catch {}
+          try { void $.process.run(['npx', '-y', '@sawbuck/reins@0.4.3', '--append'], { cwd }).catch(() => {}) } catch {}
         }
         // The cue inventory (.sawbuck/cues.json) is NOT built per turn: that is the explicit
         // `reins cues` CLI command. Per turn it would double-score every pair in engine mode and
