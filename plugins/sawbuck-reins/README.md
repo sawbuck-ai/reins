@@ -21,8 +21,8 @@ Claude Code asks two things on install: a **scope** (choose **user** so the band
   `🐴 sawbuck · ready · /sawbuck-watch to arm` when the repo is checkable but not yet armed, and a
   bold `🐴 N caught` (with the latest item) when the check flags a regression or a faked, "gamed"
   win. It never blocks your prompt and hides itself where Sawbuck is not relevant.
-- **A live steering readout** on the band (`🐎 steer X%`, taut `🪢` once you are steering more than half of your recent turns): each turn it scores how much you
-  redirected the agent (a light refine, a redirect, or a hard yank) and shows a **recent-window rate**
+- **A live steering readout** on the band (`🐎 steer X%`, taut `✊` once you are steering more than half of your recent turns): once the repo is
+  attached (`/sawbuck-watch`), each turn it scores how much you redirected the agent (a light refine, a redirect, or a hard stop) and shows a **recent-window rate**
   (an EMA over roughly your last 20 scored turns), so it tracks how you are steering lately and falls
   toward a loose rein as the agent learns your cues, instead of a lifetime average that old turns
   anchor. Set the window with `SAWBUCK_STEER_WINDOW` (default 20). It scores the newest turn in the

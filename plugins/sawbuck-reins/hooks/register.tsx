@@ -152,6 +152,8 @@ async function readSummary($: any): Promise<Summary | null> {
     const cwd: string = await $.session.cwd()
     // active = sawbuck has run here (its record exists); armed = checkable (a contract, or just
     // a test command thanks to zero-config). Show the band for either; hide otherwise.
+    // Only `active` runs the judge or writes under .sawbuck/: an unattached repo gets the
+    // "ready" label and nothing else (no model call, no files).
     let active = false
     try { await $.fs.read(cwd + '/.sawbuck/state.json'); active = true } catch {}
     let armed = false
@@ -256,7 +258,7 @@ export const register: Register = (on, options) => {
         const prior = pendingAnswer
         pendingAnswer = null
         const user = typeof e.text === 'string' ? e.text : ''
-        if (user.trim() && s && (s.active || s.armed)) {
+        if (user.trim() && s && s.active) {
           const cwd = await $.session.cwd()
           void scoreNative($, cwd, prior, user)   // deliberately not awaited
         }
@@ -269,8 +271,9 @@ export const register: Register = (on, options) => {
     try {
       const s = await readSummary($)
       await update($, summaryAtom, () => s)
-      // live watcher. Skip aborted turns and subagent turns (score the main thread only).
-      if (s && (s.active || s.armed) && !e.isAborted && e.agentId === undefined) {
+      // live watcher, only where sawbuck is attached (.sawbuck/state.json exists). Skip aborted
+      // turns and subagent turns (score the main thread only).
+      if (s && s.active && !e.isAborted && e.agentId === undefined) {
         const mode = await judgeMode($, options)
         if (mode === 'native' && !nativeBroken) {
           // stash the agent's answer; the next prompt.submit pairs it with the user's reply and scores.
@@ -283,13 +286,9 @@ export const register: Register = (on, options) => {
           const cwd = await $.session.cwd()
           try { await $.process.run(['sh', '-c', '{ reins --append || npx -y @sawbuck/reins --append; } >/dev/null 2>&1 &'], { cwd }) } catch {}
         }
-        // real-time cue inventory (separate from the steer meter): accumulate .sawbuck/cues.json in
-        // the background, so your cues build up as you work. Best-effort and detached; free on local
-        // ollama, and a no-op when no judge backend is reachable, so it never blocks or errors.
-        if (mode !== 'off') {
-          const cwdC = await $.session.cwd()
-          try { await $.process.run(['sh', '-c', '{ reins cues --append || npx -y @sawbuck/reins cues --append; } >/dev/null 2>&1 &'], { cwd: cwdC }) } catch {}
-        }
+        // The cue inventory (.sawbuck/cues.json) is NOT built per turn: that is the explicit
+        // `reins cues` CLI command. Per turn it would double-score every pair in engine mode and
+        // in native mode spawn an npx fetch plus a judge backend that is not configured.
       }
     } catch { /* the band never blocks a turn */ }
     return next(e)
