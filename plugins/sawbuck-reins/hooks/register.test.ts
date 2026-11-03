@@ -20,7 +20,7 @@ test('/sawbuck-status runs the pinned sawbuck CLI as fixed text, in the session 
   const r = await $.command.run({ command: 'sawbuck-status', args: '', origin: ORIGIN, presentation: PRESENTATION })
 
   expect(r?.text).toBe('sawbuck: watching')
-  expect(calls).toEqual([{ argv: ['npx', '-y', 'sawbuck@0.1.26', 'status'], init: undefined }])
+  expect(calls).toEqual([{ argv: ['npx', '-y', 'sawbuck@0.1.27', 'status'], init: undefined }])
 })
 
 test('/sawbuck-check tells the person when the program cannot start', async ($, on) => {
