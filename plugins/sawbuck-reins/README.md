@@ -61,10 +61,14 @@ shell: `npx -y sawbuck@0.1.26 <check|attach --claude|context --speak|debt|status
 slash commands and the band's reads, and, only in `engine` judge mode, `npx -y @sawbuck/reins@0.4.3
 --append` in the background after a turn. Both need Node 18+ and npm on your PATH.
 
-**Files it writes.** Only inside the repo you attached, under its `.sawbuck/` directory:
-`.sawbuck/steer.json` (the steer scores; written by the mod in `native` mode, by the reins CLI in
-`engine` mode) and the `sawbuck` CLI's own record (`.sawbuck/state.json`, `activity.jsonl`,
-`results.json`). `/sawbuck-watch` runs `sawbuck attach --claude`, which edits two files on purpose:
+**Files it writes.** Only inside the repo you attached: `.sawbuck/steer.json` (the steer scores;
+written by the mod in `native` mode, by the reins CLI in `engine` mode), the `sawbuck` CLI's own
+record (`.sawbuck/state.json`, `activity.jsonl`, `results.json`), and the memory engine's cache of
+that repo's own git history (`events.jsonl`, `LOGBOOK.md`), which includes the commit author names
+already in the git log. All of it is kept out of `git status` and removed by `sawbuck detach --purge`.
+To verify a change, the check also runs the repo's own test or metric command (from
+`promptwheel.config.json`, or the detected test script) in throwaway git worktrees, exactly as you
+would run it yourself; that is the only code it executes that is not one of the two pinned packages. `/sawbuck-watch` runs `sawbuck attach --claude`, which edits two files on purpose:
 `.claude/settings.local.json` in that repo (adds the UserPromptSubmit, SessionStart and Stop hooks
 that run `sawbuck turn` and the check) and `.git/info/exclude` (keeps `.sawbuck/` out of `git
 status`). `sawbuck detach` reverses both exactly. The mod itself never edits build, start-up,
