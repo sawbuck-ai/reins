@@ -1,8 +1,8 @@
 {
   "name": "sawbuck-reins",
   "displayName": "Sawbuck",
-  "version": "0.5.15",
-  "description": "Sawbuck in Claude Code, one install: the guide band (watching / N caught / last verdict / live steer rate) plus /sawbuck-check (try it now), /sawbuck-watch (arm the Stop hook), /sawbuck-context (ranked history for the files you touch), /sawbuck-debt (surface the repo's live suppression debt), and /sawbuck-status (the inventory of everything it has accumulated here).",
+  "version": "0.5.16",
+  "description": "Sawbuck in Claude Code, one install: the guide band (watching / N caught / last verdict / live steer rate) plus five slash commands, /sawbuck-reins:check (try it now), /sawbuck-reins:watch (arm the Stop hook), /sawbuck-reins:context (ranked history for the files you touch), /sawbuck-reins:debt (the repo's live suppression debt), and /sawbuck-reins:status (the inventory). The mod itself runs no program.",
   "keywords": [
     "sawbuck",
     "reward-hacking",
@@ -26,10 +26,9 @@
     "judge": {
       "type": "string",
       "title": "Live steering judge",
-      "description": "How the band's steer rate is scored each turn. native: one small call through Claude Code's own model API, on your own plan, zero setup, no key. engine: shell the reins CLI (free local ollama, or your own key, via SAWBUCK_JUDGE). off: no live steer rate.",
+      "description": "How the band's steer rate is scored each turn. native: one small call through Claude Code's own model API, on your own plan, zero setup, no key. off: no live steer rate from the plugin (score with the reins CLI instead: set SAWBUCK_JUDGE and run reins --append, see the reins-steering skill).",
       "options": [
         "native",
-        "engine",
         "off"
       ],
       "default": "native"

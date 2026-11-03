@@ -7,26 +7,24 @@ import type { Summary } from '../types'
 const summaryAtom = atom({ plugin: 'sawbuck-reins', key: 'summary' } as const, null)
 
 // --- the live steering judge ------------------------------------------------
-// The band's "🐎/✊ steer X%" comes from .sawbuck/steer.json. Two ways to fill it:
+// The band's "🐎/✊ steer X%" comes from .sawbuck/steer.json, which this mod fills in
+// ONE way: native (DEFAULT) scores the newest turn-pair with one small call through
+// Claude Code's own model API ($.model.complete, the Haiku model id), on the user's
+// own plan: zero setup, no ollama, no key. Disclosed in the README; `off` in the
+// `judge` userConfig turns it off. The mod runs NO program: a user who scores with
+// the reins CLI instead (SAWBUCK_JUDGE set: local ollama or a hosted key) runs
+// `reins --append` themselves, through the reins-steering skill, and the mod stays
+// out of the way so nothing is billed twice.
 //
-//   native (DEFAULT): score the newest turn-pair with one small call through
-//     Claude Code's own model API ($.model.complete, the Haiku model id), on the
-//     user's own plan: zero setup, no ollama, no key. Disclosed in the README;
-//     opt out via the `judge` userConfig or SAWBUCK_JUDGE.
-//   engine: shell `reins --append` (the @sawbuck/reins CLI), whose SAWBUCK_JUDGE
-//     backend is local ollama (free/private) or your own hosted key. The pre-0.4
-//     behavior; also the automatic fallback when $.model is unavailable.
-//   off: no live steer rate.
-//
-// Either way the file is identical, so the band + the offline `sawbuck statusline`
-// read one shape. The rubric + 0-3 scale + aggregate below MIRROR the canonical
-// engine (engine/judge.mjs PROMPT/parse + engine/bin/reins.mjs --append). A mod
-// can't import the npm package at runtime, so this is a deliberate small copy;
-// keep it in sync with the engine (SYNC SEAM).
+// The file shape is the engine's, so the band + the offline `sawbuck statusline` read
+// one shape. The rubric + 0-3 scale + aggregate below MIRROR the canonical engine
+// (engine/judge.mjs PROMPT/parse + engine/bin/reins.mjs --append). A mod can't import
+// the npm package at runtime, so this is a deliberate small copy; keep it in sync with
+// the engine (SYNC SEAM).
 
 // module state: survives within a session, resets on reload (steer.json persists).
 let pendingAnswer: string | null = null   // agent's answer, stashed on turn.complete, scored on the next prompt.submit
-let nativeBroken = false                   // $.model threw (missing / org-blocked) -> fall back to the engine shell-out
+let nativeBroken = false                   // $.model threw (missing / org-blocked) -> stop scoring for this session
 
 // recent-window steer gauge: an EMA over ~STEER_SPAN scored turns, seeded on the first sample so
 // there is no cold-start bias. The band shows how you have steered LATELY, not a lifetime average
@@ -79,19 +77,18 @@ function parsePressure(txt: string): { pressure: number; axis: string; nudge: st
 }
 
 // Which judge to use. userConfig `judge` is the reliable, validated switch (default
-// native); an existing SAWBUCK_JUDGE is honored best-effort as an engine preference
-// so a user who set up local ollama for the CLI isn't silently billed for native.
-async function judgeMode($: any, options: any): Promise<'native' | 'engine' | 'off'> {
+// native). A SAWBUCK_JUDGE in the shell that names a CLI backend means the user scores
+// with the reins CLI: the mod then stays off so a local-ollama setup is not silently
+// billed for native on top. SAWBUCK_JUDGE=native keeps native.
+async function judgeMode($: any, options: any): Promise<'native' | 'off'> {
   const cfg = options && typeof options.judge === 'string' ? options.judge : 'native'
   if (cfg === 'off') return 'off'
-  if (cfg === 'engine') return 'engine'
-  // cfg === 'native' (the default): defer to SAWBUCK_JUDGE if the user set one.
   try {
     const envv = await $.env.get('SAWBUCK_JUDGE')
     const v = envv == null ? '' : String(envv).trim().toLowerCase()
     if (v === 'off' || v === 'none' || v === '0' || v === 'false') return 'off'
-    if (v === 'native') return 'native'
-    if (v) return 'engine'
+    if (v === 'native' || v === '') return 'native'
+    return 'off'   // a CLI backend is configured: the reins CLI scores, not the mod
   } catch { /* $.env provenance is undocumented; ignore and stay native */ }
   return 'native'
 }
@@ -154,7 +151,7 @@ async function scoreNative($: any, prior: string, user: string): Promise<void> {
     if (r && r.isAnswered !== false && r.text) s = parsePressure(r.text)
   } catch {
     nativeBroken = true
-    return   // don't record; the engine fallback re-scans from steer.json.lastPairs
+    return   // don't record; the steer rate stays where it was for this session
   }
   try { await recordNativePair($, s, await steerSpan($)) } catch { /* the band never blocks a turn */ }
 }
@@ -212,59 +209,10 @@ async function readSummary($: any): Promise<Summary | null> {
   }
 }
 
-// Every program call below is written out in full at the call site (`$.process.run([...literal
-// argv...])`): one program, by name, pinned to an exact version, fixed arguments, no shell, and no
-// options object, so the whole command is fixed text and runs in the session's own working
-// directory (the engine's default). npx caches the package after the first run.
-const CANNOT_RUN = '🐴 sawbuck: could not run it here (it needs Node and npm on your PATH).'
-function said(r: any): string {
-  const out = ((r && r.stdout) || '').trim() || ((r && r.stderr) || '').trim()
-  return (r && r.exitCode === 0) || out ? out : CANNOT_RUN
-}
-
+// The mod runs no program. The five slash commands live in commands/ as plugin commands: each tells
+// Claude to run one exact, pinned `npx -y sawbuck@0.1.28 ...` through its own Bash tool, under Claude
+// Code's permission system, so Claude sees the verdict and can act on it.
 export const register: Register = (on, options) => {
-  // one-click control surface: try it, or arm it, without leaving Claude Code.
-  on('session.start', async ($, e, next) => {
-    try {
-      await $.command.register({ name: 'sawbuck-check', description: 'Verify your latest change right now (zero-config, no setup)' })
-      await $.command.register({ name: 'sawbuck-watch', description: 'Watch every turn in this repo (arm the sawbuck Stop hook)' })
-      await $.command.register({ name: 'sawbuck-context', description: 'Ranked history for the files you are touching (reverts, weakened tests, hot spots)' })
-      await $.command.register({ name: 'sawbuck-debt', description: 'Surface this repo\'s live suppression debt: what is still silenced in HEAD now, disabled tests first' })
-      await $.command.register({ name: 'sawbuck-status', description: 'The inventory: everything sawbuck has here in one view (caught over time + debt accruing now + armed state)' })
-    } catch { /* commands are a bonus; never fail the session over them */ }
-    return next(e)
-  })
-
-  on('command.run', { command: 'sawbuck-check' }, async ($) => {
-    try { return { text: said(await $.process.run(['npx', '-y', 'sawbuck@0.1.28', 'check'])) } } catch { return { text: CANNOT_RUN } }
-  })
-
-  on('command.run', { command: 'sawbuck-watch' }, async ($) => {
-    let out = ''
-    try { out = said(await $.process.run(['npx', '-y', 'sawbuck@0.1.28', 'attach', '--claude'])) } catch { out = CANNOT_RUN }
-    return { text: (out ? out + '\n\n' : '') + '🐴 sawbuck is watching this repo now. A win that does not survive a source-only re-run is caught, and the agent is sent back to earn it. Remove it anytime with: sawbuck detach.' }
-  })
-
-  // on-demand (never per turn): the band never shells, so the ranked history is one
-  // command away instead of a per-turn firehose. Run it before touching a hot spot.
-  // --speak: this is an explicit ask, so reply even when the trail is clean (the bare
-  // `context` stays silent for the every-turn UserPromptSubmit hook).
-  on('command.run', { command: 'sawbuck-context' }, async ($) => {
-    try { return { text: said(await $.process.run(['npx', '-y', 'sawbuck@0.1.28', 'context', '--speak'])) } } catch { return { text: CANNOT_RUN } }
-  })
-
-  // the whole-repo debt ledger (the study's headline: current live debt is the under-surfaced
-  // signal). On-demand; it greps HEAD, so never run it per turn.
-  on('command.run', { command: 'sawbuck-debt' }, async ($) => {
-    try { return { text: said(await $.process.run(['npx', '-y', 'sawbuck@0.1.28', 'debt'])) } } catch { return { text: CANNOT_RUN } }
-  })
-
-  // the inventory: one view unioning what the check has caught over time, the debt accruing now, and
-  // whether it is armed here. On-demand (it runs the whole-repo debt scan); never per turn.
-  on('command.run', { command: 'sawbuck-status' }, async ($) => {
-    try { return { text: said(await $.process.run(['npx', '-y', 'sawbuck@0.1.28', 'status'])) } } catch { return { text: CANNOT_RUN } }
-  })
-
   on('prompt.submit', async ($, e, next) => {
     try {
       const s = await readSummary($)
@@ -299,16 +247,9 @@ export const register: Register = (on, options) => {
         if (mode === 'native' && !nativeBroken) {
           // stash the agent's answer; the next prompt.submit pairs it with the user's reply and scores.
           pendingAnswer = typeof e.answer === 'string' ? e.answer : null
-        } else if (mode === 'engine' || (mode === 'native' && nativeBroken)) {
-          // engine path (explicit, or the automatic fallback when native is unavailable):
-          // run the reins CLI's incremental --append without awaiting it, so the turn never
-          // waits on a judge. One program, by name, pinned, fixed arguments, no shell.
-          // Best-effort: a missing judge just leaves the steer rate unknown, never an error.
-          try { void $.process.run(['npx', '-y', '@sawbuck/reins@0.4.3', '--append']).catch(() => {}) } catch {}
         }
         // The cue inventory (.sawbuck/cues.json) is NOT built per turn: that is the explicit
-        // `reins cues` CLI command. Per turn it would double-score every pair in engine mode and
-        // in native mode spawn an npx fetch plus a judge backend that is not configured.
+        // `reins cues` CLI command, run through the reins-steering skill.
       }
     } catch { /* the band never blocks a turn */ }
     return next(e)
@@ -356,13 +297,13 @@ export const register: Register = (on, options) => {
     if (s.armed) {
       return (
         <Box>
-          <Text dimColor>🐴 sawbuck · ready · /sawbuck-watch to arm</Text>
+          <Text dimColor>🐴 sawbuck · ready · /sawbuck-reins:watch to arm</Text>
         </Box>
       )
     }
     return (
       <Box>
-        <Text dimColor>🐴 sawbuck · memory · /sawbuck-context for history</Text>
+        <Text dimColor>🐴 sawbuck · memory · /sawbuck-reins:context for history</Text>
       </Box>
     )
   })

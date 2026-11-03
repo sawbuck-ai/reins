@@ -4,34 +4,49 @@ import { expect, mock, test } from 'claude-code/testing'
 // call is fixed text with no options object, and the one file the mod writes is at a
 // fixed relative path. `claude plugin test plugins/sawbuck-reins` runs these.
 
-const ORIGIN = { kind: 'composer' } as const
-const PRESENTATION = { isFullscreen: false, columns: 80 } as const
-
-test('/sawbuck-status runs the pinned sawbuck CLI as fixed text, in the session cwd', async ($, on) => {
-  const calls: { argv: readonly string[]; init: unknown }[] = []
-  on('command.register', () => ({ value: { command: 'sawbuck-status' } }))
+test('the mod runs no program and registers no command, in any flow', async ($, on) => {
+  const runs: unknown[] = []
+  const registered: unknown[] = []
+  mock.env(on, {})
+  on('command.register', (_, e) => { registered.push(e); return { value: { command: 'x' } } })
+  on('process.run', (_, e) => { runs.push(e.argv); return { value: { exitCode: 0, stdout: '', stderr: '', isStdoutTruncated: false, isStderrTruncated: false } } })
   on('session.start', (_, e) => ({ cwd: e.cwd }))
-  on('process.run', (_, e) => {
-    calls.push({ argv: e.argv, init: e.init })
-    return { value: { exitCode: 0, stdout: 'sawbuck: watching\n', stderr: '', isStdoutTruncated: false, isStderrTruncated: false } }
-  })
+  on('fs.exists', (_, e) => ({ value: e.path.endsWith('/.sawbuck/state.json') }))
+  on('fs.read', (_, e) => { throw new Error(`ENOENT: ${e.path}`) })
+  on('fs.write', () => ({ value: undefined }))
+  on('model.complete', () => ({ value: { isAnswered: true, text: '{"pressure":2,"axis":"x","nudge":"y"}', usage: { input_tokens: 1, output_tokens: 1 } } }))
+  on('turn.complete', () => ({ text: '' }))
+  on('prompt.submit', (_, e) => ({ text: e.text }))
 
-  await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
-  const r = await $.command.run({ command: 'sawbuck-status', args: '', origin: ORIGIN, presentation: PRESENTATION })
+  await $.session.start({ cwd: '/repo', surface: 'terminal', isInteractive: true })
+  await $.turn.complete({ answer: 'done', durationMs: 1, isAborted: false, turnId: 't1', reason: 'answer' })
+  await $.prompt.submit({ text: 'no, change the approach' })
+  await new Promise((r) => setTimeout(r, 150))
 
-  expect(r?.text).toBe('sawbuck: watching')
-  expect(calls).toEqual([{ argv: ['npx', '-y', 'sawbuck@0.1.28', 'status'], init: undefined }])
+  expect(runs).toEqual([])
+  expect(registered).toEqual([])
 })
 
-test('/sawbuck-check tells the person when the program cannot start', async ($, on) => {
-  on('command.register', () => ({ value: { command: 'sawbuck-check' } }))
+test('a SAWBUCK_JUDGE that names a CLI backend turns the plugin judge off: no model call, no program', async ($, on) => {
+  const runs: unknown[] = []
+  const models: unknown[] = []
+  mock.env(on, { SAWBUCK_JUDGE: 'ollama:qwen2.5:7b' })
+  on('process.run', (_, e) => { runs.push(e.argv); return { value: { exitCode: 0, stdout: '', stderr: '', isStdoutTruncated: false, isStderrTruncated: false } } })
   on('session.start', (_, e) => ({ cwd: e.cwd }))
-  on('process.run', () => { throw new Error('spawn npx ENOENT') })
+  on('fs.exists', (_, e) => ({ value: e.path.endsWith('/.sawbuck/state.json') }))
+  on('fs.read', (_, e) => { throw new Error(`ENOENT: ${e.path}`) })
+  on('fs.write', () => ({ value: undefined }))
+  on('model.complete', (_, e) => { models.push(e.model); return { value: { isAnswered: false, reason: 'api-error', status: null } } })
+  on('turn.complete', () => ({ text: '' }))
+  on('prompt.submit', (_, e) => ({ text: e.text }))
 
-  await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
-  const r = await $.command.run({ command: 'sawbuck-check', args: '', origin: ORIGIN, presentation: PRESENTATION })
+  await $.session.start({ cwd: '/repo', surface: 'terminal', isInteractive: true })
+  await $.turn.complete({ answer: 'done', durationMs: 1, isAborted: false, turnId: 't1', reason: 'answer' })
+  await $.prompt.submit({ text: 'no, change the approach' })
+  await new Promise((r) => setTimeout(r, 100))
 
-  expect(r?.text).toMatch(/could not run it here/)
+  expect(models).toEqual([])
+  expect(runs).toEqual([])
 })
 
 test('the native judge writes the steer tally at the fixed relative path', async ($, on) => {
@@ -39,7 +54,6 @@ test('the native judge writes the steer tally at the fixed relative path', async
   const models: string[] = []
   const probes: string[] = []
   mock.env(on, {})
-  on('command.register', () => ({ value: { command: 'x' } }))
   on('session.start', (_, e) => ({ cwd: e.cwd }))
   // attached repo: the record exists; nothing else is on disk. The engine resolves the
   // mod's relative path against the session cwd before a hook beneath sees it.
@@ -74,7 +88,6 @@ test('an unattached repo gets no model call and no file', async ($, on) => {
   const writes: string[] = []
   const models: string[] = []
   mock.env(on, {})
-  on('command.register', () => ({ value: { command: 'x' } }))
   on('session.start', (_, e) => ({ cwd: e.cwd }))
   on('fs.exists', () => ({ value: false }))
   on('fs.read', (_, e) => { throw new Error(`ENOENT: ${e.path}`) })
@@ -96,7 +109,6 @@ test('a noise reply ("ok", a task notification) is not a pair: no model call, an
   const models: string[] = []
   const writes: string[] = []
   mock.env(on, {})
-  on('command.register', () => ({ value: { command: 'x' } }))
   on('session.start', (_, e) => ({ cwd: e.cwd }))
   on('fs.exists', (_, e) => ({ value: e.path.endsWith('/.sawbuck/state.json') }))
   on('fs.read', (_, e) => { throw new Error(`ENOENT: ${e.path}`) })
@@ -125,7 +137,6 @@ test('SAWBUCK_JUDGE=native stays native (no engine shell-out), and the steer win
   const texts: string[] = []
   let last: string | null = null
   mock.env(on, { SAWBUCK_JUDGE: 'native', SAWBUCK_STEER_WINDOW: '5' })
-  on('command.register', () => ({ value: { command: 'x' } }))
   on('session.start', (_, e) => ({ cwd: e.cwd }))
   on('process.run', (_, e) => { runs.push(e.argv); return { value: { exitCode: 0, stdout: '', stderr: '', isStdoutTruncated: false, isStderrTruncated: false } } })
   on('fs.exists', (_, e) => ({ value: e.path.endsWith('/.sawbuck/state.json') }))

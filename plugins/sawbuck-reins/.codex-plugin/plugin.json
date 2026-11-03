@@ -1,6 +1,6 @@
 {
   "name": "sawbuck-reins",
-  "version": "0.5.15",
+  "version": "0.5.16",
   "description": "Catch your coding agent gaming a check, and read how you steer, inside Codex.",
   "author": {
     "name": "Matthew Owens"
@@ -16,7 +16,11 @@
     "developerName": "Matthew Owens",
     "brandColor": "#e3b23c",
     "category": "Developer Tools",
-    "capabilities": ["Verify changes", "Surface history", "Learn your steering"],
+    "capabilities": [
+      "Verify changes",
+      "Surface history",
+      "Learn your steering"
+    ],
     "websiteURL": "https://sawbuck.ai",
     "supportURL": "https://github.com/sawbuck-ai/reins/issues"
   }
