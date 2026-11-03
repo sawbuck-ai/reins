@@ -5,7 +5,7 @@ export type Summary = {
   active: boolean
   mem: boolean
   last: string
-  steer: number | null   // live steering rate 0-100 (% of turns steered this session), or null if unknown
+  steer: number | null   // live steering gauge 0-100: an EMA over roughly the last 20 scored turns (lifetime rate for older steer.json), or null if unknown
 }
 
 declare module 'claude-code' {
