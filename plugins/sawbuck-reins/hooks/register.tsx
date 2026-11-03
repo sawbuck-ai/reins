@@ -193,16 +193,13 @@ async function readSummary($: any): Promise<Summary | null> {
   }
 }
 
-// Run sawbuck through npx, pinned to an exact version. The directory reads each call as fixed
-// text, so every call site below spells out the whole argv literally: one program, by name, pinned,
-// fixed arguments, no shell. npx caches the package after the first run.
-async function run($: any, cwd: string, argv: string[]): Promise<string> {
-  try {
-    const { exitCode, stdout, stderr } = await $.process.run(argv, { cwd })
-    const out = (stdout || '').trim() || (stderr || '').trim()
-    if (exitCode === 0 || out) return out
-  } catch {}
-  return '🐴 sawbuck: could not run it here (it needs Node and npm on your PATH).'
+// Every program call below is written out in full at the call site (`$.process.run([...literal
+// argv...])`): one program, by name, pinned to an exact version, fixed arguments, no shell. The
+// directory reads those calls as fixed text. npx caches the package after the first run.
+const CANNOT_RUN = '🐴 sawbuck: could not run it here (it needs Node and npm on your PATH).'
+function said(r: any): string {
+  const out = ((r && r.stdout) || '').trim() || ((r && r.stderr) || '').trim()
+  return (r && r.exitCode === 0) || out ? out : CANNOT_RUN
 }
 
 export const register: Register = (on, options) => {
@@ -219,11 +216,12 @@ export const register: Register = (on, options) => {
   })
 
   on('command.run', { command: 'sawbuck-check' }, async ($) => {
-    return { text: await run($, await $.session.cwd(), ['npx', '-y', 'sawbuck@0.1.26', 'check']) }
+    try { return { text: said(await $.process.run(['npx', '-y', 'sawbuck@0.1.26', 'check'], { cwd: await $.session.cwd() })) } } catch { return { text: CANNOT_RUN } }
   })
 
   on('command.run', { command: 'sawbuck-watch' }, async ($) => {
-    const out = await run($, await $.session.cwd(), ['npx', '-y', 'sawbuck@0.1.26', 'attach', '--claude'])
+    let out = ''
+    try { out = said(await $.process.run(['npx', '-y', 'sawbuck@0.1.26', 'attach', '--claude'], { cwd: await $.session.cwd() })) } catch { out = CANNOT_RUN }
     return { text: (out ? out + '\n\n' : '') + '🐴 sawbuck is watching this repo now. A win that does not survive a source-only re-run is caught, and the agent is sent back to earn it. Remove it anytime with: sawbuck detach.' }
   })
 
@@ -232,19 +230,19 @@ export const register: Register = (on, options) => {
   // --speak: this is an explicit ask, so reply even when the trail is clean (the bare
   // `context` stays silent for the every-turn UserPromptSubmit hook).
   on('command.run', { command: 'sawbuck-context' }, async ($) => {
-    return { text: await run($, await $.session.cwd(), ['npx', '-y', 'sawbuck@0.1.26', 'context', '--speak']) }
+    try { return { text: said(await $.process.run(['npx', '-y', 'sawbuck@0.1.26', 'context', '--speak'], { cwd: await $.session.cwd() })) } } catch { return { text: CANNOT_RUN } }
   })
 
   // the whole-repo debt ledger (the study's headline: current live debt is the under-surfaced
   // signal). On-demand; it greps HEAD, so never run it per turn.
   on('command.run', { command: 'sawbuck-debt' }, async ($) => {
-    return { text: await run($, await $.session.cwd(), ['npx', '-y', 'sawbuck@0.1.26', 'debt']) }
+    try { return { text: said(await $.process.run(['npx', '-y', 'sawbuck@0.1.26', 'debt'], { cwd: await $.session.cwd() })) } } catch { return { text: CANNOT_RUN } }
   })
 
   // the inventory: one view unioning what the check has caught over time, the debt accruing now, and
   // whether it is armed here. On-demand (it runs the whole-repo debt scan); never per turn.
   on('command.run', { command: 'sawbuck-status' }, async ($) => {
-    return { text: await run($, await $.session.cwd(), ['npx', '-y', 'sawbuck@0.1.26', 'status']) }
+    try { return { text: said(await $.process.run(['npx', '-y', 'sawbuck@0.1.26', 'status'], { cwd: await $.session.cwd() })) } } catch { return { text: CANNOT_RUN } }
   })
 
   on('prompt.submit', async ($, e, next) => {
