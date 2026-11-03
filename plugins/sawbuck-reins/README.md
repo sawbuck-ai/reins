@@ -27,10 +27,11 @@ Claude Code asks two things on install: a **scope** (choose **user** so the band
   toward a loose rein as the agent learns your cues, instead of a lifetime average that old turns
   anchor. It scores the newest turn in the background and never blocks a turn. The judge has three modes (set `judge` in
   `/plugin configure sawbuck-reins@sawbuck` or `/config`):
-  - **`native`** (default): a tiny Claude (Haiku) call on your **own** Claude plan. Zero setup:
-    no ollama, no key. It's a separate cheap Haiku classify call (not your session's main model),
-    on the order of a fraction of a cent per turn, billed to your plan. If your build or org
-    blocks model calls, it falls back to the engine automatically.
+  - **`native`** (default): a separate, lightweight classify call through Claude Code's own model
+    API (`$.model.complete`, requesting the Haiku model id), on your **own** Claude plan. Zero
+    setup: no ollama, no key, nothing leaves your Claude account. It runs only in repos where
+    sawbuck is attached. If your build or org blocks model calls, it falls back to the engine
+    automatically.
   - **`engine`**: shell the `reins` CLI instead, whose backend is a socket: `SAWBUCK_JUDGE` picks
     a local model (`ollama:qwen2.5:7b`, free, private) or `haiku` (needs `ANTHROPIC_API_KEY`).
     Pick this to keep scoring off your Claude plan.

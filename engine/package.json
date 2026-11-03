@@ -4,6 +4,26 @@
   "description": "Reins: measure how much you steer your AI coding agent. A per-turn steering-pressure judge over your session transcript, pluggable backend (Haiku / local ollama / any OpenAI-compatible). The LLM half of the reins steering layer; keeps sawbuck's core offline.",
   "type": "module",
   "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sawbuck-ai/reins.git",
+    "directory": "engine"
+  },
+  "homepage": "https://sawbuck.ai/steering",
+  "bugs": {
+    "url": "https://github.com/sawbuck-ai/reins/issues"
+  },
+  "keywords": [
+    "claude-code",
+    "codex",
+    "ai-agents",
+    "steering",
+    "developer-tools",
+    "sawbuck"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
   "bin": {
     "reins": "bin/reins.mjs"
   },
