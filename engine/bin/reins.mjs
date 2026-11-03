@@ -7,7 +7,6 @@ import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { join, dirname, relative } from "node:path";
 import * as claudeHarness from "../scan.mjs";
 import * as codexHarness from "../codex.mjs";
-import { scan } from "../scan.mjs";
 import { score, backend, harvestScore } from "../judge.mjs";
 import { harvest, aggregateCues } from "../wizard.mjs";
 
@@ -19,7 +18,12 @@ const argv = process.argv.slice(2);
 const flag = (n) => { const i = argv.indexOf(n); return i > -1 ? argv[i + 1] : null; };
 const has = (n) => argv.includes(n);
 // harness adapter: whose transcripts to read. --harness codex (or SAWBUCK_HARNESS=codex); default Claude Code.
-const H = (flag("--harness") || process.env.SAWBUCK_HARNESS) === "codex" ? codexHarness : claudeHarness;
+const isCodex = (flag("--harness") || process.env.SAWBUCK_HARNESS) === "codex";
+const H = isCodex ? codexHarness : claudeHarness;
+const { scan } = claudeHarness;   // the aggregator is harness-neutral (it takes pairsFn)
+// for error messages: which harness, and where its transcripts were looked for
+const harnessName = isCodex ? "Codex" : "Claude Code";
+const harnessRoot = isCodex ? join(process.env.CODEX_HOME || "~/.codex", "sessions") : "~/.claude/projects";
 
 // ---- `reins wizard` / `reins harvest`: read your old chats, rank the cues you keep giving ----
 if (argv[0] === "wizard" || argv[0] === "harvest") {
@@ -47,7 +51,7 @@ It reads every turn-pair with a model. On the local ollama default that is free;
   const sinceDays = parseInt(flag("--since"), 10) || 0;
   const sinceMs = sinceDays > 0 ? Date.now() - sinceDays * 86400000 : 0;
   const sessions = H.resolveSessions({ limit: sessionsN, sinceMs });
-  if (!sessions.length) { process.stderr.write("reins wizard: no Claude Code sessions found under ~/.claude/projects\n"); process.exit(2); }
+  if (!sessions.length) { process.stderr.write(`reins wizard: no ${harnessName} sessions found under ${harnessRoot}\n`); process.exit(2); }
   const hosted = !b.startsWith("ollama:");
   if (hosted && !has("--yes")) {
     process.stderr.write(`reins wizard: ${b} is a HOSTED backend and will make up to ${maxPairs} calls (a small cost).\n  re-run with --yes to proceed, or use the free local default (omit --judge).\n`);
@@ -99,7 +103,7 @@ Free on the local ollama default. Seed from your whole history once with: reins 
   if (flag("--judge")) process.env.SAWBUCK_JUDGE = flag("--judge");
   const b = backend();
   const sess = H.resolveSessionPath(flag("--session"));
-  if (!sess) { process.stderr.write("reins cues: no session transcript found\n"); process.exit(2); }
+  if (!sess) { process.stderr.write(`reins cues: no ${harnessName} session transcript found under ${harnessRoot} (pass --session <path>)\n`); process.exit(2); }
   let ctext = ""; try { ctext = readFileSync(sess, "utf8"); } catch { process.stderr.write("reins cues: cannot read " + sess + "\n"); process.exit(2); }
   const allC = H.pairs(ctext);
   const cout = join(process.cwd(), ".sawbuck", "cues.json");
@@ -115,7 +119,7 @@ Free on the local ollama default. Seed from your whole history once with: reins 
   const items = has("--append") ? prior.items.slice() : [];
   const sid = sess.split("/").pop();
   for (const { prior: a, user: u } of fresh) { let r = null; try { r = await harvestScore(a, u); } catch {} items.push({ session: sid, result: r }); }
-  const capped = items.slice(-1500);
+  const capped = items.slice(-300);   // bounded: cues.json lives inside the user's repo
   const agg = aggregateCues(capped);
   const rec = { at: new Date().toISOString(), backend: b, session: sess, lastPairs: has("--append") ? consumed : allC.length, pairs: capped.length, ...agg, items: capped };
   try { mkdirSync(dirname(cout), { recursive: true }); writeFileSync(cout, JSON.stringify(rec, null, 2) + "\n"); } catch { process.stderr.write("reins cues: could not write " + cout + "\n"); }
@@ -150,7 +154,7 @@ Backend is SAWBUCK_JUDGE (default ollama:qwen2.5:7b). Local = free + private.
 
 if (flag("--judge")) process.env.SAWBUCK_JUDGE = flag("--judge");
 const sess = H.resolveSessionPath(flag("--session"));
-if (!sess) { process.stderr.write("reins: no session transcript found (pass --session <path.jsonl>)\n"); process.exit(2); }
+if (!sess) { process.stderr.write(`reins: no ${harnessName} session transcript found under ${harnessRoot} (pass --session <path.jsonl>)\n`); process.exit(2); }
 
 let text = "";
 try { text = readFileSync(sess, "utf8"); } catch { process.stderr.write("reins: cannot read " + sess + "\n"); process.exit(2); }
