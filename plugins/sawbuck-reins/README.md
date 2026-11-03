@@ -50,6 +50,36 @@ Claude Code asks two things on install: a **scope** (choose **user** so the band
 - **`/sawbuck-status`** the inventory: everything Sawbuck has accumulated here in one view, what it
   has caught for you over time, the debt accruing now, and whether it is armed in this repo.
 
-It shells the `sawbuck` CLI (a global install if present, else `npx -y sawbuck`), which rides the
-deterministic, zero-LLM `promptwheel` check and the `@promptwheel/logbook` memory. No `npm install`
-and no manual `sawbuck attach` to start.
+It runs the `sawbuck` CLI through `npx`, pinned to an exact version, which rides the deterministic,
+zero-LLM `promptwheel` check and the `@promptwheel/logbook` memory. No `npm install` and no manual
+`sawbuck attach` to start.
+
+## What this plugin runs, writes, and sends (the full list)
+
+**Programs it runs.** Exactly two, through `npx` with pinned versions and fixed arguments, never a
+shell: `npx -y sawbuck@0.1.26 <check|attach --claude|context --speak|debt|status> .` behind the five
+slash commands and the band's reads, and, only in `engine` judge mode, `npx -y @sawbuck/reins@0.4.3
+--append` in the background after a turn. Both need Node 18+ and npm on your PATH.
+
+**Files it writes.** Only inside the repo you attached, under its `.sawbuck/` directory:
+`.sawbuck/steer.json` (the steer scores; written by the mod in `native` mode, by the reins CLI in
+`engine` mode) and the `sawbuck` CLI's own record (`.sawbuck/state.json`, `activity.jsonl`,
+`results.json`). `/sawbuck-watch` runs `sawbuck attach --claude`, which edits two files on purpose:
+`.claude/settings.local.json` in that repo (adds the UserPromptSubmit, SessionStart and Stop hooks
+that run `sawbuck turn` and the check) and `.git/info/exclude` (keeps `.sawbuck/` out of `git
+status`). `sawbuck detach` reverses both exactly. The mod itself never edits build, start-up,
+settings or instructions files.
+
+**What it sends, and where.** In the default `native` mode, one small classify call per turn through
+Claude Code's own model API (`$.model.complete`, requesting the Haiku model id), on your own Claude
+plan, containing the agent's last answer and your reply so it can score how much you steered. In
+`engine` mode the reins CLI sends the same pair to the judge you configured with `SAWBUCK_JUDGE`
+(a local ollama model, nothing leaves your machine, or your own API key). `off` sends nothing.
+There is no telemetry, no analytics, and no other network call; the deterministic check never calls
+a model.
+
+**What each hook does.** `session.start` registers the five slash commands. `prompt.submit` scores
+the previous (agent answer, your reply) pair in the background and reads `.sawbuck/` to refresh the
+band; it never changes your prompt. `turn.complete` stashes the agent's answer for that scoring
+(or starts the reins CLI in `engine` mode). `ui.render` draws the band above the prompt. None of
+them block a turn, and all of them stay silent in repos where Sawbuck is not attached.

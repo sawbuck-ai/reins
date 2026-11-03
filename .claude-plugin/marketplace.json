@@ -5,7 +5,7 @@
   "plugins": [
     {
       "name": "sawbuck-reins",
-      "version": "0.5.5",
+      "version": "0.5.6",
       "source": "./plugins/sawbuck-reins",
       "description": "One install wires the sawbuck guide band (watching / N caught / last verdict) plus five slash commands: /sawbuck-check (verify now), /sawbuck-watch (arm the Stop hook), /sawbuck-context (ranked history), /sawbuck-debt (live suppression debt), /sawbuck-status (the inventory). No npm install, no manual attach."
     }

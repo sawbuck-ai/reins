@@ -193,15 +193,16 @@ async function readSummary($: any): Promise<Summary | null> {
   }
 }
 
-// Run sawbuck: a global install if present, else npx (first run fetches it, then it is cached).
+// Run sawbuck through npx, pinned to an exact version (the directory's policy: one program, by name,
+// fixed arguments, no shell). npx caches it after the first run.
+const SAWBUCK_PKG = 'sawbuck@0.1.26'
+const REINS_PKG = '@sawbuck/reins@0.4.3'
 async function runSawbuck($: any, cwd: string, args: string[]): Promise<string> {
-  for (const argv of [['sawbuck', ...args], ['npx', '-y', 'sawbuck', ...args]]) {
-    try {
-      const { exitCode, stdout, stderr } = await $.process.run(argv, { cwd })
-      const out = (stdout || '').trim() || (stderr || '').trim()
-      if (exitCode === 0 || out) return out
-    } catch {}
-  }
+  try {
+    const { exitCode, stdout, stderr } = await $.process.run(['npx', '-y', SAWBUCK_PKG, ...args], { cwd })
+    const out = (stdout || '').trim() || (stderr || '').trim()
+    if (exitCode === 0 || out) return out
+  } catch {}
   return '🐴 sawbuck: could not run it here (it needs Node and npm on your PATH).'
 }
 
@@ -280,11 +281,11 @@ export const register: Register = (on, options) => {
           pendingAnswer = typeof e.answer === 'string' ? e.answer : null
         } else if (mode === 'engine' || (mode === 'native' && nativeBroken)) {
           // engine path (explicit, or the automatic fallback when native is unavailable):
-          // shell the reins CLI's incremental --append in the BACKGROUND (never blocks the
-          // turn; the trailing `&` detaches it). Best-effort - a missing judge just leaves
-          // the steer rate unknown, never an error.
+          // run the reins CLI's incremental --append without awaiting it, so the turn never
+          // waits on a judge. One program, by name, pinned, fixed arguments, no shell.
+          // Best-effort: a missing judge just leaves the steer rate unknown, never an error.
           const cwd = await $.session.cwd()
-          try { await $.process.run(['sh', '-c', '{ reins --append || npx -y @sawbuck/reins --append; } >/dev/null 2>&1 &'], { cwd }) } catch {}
+          try { void $.process.run(['npx', '-y', REINS_PKG, '--append'], { cwd }).catch(() => {}) } catch {}
         }
         // The cue inventory (.sawbuck/cues.json) is NOT built per turn: that is the explicit
         // `reins cues` CLI command. Per turn it would double-score every pair in engine mode and

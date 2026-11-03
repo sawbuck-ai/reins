@@ -10,14 +10,14 @@ metadata:
 To see how much you redirected the agent this session (your steer rate):
 
 ```
-npx -y @sawbuck/reins --harness codex
+npx -y @sawbuck/reins@0.4.3 --harness codex
 ```
 
 To build a cue inventory, the standing preferences you keep giving, from your Codex chats:
 
 ```
-npx -y @sawbuck/reins cues --harness codex --append   # the running inventory, updated per session
-npx -y @sawbuck/reins wizard --harness codex           # a one-time harvest across your whole history
+npx -y @sawbuck/reins@0.4.3 cues --harness codex --append   # the running inventory, updated per session
+npx -y @sawbuck/reins@0.4.3 wizard --harness codex           # a one-time harvest across your whole history
 ```
 
 These read your Codex sessions under `~/.codex/sessions` and score each turn with a local model by
