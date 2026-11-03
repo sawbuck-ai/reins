@@ -9,7 +9,7 @@
     "url": "git+https://github.com/sawbuck-ai/reins.git",
     "directory": "engine"
   },
-  "homepage": "https://sawbuck.ai/steering",
+  "homepage": "https://sawbuck.ai/memory#steering",
   "bugs": {
     "url": "https://github.com/sawbuck-ai/reins/issues"
   },

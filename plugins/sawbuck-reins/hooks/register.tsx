@@ -142,16 +142,23 @@ async function scoreNative($: any, prior: string, user: string): Promise<void> {
   try {
     // Call it directly - $ members can't be read as values, only called ($.noun.method(...)).
     // If $.model is unavailable or the org blocks the model, this throws and we fall back.
-    const r = await $.model.complete({
-      model: 'claude-haiku-5-5',   // full id works on every build ('haiku' alias needs >=2.1.309)
-      prompt: PROMPT(prior, user),
-      maxTokens: 200,
-      timeoutMs: 12000,
-    })
+    // the host honors timeoutMs; a local race makes the bound the mod's own, so one call that never
+    // settles costs one sample, never the rest of the session's scoring (the chain is serialized)
+    let timer: any
+    const bound = new Promise<never>((_, reject) => { timer = setTimeout(() => reject(new Error('judge timeout')), 15000) })
+    const r: any = await Promise.race([
+      $.model.complete({
+        model: 'claude-haiku-5-5',   // full id works on every build ('haiku' alias needs >=2.1.309)
+        prompt: PROMPT(prior, user),
+        maxTokens: 200,
+        timeoutMs: 12000,
+      }),
+      bound,
+    ]).finally(() => clearTimeout(timer))
     if (r && r.isAnswered !== false && r.text) s = parsePressure(r.text)
-  } catch {
-    nativeBroken = true
-    return   // don't record; the steer rate stays where it was for this session
+  } catch (e: any) {
+    if (!(e && String(e.message) === 'judge timeout')) nativeBroken = true   // a timeout is one lost sample, not a broken host
+    return   // don't record; the steer rate stays where it was
   }
   try { await recordNativePair($, s, await steerSpan($)) } catch { /* the band never blocks a turn */ }
 }
@@ -210,7 +217,7 @@ async function readSummary($: any): Promise<Summary | null> {
 }
 
 // The mod runs no program. The five slash commands live in commands/ as plugin commands: each tells
-// Claude to run one exact, pinned `npx -y sawbuck@0.1.28 ...` through its own Bash tool, under Claude
+// Claude to run one exact, pinned `npx -y sawbuck@0.1.29 ...` through its own Bash tool, under Claude
 // Code's permission system, so Claude sees the verdict and can act on it.
 export const register: Register = (on, options) => {
   on('prompt.submit', async ($, e, next) => {

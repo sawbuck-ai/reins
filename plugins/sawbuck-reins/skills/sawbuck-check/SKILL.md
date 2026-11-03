@@ -11,7 +11,7 @@ When a change you made makes a check, test, or metric pass, confirm the win is r
 call it done. Run:
 
 ```
-npx -y sawbuck@0.1.28 check
+npx -y sawbuck@0.1.29 check
 ```
 
 It re-proves the result from your source edits alone, reverting the test, grader, config, and
