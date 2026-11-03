@@ -57,12 +57,17 @@ zero-LLM `promptwheel` check and the `@promptwheel/logbook` memory. No `npm inst
 ## What this plugin runs, writes, and sends (the full list)
 
 **Programs it runs.** Exactly two, through `npx` with pinned versions and fixed arguments, never a
-shell: `npx -y sawbuck@0.1.26 <check|attach --claude|context --speak|debt|status> .` behind the five
-slash commands and the band's reads, and, only in `engine` judge mode, `npx -y @sawbuck/reins@0.4.3
---append` in the background after a turn. Both need Node 18+ and npm on your PATH.
+shell: `npx -y sawbuck@0.1.26 <check|attach --claude|context --speak|debt|status>` behind the five
+slash commands, and, only in `engine` judge mode, `npx -y @sawbuck/reins@0.4.3 --append` in the
+background after a turn. Every call is written out in full in `hooks/register.tsx`, with no options
+object, so each runs in the session's own working directory (the repo you opened) and nothing from
+your prompt or the conversation is passed to either program: the slash commands send fixed arguments
+only, and the engine's `--append` reads the pair from the local transcript itself. Both need Node 18+
+and npm on your PATH. The band never runs a program.
 
 **Files it writes.** Only inside the repo you attached: `.sawbuck/steer.json` (the steer scores;
-written by the mod in `native` mode, by the reins CLI in `engine` mode), the `sawbuck` CLI's own
+written by the mod in `native` mode at that fixed path relative to the session's working directory,
+by the reins CLI in `engine` mode), the `sawbuck` CLI's own
 record (`.sawbuck/state.json`, `activity.jsonl`, `results.json`), and the memory engine's cache of
 that repo's own git history (`events.jsonl`, `LOGBOOK.md`), which includes the commit author names
 already in the git log. All of it is kept out of `git status` and removed by `sawbuck detach --purge`.
@@ -72,7 +77,8 @@ would run it yourself; that is the only code it executes that is not one of the 
 `.claude/settings.local.json` in that repo (adds the UserPromptSubmit, SessionStart and Stop hooks
 that run `sawbuck turn` and the check) and `.git/info/exclude` (keeps `.sawbuck/` out of `git
 status`). `sawbuck detach` reverses both exactly. The mod itself never edits build, start-up,
-settings or instructions files.
+settings or instructions files, and the only file it writes is that one steer tally, which nothing
+runs or obeys: the band and `sawbuck statusline` read it to show a percentage.
 
 **What it sends, and where.** In the default `native` mode, one small classify call per turn through
 Claude Code's own model API (`$.model.complete`, requesting the Haiku model id), on your own Claude
@@ -89,6 +95,8 @@ a model.
 
 **What each hook does.** `session.start` registers the five slash commands. `prompt.submit` scores
 the previous (agent answer, your reply) pair in the background and reads `.sawbuck/` to refresh the
-band; it never changes your prompt. `turn.complete` stashes the agent's answer for that scoring
+band; it never changes your prompt, and your prompt text goes nowhere but that bounded model call
+(never to a program). What the band reads from `.sawbuck/` (`state.json`, `results.json`,
+`activity.jsonl`, `steer.json`) is shown to you in the band and is not sent anywhere. `turn.complete` stashes the agent's answer for that scoring
 (or starts the reins CLI in `engine` mode). `ui.render` draws the band above the prompt. None of
 them block a turn, and all of them stay silent in repos where Sawbuck is not attached.

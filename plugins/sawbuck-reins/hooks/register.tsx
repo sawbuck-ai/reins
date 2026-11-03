@@ -9,11 +9,10 @@ const summaryAtom = atom({ plugin: 'sawbuck-reins', key: 'summary' } as const, n
 // --- the live steering judge ------------------------------------------------
 // The band's "🐎/✊ steer X%" comes from .sawbuck/steer.json. Two ways to fill it:
 //
-//   native (DEFAULT): score the newest turn-pair with a tiny Claude (Haiku) call
-//     via $.model.complete - zero setup, no ollama, no key. It bills the user's
-//     OWN Claude plan (a separate cheap Haiku call, not the session's main model;
-//     ~a fraction of a cent/turn). Disclosed in the README; opt out via the
-//     `judge` userConfig or SAWBUCK_JUDGE.
+//   native (DEFAULT): score the newest turn-pair with one small call through
+//     Claude Code's own model API ($.model.complete, the Haiku model id), on the
+//     user's own plan: zero setup, no ollama, no key. Disclosed in the README;
+//     opt out via the `judge` userConfig or SAWBUCK_JUDGE.
 //   engine: shell `reins --append` (the @sawbuck/reins CLI), whose SAWBUCK_JUDGE
 //     backend is local ollama (free/private) or your own hosted key. The pre-0.4
 //     behavior; also the automatic fallback when $.model is unavailable.
@@ -86,12 +85,12 @@ async function judgeMode($: any, options: any): Promise<'native' | 'engine' | 'o
 // Record one consumed turn-pair into .sawbuck/steer.json, in the engine's exact
 // --append shape. `s` null = the pair was consumed but not scored (soft judge fail);
 // we still bump lastPairs so an engine fallback resumes from the right place.
-async function recordNativePair($: any, cwd: string, s: { pressure: number } | null): Promise<void> {
-  const out = cwd.replace(/\/$/, '') + '/.sawbuck/steer.json'
+// The path is fixed text, relative to the session's working directory (the attached repo).
+async function recordNativePair($: any, s: { pressure: number } | null): Promise<void> {
   const prior: { lastPairs: number; scored: number; steering: number; wsum: number; ema: number; distribution: Record<number, number> } =
     { lastPairs: 0, scored: 0, steering: 0, wsum: 0, ema: 0, distribution: { 0: 0, 1: 0, 2: 0, 3: 0 } }
   try {
-    const p = JSON.parse(await $.fs.read(out))
+    const p = JSON.parse(await $.fs.read('.sawbuck/steer.json'))
     if (p && p.lastPairs != null) {
       prior.lastPairs = p.lastPairs
       prior.scored = p.scored || 0
@@ -119,14 +118,14 @@ async function recordNativePair($: any, cwd: string, s: { pressure: number } | n
     meanPressure: prior.scored ? prior.wsum / prior.scored : 0,
     distribution: prior.distribution, _wsum: prior.wsum,
   }
-  await $.fs.write(out, JSON.stringify(rec) + '\n')
+  await $.fs.write('.sawbuck/steer.json', JSON.stringify(rec) + '\n')
 }
 
 // Score the stashed (agent, user) pair natively. Best-effort, never blocks a turn.
 // A HARD throw (no $.model / org-blocked) trips nativeBroken so the next turn.complete
 // shells the engine instead; a SOFT fail (isAnswered:false / unparseable) stays native
 // but still records the consumed pair so the count doesn't drift.
-async function scoreNative($: any, cwd: string, prior: string, user: string): Promise<void> {
+async function scoreNative($: any, prior: string, user: string): Promise<void> {
   let s: { pressure: number } | null = null
   try {
     // Call it directly - $ members can't be read as values, only called ($.noun.method(...)).
@@ -142,32 +141,33 @@ async function scoreNative($: any, cwd: string, prior: string, user: string): Pr
     nativeBroken = true
     return   // don't record; the engine fallback re-scans from steer.json.lastPairs
   }
-  try { await recordNativePair($, cwd, s) } catch { /* the band never blocks a turn */ }
+  try { await recordNativePair($, s) } catch { /* the band never blocks a turn */ }
 }
 
-// Read the cwd repo's sawbuck status. Fast: file reads only, never shells, never blocks.
+// Is the file there? $.fs.exists where the build has it; an older build answers by reading.
+async function present($: any, path: string): Promise<boolean> {
+  try { return !!(await $.fs.exists(path)) } catch { /* no $.fs.exists on this build */ }
+  try { await $.fs.read(path); return true } catch { return false }
+}
+
+// Read the session repo's sawbuck status. Fast: file reads only, never shells, never blocks.
+// Every path is fixed text relative to the session's working directory.
 // null = not a sawbuck-relevant repo (hide the band).
 async function readSummary($: any): Promise<Summary | null> {
   try {
-    const cwd: string = await $.session.cwd()
     // active = sawbuck has run here (its record exists); armed = checkable (a contract, or just
     // a test command thanks to zero-config). Show the band for either; hide otherwise.
     // Only `active` runs the judge or writes under .sawbuck/: an unattached repo gets the
     // "ready" label and nothing else (no model call, no files).
-    let active = false
-    try { await $.fs.read(cwd + '/.sawbuck/state.json'); active = true } catch {}
-    let armed = false
-    try { await $.fs.read(cwd + '/promptwheel.config.json'); armed = true } catch {}
-    if (!armed) { try { await $.fs.read(cwd + '/package.json'); armed = true } catch {} }
+    const active = await present($, '.sawbuck/state.json')
+    const armed = (await present($, 'promptwheel.config.json')) || (await present($, 'package.json'))
     // memory-only: logbook history is here, but no check contract (history recall without the gate)
-    let mem = false
-    try { await $.fs.read(cwd + '/LOGBOOK.md'); mem = true } catch {}
-    if (!mem) { try { await $.fs.read(cwd + '/events.jsonl'); mem = true } catch {} }
+    const mem = (await present($, 'LOGBOOK.md')) || (await present($, 'events.jsonl'))
     if (!active && !armed && !mem) return null
     let caught = 0
     let latest: Summary['latest'] = null
     try {
-      const r = JSON.parse(await $.fs.read(cwd + '/.sawbuck/results.json'))
+      const r = JSON.parse(await $.fs.read('.sawbuck/results.json'))
       caught = (r.regressions || 0) + (r.gamed || 0)
       if (r.latest && r.latest.file) latest = { kind: String(r.latest.kind || 'caught'), file: String(r.latest.file) }
     } catch {
@@ -176,14 +176,14 @@ async function readSummary($: any): Promise<Summary | null> {
     // the last verdict from the activity feed (includes verified passes), so you see it working
     let last = ''
     try {
-      const lines = (await $.fs.read(cwd + '/.sawbuck/activity.jsonl')).trim().split('\n')
+      const lines = (await $.fs.read('.sawbuck/activity.jsonl')).trim().split('\n')
       last = String(JSON.parse(lines[lines.length - 1]).kind || '')
     } catch {}
     // live steering rate from .sawbuck/steer.json (written by the native judge or the
     // engine's --append); null when unknown so the band stays quiet.
     let steer: number | null = null
     try {
-      const sj = JSON.parse(await $.fs.read(cwd + '/.sawbuck/steer.json'))
+      const sj = JSON.parse(await $.fs.read('.sawbuck/steer.json'))
       // recent-window gauge (EMA) when present; fall back to the lifetime rate for older files.
       if (sj && sj.scored) steer = Math.round(((sj.ema != null ? sj.ema : sj.steeringRate) || 0) * 100)
     } catch {}
@@ -194,8 +194,9 @@ async function readSummary($: any): Promise<Summary | null> {
 }
 
 // Every program call below is written out in full at the call site (`$.process.run([...literal
-// argv...])`): one program, by name, pinned to an exact version, fixed arguments, no shell. The
-// directory reads those calls as fixed text. npx caches the package after the first run.
+// argv...])`): one program, by name, pinned to an exact version, fixed arguments, no shell, and no
+// options object, so the whole command is fixed text and runs in the session's own working
+// directory (the engine's default). npx caches the package after the first run.
 const CANNOT_RUN = '🐴 sawbuck: could not run it here (it needs Node and npm on your PATH).'
 function said(r: any): string {
   const out = ((r && r.stdout) || '').trim() || ((r && r.stderr) || '').trim()
@@ -216,14 +217,12 @@ export const register: Register = (on, options) => {
   })
 
   on('command.run', { command: 'sawbuck-check' }, async ($) => {
-    const cwd = await $.session.cwd()
-    try { return { text: said(await $.process.run(['npx', '-y', 'sawbuck@0.1.26', 'check'], { cwd })) } } catch { return { text: CANNOT_RUN } }
+    try { return { text: said(await $.process.run(['npx', '-y', 'sawbuck@0.1.26', 'check'])) } } catch { return { text: CANNOT_RUN } }
   })
 
   on('command.run', { command: 'sawbuck-watch' }, async ($) => {
     let out = ''
-    const cwd = await $.session.cwd()
-    try { out = said(await $.process.run(['npx', '-y', 'sawbuck@0.1.26', 'attach', '--claude'], { cwd })) } catch { out = CANNOT_RUN }
+    try { out = said(await $.process.run(['npx', '-y', 'sawbuck@0.1.26', 'attach', '--claude'])) } catch { out = CANNOT_RUN }
     return { text: (out ? out + '\n\n' : '') + '🐴 sawbuck is watching this repo now. A win that does not survive a source-only re-run is caught, and the agent is sent back to earn it. Remove it anytime with: sawbuck detach.' }
   })
 
@@ -232,22 +231,19 @@ export const register: Register = (on, options) => {
   // --speak: this is an explicit ask, so reply even when the trail is clean (the bare
   // `context` stays silent for the every-turn UserPromptSubmit hook).
   on('command.run', { command: 'sawbuck-context' }, async ($) => {
-    const cwd = await $.session.cwd()
-    try { return { text: said(await $.process.run(['npx', '-y', 'sawbuck@0.1.26', 'context', '--speak'], { cwd })) } } catch { return { text: CANNOT_RUN } }
+    try { return { text: said(await $.process.run(['npx', '-y', 'sawbuck@0.1.26', 'context', '--speak'])) } } catch { return { text: CANNOT_RUN } }
   })
 
   // the whole-repo debt ledger (the study's headline: current live debt is the under-surfaced
   // signal). On-demand; it greps HEAD, so never run it per turn.
   on('command.run', { command: 'sawbuck-debt' }, async ($) => {
-    const cwd = await $.session.cwd()
-    try { return { text: said(await $.process.run(['npx', '-y', 'sawbuck@0.1.26', 'debt'], { cwd })) } } catch { return { text: CANNOT_RUN } }
+    try { return { text: said(await $.process.run(['npx', '-y', 'sawbuck@0.1.26', 'debt'])) } } catch { return { text: CANNOT_RUN } }
   })
 
   // the inventory: one view unioning what the check has caught over time, the debt accruing now, and
   // whether it is armed here. On-demand (it runs the whole-repo debt scan); never per turn.
   on('command.run', { command: 'sawbuck-status' }, async ($) => {
-    const cwd = await $.session.cwd()
-    try { return { text: said(await $.process.run(['npx', '-y', 'sawbuck@0.1.26', 'status'], { cwd })) } } catch { return { text: CANNOT_RUN } }
+    try { return { text: said(await $.process.run(['npx', '-y', 'sawbuck@0.1.26', 'status'])) } } catch { return { text: CANNOT_RUN } }
   })
 
   on('prompt.submit', async ($, e, next) => {
@@ -262,8 +258,7 @@ export const register: Register = (on, options) => {
         pendingAnswer = null
         const user = typeof e.text === 'string' ? e.text : ''
         if (user.trim() && s && s.active) {
-          const cwd = await $.session.cwd()
-          void scoreNative($, cwd, prior, user)   // deliberately not awaited
+          void scoreNative($, prior, user)   // deliberately not awaited
         }
       }
     } catch { /* the band never blocks a prompt */ }
@@ -286,8 +281,7 @@ export const register: Register = (on, options) => {
           // run the reins CLI's incremental --append without awaiting it, so the turn never
           // waits on a judge. One program, by name, pinned, fixed arguments, no shell.
           // Best-effort: a missing judge just leaves the steer rate unknown, never an error.
-          const cwd = await $.session.cwd()
-          try { void $.process.run(['npx', '-y', '@sawbuck/reins@0.4.3', '--append'], { cwd }).catch(() => {}) } catch {}
+          try { void $.process.run(['npx', '-y', '@sawbuck/reins@0.4.3', '--append']).catch(() => {}) } catch {}
         }
         // The cue inventory (.sawbuck/cues.json) is NOT built per turn: that is the explicit
         // `reins cues` CLI command. Per turn it would double-score every pair in engine mode and
