@@ -1,5 +1,5 @@
 // wizard.mjs - the harvest: read your old Claude Code chats, find the STEERS you keep
-// giving, and rank them into a cue inventory, so a fresh saddle already knows your style.
+// giving, and rank them into a cue inventory, so a fresh session already knows your style.
 //
 // Token honesty: every turn-pair is read by a model. On the default local ollama that is
 // free (just compute); on a hosted backend it costs a little. The CLI prints the count and

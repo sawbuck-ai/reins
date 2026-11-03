@@ -2,22 +2,21 @@
 
 The engine behind reins: measure how much you steer your AI coding agent. It reads
 a Claude Code session transcript, scores each of your turns for **steering
-pressure** (0 passive → 1 light refine → 2 redirect → 3 hard yank) with a small LLM,
+pressure** (0 passive → 1 light refine → 2 redirect → 3 hard stop) with a small LLM,
 and prints a seismograph of the session plus the distribution.
 
-This is the LLM half of reins. The deterministic brake-slam counter (`sawbuck yank`)
-lives in sawbuck's offline core; the continuous pressure judge needs a model, so it
-lives here, keeping sawbuck's core model-free. (The reins *plugin*, the Claude Code
-surface, lives alongside this in `plugins/sawbuck-reins/`.)
+This is the LLM half of reins. The continuous pressure judge needs a model, so it
+lives here, keeping sawbuck's deterministic core model-free. (The reins *plugin*, the
+Claude Code surface, lives alongside this in `plugins/sawbuck-reins/`.)
 
 ```
 $ reins
   reins · steering this session   (judge: ollama:qwen2.5:7b)
   ..--+-+---+---.--.--..+--+.--
-    . passive   - refine   + redirect   # yank
+    . passive   - refine   + redirect   # hard stop
 
   you steered 22 of 29 turns (76%)   ·   mean pressure 0.93/3
-  17 light refine · 5 redirect · 0 hard yank · 7 passive
+  17 light refine · 5 redirect · 0 hard stop · 7 passive
   the check guards the 7 turns you didn't steer - a miss there is the risk.
 ```
 
@@ -47,7 +46,7 @@ structured outputs), so a thinking model can't break the parse.
 ## Live on the statusline
 
 `--write [path]` writes the summary JSON (default `.sawbuck/steer.json`). The
-offline `sawbuck statusline` reads that file and shows `🪢 steer 76%` next to its
+offline `sawbuck statusline` reads that file and shows `✊ steer 76%` (`🐎` under half) next to its
 own segment, the LLM work happens here, sawbuck's core stays model-free (it only
 reads a file). Keep it fresh by running `reins --write` on a cadence (a `/loop`, a
 watch, or a post-turn hook):
@@ -72,7 +71,7 @@ reins wizard [--sessions N] [--max N] [--since DAYS] [--judge <backend>] [--json
 ```
 
 Reads your old Claude Code chats, finds the steers you keep giving (a correction of HOW
-the agent works, not a new task), and ranks them into a cue inventory, so a fresh saddle
+the agent works, not a new task), and ranks them into a cue inventory, so a fresh session
 already knows your style. It writes `.sawbuck/cues.json` and prints your top cues, ranked by
 how many distinct sessions they span, then how generalizable they are.
 

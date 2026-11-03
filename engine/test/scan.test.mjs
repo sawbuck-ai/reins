@@ -27,7 +27,7 @@ test("scan(): aggregates pressure into distribution + seismograph", async () => 
     user("start"),
     asst(), user("yes go"),               // scored passive
     asst(), user("make it a bit leaner"), // refine
-    asst(), user("no, different approach"),// redirect/yank
+    asst(), user("no, different approach"),// redirect/hard stop
   ].join("\n");
   // deterministic fake judge: keyword -> pressure
   const fake = async (_prior, u) =>

@@ -245,9 +245,9 @@ if (r.scored === 0) {
   process.exit(r.fails ? 2 : 0);
 }
 process.stdout.write(`  ${r.seismograph}\n`);
-process.stdout.write(`    . passive   - refine   + redirect   # yank\n\n`);
+process.stdout.write(`    . passive   - refine   + redirect   # hard stop\n\n`);
 process.stdout.write(`  you steered ${r.steering} of ${r.scored} turns (${pct}%)   ·   mean pressure ${r.meanPressure.toFixed(2)}/3\n`);
-process.stdout.write(`  ${d[1]} light refine · ${d[2]} redirect · ${d[3]} hard yank · ${d[0]} passive${r.fails ? ` · ${r.fails} skipped` : ""}\n`);
+process.stdout.write(`  ${d[1]} light refine · ${d[2]} redirect · ${d[3]} hard stop · ${d[0]} passive${r.fails ? ` · ${r.fails} skipped` : ""}\n`);
 process.stdout.write(`  the check guards the ${r.scored - r.steering} turns you didn't steer - a miss there is the risk.\n`);
 if (r.recent.length) {
   process.stdout.write(`\n  recent steers:\n`);

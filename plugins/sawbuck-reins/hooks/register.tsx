@@ -42,7 +42,7 @@ const STEER_ALPHA = 2 / (STEER_SPAN + 1)
 const PROMPT = (a: string, u: string) =>
 `You rate how much a developer's message STEERS an AI coding agent's current work.
 Output ONLY one JSON object: {"pressure":0-3,"axis":"one-word","nudge":"<=8 words"}
-pressure: 0 passive (approval like "yes/go/do it", a pure question, or a brand-new unrelated task; NOT steering current work). 1 light refine (small adjustment to the SAME work: tone, length, scope, emphasis, "a bit more X", "also Y"). 2 redirect (change the approach/direction of current work). 3 hard-stop ("no/stop/undo/revert", reject and restart).
+pressure: 0 passive (approval like "yes/go/do it", a pure question, or a brand-new unrelated task; NOT steering current work). 1 light refine (small adjustment to the SAME work: tone, length, scope, emphasis, "a bit more X", "also Y"). 2 redirect (change the approach/direction of current work). 3 hard stop ("no/stop/undo/revert", reject and restart).
 AGENT just did: ${String(a).slice(0, 600)}
 USER replied: ${String(u).replace(/\s+/g, ' ').slice(0, 800)}
 JSON:`
