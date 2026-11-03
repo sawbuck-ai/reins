@@ -7,7 +7,7 @@ import type { Summary } from '../types'
 const summaryAtom = atom({ plugin: 'sawbuck-reins', key: 'summary' } as const, null)
 
 // --- the live steering judge ------------------------------------------------
-// The band's "🐎/🪢 steer X%" comes from .sawbuck/steer.json. Two ways to fill it:
+// The band's "🐎/✊ steer X%" comes from .sawbuck/steer.json. Two ways to fill it:
 //
 //   native (DEFAULT): score the newest turn-pair with a tiny Claude (Haiku) call
 //     via $.model.complete - zero setup, no ollama, no key. It bills the user's
@@ -314,8 +314,8 @@ export const register: Register = (on, options) => {
     const { Box, Text } = $.ui.resolve(e)
     const icon = ({ verified: '✓', gamed: '🚩', regression: '✗', inconclusive: '≈', allowed: '✎' } as Record<string, string>)[s.last] || ''
     // the steer icon reads the RECENT rate (the % beside it carries the detail): reins slack (🐎)
-    // when under half your recent turns are steers, taut (🪢) past half.
-    const grip = (s.steer ?? 0) >= 50 ? '🪢' : '🐎'
+    // when under half your recent turns are steers, taut (✊) past half.
+    const grip = (s.steer ?? 0) >= 50 ? '✊' : '🐎'
     const steerSeg = s.steer != null ? ` · ${grip} steer ${s.steer}%` : ''
 
     if (s.caught > 0) {
