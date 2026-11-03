@@ -78,7 +78,12 @@ settings or instructions files.
 Claude Code's own model API (`$.model.complete`, requesting the Haiku model id), on your own Claude
 plan, containing the agent's last answer and your reply so it can score how much you steered. In
 `engine` mode the reins CLI sends the same pair to the judge you configured with `SAWBUCK_JUDGE`
-(a local ollama model, nothing leaves your machine, or your own API key). `off` sends nothing.
+(a local ollama model, nothing leaves your machine, or your own API key). `off` sends nothing. A pair
+is bounded: at most the first 600 characters of the agent's answer and 800 of your reply, never the
+whole conversation. The `reins-steering` skill runs `reins wizard` / `reins cues` on demand: they read
+your own local Claude Code or Codex transcripts to find the cues you keep giving, send each bounded
+pair to the judge you chose (a hosted judge asks for confirmation first), and write a short list of
+cue phrases to `.sawbuck/cues.json` in the repo.
 There is no telemetry, no analytics, and no other network call; the deterministic check never calls
 a model.
 
