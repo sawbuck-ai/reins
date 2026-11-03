@@ -131,7 +131,7 @@ Free on the local ollama default. Seed from your whole history once with: reins 
 if (has("--help") || has("-h")) {
   process.stdout.write(`reins: measure how much you steer your agent this session
 
-Usage: reins [--session <path.jsonl>] [--judge <backend>] [-n N] [--json] [--write [path]] [--share [--label <term>]]
+Usage: reins [--session <path.jsonl>] [--judge <backend>] [-n N] [--json] [--write [path]]
 
   --session <path>   a Claude Code transcript (default: your newest session)
   --judge <backend>  override SAWBUCK_JUDGE: ollama:<model> | haiku | anthropic:<model> | openai:<model>
@@ -139,9 +139,6 @@ Usage: reins [--session <path.jsonl>] [--judge <backend>] [-n N] [--json] [--wri
   --json             machine-readable output
   --write [path]     also write the summary JSON (default .sawbuck/steer.json) for the
                      offline sawbuck statusline to read - run it on a cadence for a live readout
-  --share            print a paste-ready card for posting (LinkedIn / X / Reddit)
-  --label <term>     the word for the stat on the share card (default "steer rate";
-                     e.g. "yank rate" for a playful channel - keep it neutral for LinkedIn)
 
   --harness <h>      whose transcripts to read: claude (default) | codex (reads ~/.codex/sessions)
 
@@ -188,7 +185,7 @@ if (has("--append")) {
     // EMA of the steer indicator, seeded on the first scored turn so there is no cold-start bias toward 0
     prior.ema = prior.scored === 1 ? x : alpha * x + (1 - alpha) * prior.ema;
   }
-  const rate = prior.scored ? prior.steering / prior.scored : 0;   // lifetime rate (the --share card uses this)
+  const rate = prior.scored ? prior.steering / prior.scored : 0;   // lifetime rate (kept for older readers of steer.json)
   const rec = { at: new Date().toISOString(), backend: backend(), lastPairs: consumed, turns: all.length, scored: prior.scored, steering: prior.steering, steeringRate: rate, ema: prior.ema, meanPressure: prior.scored ? prior.wsum / prior.scored : 0, distribution: prior.distribution, _wsum: prior.wsum };
   try { mkdirSync(dirname(out), { recursive: true }); writeFileSync(out, JSON.stringify(rec) + "\n"); } catch { process.stderr.write("reins: could not write " + out + "\n"); }
   if (has("--json")) process.stdout.write(JSON.stringify(rec) + "\n");
@@ -211,31 +208,6 @@ if (has("--write")) {
 }
 
 if (has("--json")) { process.stdout.write(JSON.stringify({ backend: backend(), ...r }) + "\n"); process.exit(0); }
-
-// --share: a tasteful, paste-anywhere card (plain text works on LinkedIn / X / Reddit).
-// --label swaps the stat's word; default stays neutral ("steer rate") so it's safe for a
-// professional feed, e.g. --label "yank rate" for a playful channel.
-if (has("--share")) {
-  if (r.scored === 0) { process.stdout.write("reins: nothing to share yet (no turns scored).\n"); process.exit(0); }
-  const lf = flag("--label");
-  const label = lf && !lf.startsWith("--") ? lf : "steer rate";
-  const pct = Math.round(r.steeringRate * 100);
-  const d = r.distribution;
-  const texture = d[1] >= d[2] + d[3] ? "mostly light refinements" : d[3] > 0 ? "a few hard pulls" : "real redirects";
-  const grip = pct >= 60 ? "hands-on" : pct >= 30 ? "a steady hand" : "a loose rein";
-  process.stdout.write(
-`my ${label} this session 🐴
-
-  ${r.seismograph}
-  · let it ride   - nudge   + redirect   # hard pull
-
-I steered ${r.steering} of ${r.scored} turns (${pct}%): ${grip}, ${texture}.
-The ${r.scored - r.steering} I let ride, the check had my back.
-
-measured with reins · sawbuck
-`);
-  process.exit(0);
-}
 
 const pct = Math.round(r.steeringRate * 100);
 const d = r.distribution;

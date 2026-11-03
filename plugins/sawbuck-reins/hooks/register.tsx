@@ -32,8 +32,8 @@ let nativeBroken = false                   // $.model threw (missing / org-block
 // recent-window steer gauge: an EMA over ~STEER_SPAN scored turns, seeded on the first sample so
 // there is no cold-start bias. The band shows how you have steered LATELY, not a lifetime average
 // that old high-steering turns anchor - so it reflects the fall toward a loose rein as cues land.
-// Mirrors the engine's SAWBUCK_STEER_WINDOW default so native + engine write one steer.json shape;
-// the --share card still reports the lifetime rate.
+// Mirrors the engine's SAWBUCK_STEER_WINDOW default so native + engine write one steer.json shape
+// (the lifetime rate is still written for older readers).
 const STEER_SPAN = 20
 const STEER_ALPHA = 2 / (STEER_SPAN + 1)
 
@@ -111,7 +111,7 @@ async function recordNativePair($: any, cwd: string, s: { pressure: number } | n
     // EMA seeded on the first scored turn (no cold-start bias); same shape the engine writes
     prior.ema = prior.scored === 1 ? x : STEER_ALPHA * x + (1 - STEER_ALPHA) * prior.ema
   }
-  const rate = prior.scored ? prior.steering / prior.scored : 0   // lifetime (for the --share card)
+  const rate = prior.scored ? prior.steering / prior.scored : 0   // lifetime (kept for older readers of steer.json)
   const rec = {
     at: new Date().toISOString(), backend: 'native',
     lastPairs: prior.lastPairs, turns: prior.lastPairs,
