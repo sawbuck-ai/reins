@@ -57,7 +57,7 @@ zero-LLM `promptwheel` check and the `@promptwheel/logbook` memory. No `npm inst
 ## What this plugin runs, writes, and sends (the full list)
 
 **Programs it runs.** Exactly two, through `npx` with pinned versions and fixed arguments, never a
-shell: `npx -y sawbuck@0.1.27 <check|attach --claude|context --speak|debt|status>` behind the five
+shell: `npx -y sawbuck@0.1.28 <check|attach --claude|context --speak|debt|status>` behind the five
 slash commands, and, only in `engine` judge mode, `npx -y @sawbuck/reins@0.4.3 --append` in the
 background after a turn. Every call is written out in full in `hooks/register.tsx`, with no options
 object, so each runs in the session's own working directory (the repo you opened) and nothing from

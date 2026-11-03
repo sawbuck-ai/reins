@@ -20,7 +20,7 @@ test('/sawbuck-status runs the pinned sawbuck CLI as fixed text, in the session 
   const r = await $.command.run({ command: 'sawbuck-status', args: '', origin: ORIGIN, presentation: PRESENTATION })
 
   expect(r?.text).toBe('sawbuck: watching')
-  expect(calls).toEqual([{ argv: ['npx', '-y', 'sawbuck@0.1.27', 'status'], init: undefined }])
+  expect(calls).toEqual([{ argv: ['npx', '-y', 'sawbuck@0.1.28', 'status'], init: undefined }])
 })
 
 test('/sawbuck-check tells the person when the program cannot start', async ($, on) => {
@@ -90,4 +90,67 @@ test('an unattached repo gets no model call and no file', async ($, on) => {
 
   expect(models).toEqual([])
   expect(writes).toEqual([])
+})
+
+test('a noise reply ("ok", a task notification) is not a pair: no model call, and the stash waits for a real reply', async ($, on) => {
+  const models: string[] = []
+  const writes: string[] = []
+  mock.env(on, {})
+  on('command.register', () => ({ value: { command: 'x' } }))
+  on('session.start', (_, e) => ({ cwd: e.cwd }))
+  on('fs.exists', (_, e) => ({ value: e.path.endsWith('/.sawbuck/state.json') }))
+  on('fs.read', (_, e) => { throw new Error(`ENOENT: ${e.path}`) })
+  on('fs.write', (_, e) => { writes.push(e.path); return { value: undefined } })
+  on('model.complete', (_, e) => { models.push(e.prompt); return { value: { isAnswered: true, text: '{"pressure":1,"axis":"scope","nudge":"shorter"}', usage: { input_tokens: 1, output_tokens: 1 } } } })
+  on('turn.complete', () => ({ text: '' }))
+  on('prompt.submit', (_, e) => ({ text: e.text }))
+
+  await $.session.start({ cwd: '/repo', surface: 'terminal', isInteractive: true })
+  await $.turn.complete({ answer: 'Here is the plan.', durationMs: 1, isAborted: false, turnId: 't1', reason: 'answer' })
+  await $.prompt.submit({ text: 'ok' })
+  await $.prompt.submit({ text: '<task-notification>\n<task-id>abc</task-id>\n</task-notification>' })
+  await new Promise((r) => setTimeout(r, 100))
+  expect(models).toEqual([])
+  expect(writes).toEqual([])
+  await $.prompt.submit({ text: 'a bit shorter please, same plan' })
+  for (let i = 0; i < 50 && writes.length === 0; i++) await new Promise((r) => setTimeout(r, 20))
+  expect(models.length).toBe(1)
+  expect(models[0]).toMatch(/AGENT just did: Here is the plan\./)
+  expect(writes.length).toBe(1)
+})
+
+test('SAWBUCK_JUDGE=native stays native (no engine shell-out), and the steer window follows SAWBUCK_STEER_WINDOW', async ($, on) => {
+  const runs: unknown[] = []
+  const models: string[] = []
+  const texts: string[] = []
+  let last: string | null = null
+  mock.env(on, { SAWBUCK_JUDGE: 'native', SAWBUCK_STEER_WINDOW: '5' })
+  on('command.register', () => ({ value: { command: 'x' } }))
+  on('session.start', (_, e) => ({ cwd: e.cwd }))
+  on('process.run', (_, e) => { runs.push(e.argv); return { value: { exitCode: 0, stdout: '', stderr: '', isStdoutTruncated: false, isStderrTruncated: false } } })
+  on('fs.exists', (_, e) => ({ value: e.path.endsWith('/.sawbuck/state.json') }))
+  on('fs.read', (_, e) => { if (e.path.endsWith('/.sawbuck/steer.json') && last != null) return { value: last }; throw new Error(`ENOENT: ${e.path}`) })
+  on('fs.write', (_, e) => { last = e.text; texts.push(e.text); return { value: undefined } })
+  on('model.complete', (_, e) => {
+    models.push(e.model)
+    const pressure = models.length === 1 ? 3 : 0
+    return { value: { isAnswered: true, text: `{"pressure":${pressure},"axis":"x","nudge":"y"}`, usage: { input_tokens: 1, output_tokens: 1 } } }
+  })
+  on('turn.complete', () => ({ text: '' }))
+  on('prompt.submit', (_, e) => ({ text: e.text }))
+
+  await $.session.start({ cwd: '/repo', surface: 'terminal', isInteractive: true })
+  await $.turn.complete({ answer: 'first answer', durationMs: 1, isAborted: false, turnId: 't1', reason: 'answer' })
+  await $.prompt.submit({ text: 'no, stop, revert that' })
+  await $.turn.complete({ answer: 'second answer', durationMs: 1, isAborted: false, turnId: 't2', reason: 'answer' })
+  await $.prompt.submit({ text: 'yes, go ahead with it' })
+  for (let i = 0; i < 50 && texts.length < 2; i++) await new Promise((r) => setTimeout(r, 20))
+
+  expect(runs).toEqual([])
+  expect(models).toEqual(['claude-haiku-5-5', 'claude-haiku-5-5'])
+  const rec = JSON.parse(texts[1])
+  expect(rec.scored).toBe(2)
+  expect(rec.steering).toBe(1)
+  // span 5: alpha 2/6; ema after (1, 0) = 1 - 1/3
+  expect(Math.abs(rec.ema - (1 - 2 / 6)) < 1e-9).toBe(true)
 })

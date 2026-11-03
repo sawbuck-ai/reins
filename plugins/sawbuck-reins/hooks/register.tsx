@@ -31,10 +31,23 @@ let nativeBroken = false                   // $.model threw (missing / org-block
 // recent-window steer gauge: an EMA over ~STEER_SPAN scored turns, seeded on the first sample so
 // there is no cold-start bias. The band shows how you have steered LATELY, not a lifetime average
 // that old high-steering turns anchor - so it reflects the fall toward a loose rein as cues land.
-// Mirrors the engine's SAWBUCK_STEER_WINDOW default so native + engine write one steer.json shape
-// (the lifetime rate is still written for older readers).
+// Mirrors the engine's --append: the span is SAWBUCK_STEER_WINDOW (default 20), alpha = 2/(span+1),
+// so native + engine write one steer.json shape and one gauge (the lifetime rate is still written
+// for older readers).
 const STEER_SPAN = 20
-const STEER_ALPHA = 2 / (STEER_SPAN + 1)
+async function steerSpan($: any): Promise<number> {
+  try { const w = Number(await $.env.get('SAWBUCK_STEER_WINDOW')); if (w > 0 && Number.isFinite(w)) return w } catch { /* default */ }
+  return STEER_SPAN
+}
+
+// EXACT copy of the engine's noise() in scan.mjs: a reply the engine does not count as a pair is not
+// a pair here either (so the shared lastPairs index stays aligned with the engine's pairs()).
+function noise(t: string): boolean {
+  const s = String(t).trim()
+  if (!s) return true
+  if (s.includes('<task-notification>') || s.startsWith('<task-id>')) return true
+  return s.replace(/\[Image #\d+\]/g, '').trim().length < 3
+}
 
 // EXACT copy of engine/judge.mjs PROMPT (the 600/800 slicing that lives in
 // scan.mjs pairs() is applied inline here since we score a live pair, not the transcript).
@@ -77,6 +90,7 @@ async function judgeMode($: any, options: any): Promise<'native' | 'engine' | 'o
     const envv = await $.env.get('SAWBUCK_JUDGE')
     const v = envv == null ? '' : String(envv).trim().toLowerCase()
     if (v === 'off' || v === 'none' || v === '0' || v === 'false') return 'off'
+    if (v === 'native') return 'native'
     if (v) return 'engine'
   } catch { /* $.env provenance is undocumented; ignore and stay native */ }
   return 'native'
@@ -86,7 +100,7 @@ async function judgeMode($: any, options: any): Promise<'native' | 'engine' | 'o
 // --append shape. `s` null = the pair was consumed but not scored (soft judge fail);
 // we still bump lastPairs so an engine fallback resumes from the right place.
 // The path is fixed text, relative to the session's working directory (the attached repo).
-async function recordNativePair($: any, s: { pressure: number } | null): Promise<void> {
+async function recordNativePair($: any, s: { pressure: number } | null, span: number): Promise<void> {
   const prior: { lastPairs: number; scored: number; steering: number; wsum: number; ema: number; distribution: Record<number, number> } =
     { lastPairs: 0, scored: 0, steering: 0, wsum: 0, ema: 0, distribution: { 0: 0, 1: 0, 2: 0, 3: 0 } }
   try {
@@ -108,7 +122,8 @@ async function recordNativePair($: any, s: { pressure: number } | null): Promise
     const x = s.pressure >= 1 ? 1 : 0
     if (x) prior.steering++
     // EMA seeded on the first scored turn (no cold-start bias); same shape the engine writes
-    prior.ema = prior.scored === 1 ? x : STEER_ALPHA * x + (1 - STEER_ALPHA) * prior.ema
+    const alpha = 2 / (span + 1)
+    prior.ema = prior.scored === 1 ? x : alpha * x + (1 - alpha) * prior.ema
   }
   const rate = prior.scored ? prior.steering / prior.scored : 0   // lifetime (kept for older readers of steer.json)
   const rec = {
@@ -141,8 +156,12 @@ async function scoreNative($: any, prior: string, user: string): Promise<void> {
     nativeBroken = true
     return   // don't record; the engine fallback re-scans from steer.json.lastPairs
   }
-  try { await recordNativePair($, s) } catch { /* the band never blocks a turn */ }
+  try { await recordNativePair($, s, await steerSpan($)) } catch { /* the band never blocks a turn */ }
 }
+
+// one scoring at a time: steer.json is a read-modify-write, and two quick turns would otherwise
+// interleave their 12 s model calls and lose a sample
+let scoring: Promise<void> = Promise.resolve()
 
 // Is the file there? $.fs.exists where the build has it; an older build answers by reading.
 async function present($: any, path: string): Promise<boolean> {
@@ -217,12 +236,12 @@ export const register: Register = (on, options) => {
   })
 
   on('command.run', { command: 'sawbuck-check' }, async ($) => {
-    try { return { text: said(await $.process.run(['npx', '-y', 'sawbuck@0.1.27', 'check'])) } } catch { return { text: CANNOT_RUN } }
+    try { return { text: said(await $.process.run(['npx', '-y', 'sawbuck@0.1.28', 'check'])) } } catch { return { text: CANNOT_RUN } }
   })
 
   on('command.run', { command: 'sawbuck-watch' }, async ($) => {
     let out = ''
-    try { out = said(await $.process.run(['npx', '-y', 'sawbuck@0.1.27', 'attach', '--claude'])) } catch { out = CANNOT_RUN }
+    try { out = said(await $.process.run(['npx', '-y', 'sawbuck@0.1.28', 'attach', '--claude'])) } catch { out = CANNOT_RUN }
     return { text: (out ? out + '\n\n' : '') + '🐴 sawbuck is watching this repo now. A win that does not survive a source-only re-run is caught, and the agent is sent back to earn it. Remove it anytime with: sawbuck detach.' }
   })
 
@@ -231,19 +250,19 @@ export const register: Register = (on, options) => {
   // --speak: this is an explicit ask, so reply even when the trail is clean (the bare
   // `context` stays silent for the every-turn UserPromptSubmit hook).
   on('command.run', { command: 'sawbuck-context' }, async ($) => {
-    try { return { text: said(await $.process.run(['npx', '-y', 'sawbuck@0.1.27', 'context', '--speak'])) } } catch { return { text: CANNOT_RUN } }
+    try { return { text: said(await $.process.run(['npx', '-y', 'sawbuck@0.1.28', 'context', '--speak'])) } } catch { return { text: CANNOT_RUN } }
   })
 
   // the whole-repo debt ledger (the study's headline: current live debt is the under-surfaced
   // signal). On-demand; it greps HEAD, so never run it per turn.
   on('command.run', { command: 'sawbuck-debt' }, async ($) => {
-    try { return { text: said(await $.process.run(['npx', '-y', 'sawbuck@0.1.27', 'debt'])) } } catch { return { text: CANNOT_RUN } }
+    try { return { text: said(await $.process.run(['npx', '-y', 'sawbuck@0.1.28', 'debt'])) } } catch { return { text: CANNOT_RUN } }
   })
 
   // the inventory: one view unioning what the check has caught over time, the debt accruing now, and
   // whether it is armed here. On-demand (it runs the whole-repo debt scan); never per turn.
   on('command.run', { command: 'sawbuck-status' }, async ($) => {
-    try { return { text: said(await $.process.run(['npx', '-y', 'sawbuck@0.1.27', 'status'])) } } catch { return { text: CANNOT_RUN } }
+    try { return { text: said(await $.process.run(['npx', '-y', 'sawbuck@0.1.28', 'status'])) } } catch { return { text: CANNOT_RUN } }
   })
 
   on('prompt.submit', async ($, e, next) => {
@@ -254,11 +273,15 @@ export const register: Register = (on, options) => {
       // has no reply yet). Score the pair stashed on the previous turn.complete, in the
       // background - never blocks the prompt. pendingAnswer is only set in native mode.
       if (pendingAnswer != null) {
-        const prior = pendingAnswer
-        pendingAnswer = null
         const user = typeof e.text === 'string' ? e.text : ''
-        if (user.trim() && s && s.active) {
-          void scoreNative($, prior, user)   // deliberately not awaited
+        // a meta prompt or an engine-noise reply ("ok", a task notification) is not a pair: skip it and
+        // keep the stash, exactly as the engine keeps `prev` past a noise line.
+        if (!(e as any).isMeta && !noise(user)) {
+          const prior = pendingAnswer
+          pendingAnswer = null
+          if (s && s.active) {
+            scoring = scoring.then(() => scoreNative($, prior, user)).catch(() => {})   // deliberately not awaited
+          }
         }
       }
     } catch { /* the band never blocks a prompt */ }
