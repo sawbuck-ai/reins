@@ -217,7 +217,7 @@ async function readSummary($: any): Promise<Summary | null> {
 }
 
 // The mod runs no program. The five slash commands live in commands/ as plugin commands: each tells
-// Claude to run one exact, pinned `npx -y sawbuck@0.1.29 ...` through its own Bash tool, under Claude
+// Claude to run one exact, pinned `npx -y sawbuck@0.1.30 ...` through its own Bash tool, under Claude
 // Code's permission system, so Claude sees the verdict and can act on it.
 export const register: Register = (on, options) => {
   on('prompt.submit', async ($, e, next) => {
