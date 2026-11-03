@@ -1,7 +1,7 @@
 {
   "name": "sawbuck-reins",
   "displayName": "Sawbuck",
-  "version": "0.5.10",
+  "version": "0.5.11",
   "description": "Sawbuck in Claude Code, one install: the guide band (watching / N caught / last verdict / live steer rate) plus /sawbuck-check (try it now), /sawbuck-watch (arm the Stop hook), /sawbuck-context (ranked history for the files you touch), /sawbuck-debt (surface the repo's live suppression debt), and /sawbuck-status (the inventory of everything it has accumulated here).",
   "keywords": [
     "sawbuck",
@@ -22,7 +22,6 @@
   "author": {
     "name": "Matthew Owens"
   },
-  "types": "./types/index.d.ts",
   "userConfig": {
     "judge": {
       "type": "string",

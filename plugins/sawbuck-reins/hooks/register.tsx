@@ -216,12 +216,14 @@ export const register: Register = (on, options) => {
   })
 
   on('command.run', { command: 'sawbuck-check' }, async ($) => {
-    try { return { text: said(await $.process.run(['npx', '-y', 'sawbuck@0.1.26', 'check'], { cwd: await $.session.cwd() })) } } catch { return { text: CANNOT_RUN } }
+    const cwd = await $.session.cwd()
+    try { return { text: said(await $.process.run(['npx', '-y', 'sawbuck@0.1.26', 'check'], { cwd })) } } catch { return { text: CANNOT_RUN } }
   })
 
   on('command.run', { command: 'sawbuck-watch' }, async ($) => {
     let out = ''
-    try { out = said(await $.process.run(['npx', '-y', 'sawbuck@0.1.26', 'attach', '--claude'], { cwd: await $.session.cwd() })) } catch { out = CANNOT_RUN }
+    const cwd = await $.session.cwd()
+    try { out = said(await $.process.run(['npx', '-y', 'sawbuck@0.1.26', 'attach', '--claude'], { cwd })) } catch { out = CANNOT_RUN }
     return { text: (out ? out + '\n\n' : '') + '🐴 sawbuck is watching this repo now. A win that does not survive a source-only re-run is caught, and the agent is sent back to earn it. Remove it anytime with: sawbuck detach.' }
   })
 
@@ -230,19 +232,22 @@ export const register: Register = (on, options) => {
   // --speak: this is an explicit ask, so reply even when the trail is clean (the bare
   // `context` stays silent for the every-turn UserPromptSubmit hook).
   on('command.run', { command: 'sawbuck-context' }, async ($) => {
-    try { return { text: said(await $.process.run(['npx', '-y', 'sawbuck@0.1.26', 'context', '--speak'], { cwd: await $.session.cwd() })) } } catch { return { text: CANNOT_RUN } }
+    const cwd = await $.session.cwd()
+    try { return { text: said(await $.process.run(['npx', '-y', 'sawbuck@0.1.26', 'context', '--speak'], { cwd })) } } catch { return { text: CANNOT_RUN } }
   })
 
   // the whole-repo debt ledger (the study's headline: current live debt is the under-surfaced
   // signal). On-demand; it greps HEAD, so never run it per turn.
   on('command.run', { command: 'sawbuck-debt' }, async ($) => {
-    try { return { text: said(await $.process.run(['npx', '-y', 'sawbuck@0.1.26', 'debt'], { cwd: await $.session.cwd() })) } } catch { return { text: CANNOT_RUN } }
+    const cwd = await $.session.cwd()
+    try { return { text: said(await $.process.run(['npx', '-y', 'sawbuck@0.1.26', 'debt'], { cwd })) } } catch { return { text: CANNOT_RUN } }
   })
 
   // the inventory: one view unioning what the check has caught over time, the debt accruing now, and
   // whether it is armed here. On-demand (it runs the whole-repo debt scan); never per turn.
   on('command.run', { command: 'sawbuck-status' }, async ($) => {
-    try { return { text: said(await $.process.run(['npx', '-y', 'sawbuck@0.1.26', 'status'], { cwd: await $.session.cwd() })) } } catch { return { text: CANNOT_RUN } }
+    const cwd = await $.session.cwd()
+    try { return { text: said(await $.process.run(['npx', '-y', 'sawbuck@0.1.26', 'status'], { cwd })) } } catch { return { text: CANNOT_RUN } }
   })
 
   on('prompt.submit', async ($, e, next) => {
