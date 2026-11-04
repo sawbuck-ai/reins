@@ -54,7 +54,7 @@ Claude Code asks three things on install: a **scope** (choose **user** so the ba
   what it has caught for you over time, the debt accruing now, and whether it is armed in this repo.
 
 Each command is a plain plugin command: a prompt that tells Claude to run one exact, pinned
-`npx -y sawbuck@0.1.32 ...` through its own Bash tool, pre-approved for that exact command and
+`npx -y sawbuck@0.1.33 ...` through its own Bash tool, pre-approved for that exact command and
 nothing else, so Claude Code's permission system is the one in charge. The `sawbuck` CLI rides the
 deterministic, zero-LLM `promptwheel` check and the `@promptwheel/logbook` memory. No `npm install`
 and no manual `sawbuck attach` to start.
@@ -63,7 +63,7 @@ and no manual `sawbuck attach` to start.
 
 **Programs it runs.** The mod (`hooks/register.tsx`) runs none: it makes no process call of any
 kind. The five slash commands in `commands/` are prompts; each tells Claude to run one exact
-command, `npx -y sawbuck@0.1.32 <check|attach --claude|context --speak|debt|status>`, through
+command, `npx -y sawbuck@0.1.33 <check|attach --claude|context --speak|debt|status>`, through
 Claude's own Bash tool, with `allowed-tools` pre-approving that exact string and nothing else. Claude
 sees the output and can act on it (fix the source after a gamed verdict, for instance). The
 `reins-steering` skill tells Claude to run the pinned `npx -y @sawbuck/reins@0.4.5` CLI the same way.
