@@ -59,7 +59,7 @@ Outside a git repository there is nothing to check, so the band reads `no repo h
   what it has caught for you over time, the debt accruing now, and whether it is armed in this repo.
 
 Each command is a plain plugin command: a prompt that tells Claude to run exact, pinned
-`npx -y sawbuck@0.1.36 ...` calls through its own Bash tool, pre-approved for those exact commands and
+`npx -y sawbuck@0.1.37 ...` calls through its own Bash tool, pre-approved for those exact commands and
 nothing else, so Claude Code's permission system is the one in charge. The `sawbuck` CLI rides the
 deterministic, zero-LLM `promptwheel` check and the `@promptwheel/logbook` memory. No `npm install`
 and no manual `sawbuck attach` to start.
@@ -68,7 +68,7 @@ and no manual `sawbuck attach` to start.
 
 **Programs it runs.** The mod (`hooks/register.tsx`) runs none: it makes no process call of any
 kind. The six slash commands in `commands/` are prompts; each tells Claude to run exact
-commands, `npx -y sawbuck@0.1.36 <contract|check|attach --claude|context --speak|debt|status>` (`/sawbuck-reins:contract` runs `contract`, then `attach --claude`), through
+commands, `npx -y sawbuck@0.1.37 <contract|check|attach --claude|context --speak|debt|status>` (`/sawbuck-reins:contract` runs `contract`, then `attach --claude`), through
 Claude's own Bash tool, with `allowed-tools` pre-approving those exact strings and nothing else. Claude
 sees the output and can act on it (fix the source after a gamed verdict, for instance). The
 `reins-steering` skill tells Claude to run the pinned `npx -y @sawbuck/reins@0.4.5` CLI the same way.

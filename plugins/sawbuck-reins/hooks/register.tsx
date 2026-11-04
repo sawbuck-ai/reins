@@ -188,8 +188,13 @@ async function present($: any, path: string): Promise<boolean> {
 
 // In a git repository, from any folder of it? The engine knows; a build without $.session.repo keeps
 // the old behaviour.
-async function inRepo($: any): Promise<boolean> {
-  try { return (await $.session.repo()) !== null } catch { return true }
+// Its folder name is what the band shows, so you can see which repo was detected: '' when the engine cannot say.
+async function repoName($: any): Promise<string | null> {
+  try {
+    const r = await $.session.repo()
+    if (r === null) return null
+    return String((r && r.root) || '').split(/[\\/]/).filter(Boolean).pop() || ''
+  } catch { return '' }
 }
 
 // Read the session repo's sawbuck status. Fast: file reads only, never shells, never blocks.
@@ -203,7 +208,8 @@ async function readSummary($: any): Promise<Summary | null> {
     // "ready" label and nothing else (no model call, no files).
     // Outside a git repository nothing can be checked, so nothing is gathered: say so and stop, even
     // where an old version left a .sawbuck behind. No judge, no model call, no file.
-    if (!(await inRepo($))) return { caught: 0, latest: null, armed: false, active: false, mem: false, last: '', steer: null, signed: false, noRepo: true }
+    const repo = await repoName($)
+    if (repo === null) return { caught: 0, latest: null, armed: false, active: false, mem: false, last: '', steer: null, signed: false, noRepo: true, repo: '' }
     const active = await present($, '.sawbuck/state.json')
     const armed = (await present($, 'promptwheel.config.json')) || (await present($, 'package.json'))
     // memory-only: logbook history is here, but no check contract (history recall without the gate)
@@ -213,8 +219,10 @@ async function readSummary($: any): Promise<Summary | null> {
     let latest: Summary['latest'] = null
     try {
       const r = JSON.parse(await $.fs.read('.sawbuck/results.json'))
-      caught = (r.regressions || 0) + (r.gamed || 0)
+      caught = (r.regressions || 0) + (r.gamed || 0) + (r.mandates || 0)
       if (r.latest && r.latest.file) latest = { kind: String(r.latest.kind || 'caught'), file: String(r.latest.file) }
+      const m = r.lastMandate
+      if (m && m.file && (!r.latest || String(m.at) > String(r.latest.at || ''))) latest = { kind: 'protected path', file: String(m.file) }
     } catch {
       // no results yet = nothing caught, still "watching"
     }
@@ -233,14 +241,14 @@ async function readSummary($: any): Promise<Summary | null> {
       if (sj && sj.scored) steer = Math.round(((sj.ema != null ? sj.ema : sj.steeringRate) || 0) * 100)
     } catch {}
     const signed = await present($, 'promptwheel.lock.json')   // signed = has run the one setup step; the band always names the next step
-    return { caught, latest, armed, active, mem, last, steer, signed, noRepo: false }
+    return { caught, latest, armed, active, mem, last, steer, signed, noRepo: false, repo }
   } catch {
     return null
   }
 }
 
 // The mod runs no program. The five slash commands live in commands/ as plugin commands: each tells
-// Claude to run one exact, pinned `npx -y sawbuck@0.1.36 ...` through its own Bash tool, under Claude
+// Claude to run one exact, pinned `npx -y sawbuck@0.1.37 ...` through its own Bash tool, under Claude
 // Code's permission system, so Claude sees the verdict and can act on it.
 // One offer per repository, ever: in a git repo with no contract, one line in the system prompt asks Claude to
 // offer to sign it after doing the work. Decided in prompt.compose, which runs before prompt.submit, and kept for
@@ -340,11 +348,12 @@ export const register: Register = (on, options) => {
     // when under half your recent turns are steers, taut (✊) past half.
     const grip = (s.steer ?? 0) >= 50 ? '✊' : '🐎'
     const steerSeg = s.steer != null ? ` · ${grip} steer ${s.steer}%` : ''
+    const at = s.repo ? s.repo + ' · ' : ''
 
     if (s.caught > 0) {
       return (
         <Box>
-          <Text color="yellow" weight="bold">🐴 sawbuck · {s.caught} caught</Text>
+          <Text color="yellow" weight="bold">🐴 sawbuck · {at}{s.caught} caught</Text>
           {s.latest ? <Text dimColor> · {s.latest.kind} on {s.latest.file}</Text> : null}
           {steerSeg ? <Text dimColor>{steerSeg}</Text> : null}
         </Box>
@@ -353,14 +362,14 @@ export const register: Register = (on, options) => {
     if (s.active) {
       return (
         <Box>
-          <Text dimColor>🐴 sawbuck · watching{icon ? ' · ' + icon : ''}{steerSeg}{s.signed ? '' : ' · /sawbuck-reins:contract to sign'}</Text>
+          <Text dimColor>🐴 sawbuck · {at}watching{icon ? ' · ' + icon : ''}{steerSeg}{s.signed ? '' : ' · /sawbuck-reins:contract to sign'}</Text>
         </Box>
       )
     }
     if (s.armed) {
       return (
         <Box>
-          <Text dimColor>🐴 sawbuck · one step: /sawbuck-reins:contract</Text>
+          <Text dimColor>🐴 sawbuck · {at}one step: /sawbuck-reins:contract</Text>
         </Box>
       )
     }
