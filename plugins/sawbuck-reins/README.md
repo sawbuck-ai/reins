@@ -20,7 +20,7 @@ Claude Code asks three things on install: a **scope** (choose **user** so the ba
 
 - **A guide band** above the prompt, read from the repo's local `.sawbuck/` record each turn:
   a quiet `🐴 sawbuck · watching` (with the last verdict, `✓` verified / `🚩` gamed) when armed,
-  `🐴 sawbuck · ready · /sawbuck-reins:watch to arm` when the repo is checkable but not yet armed, and a
+  `🐴 sawbuck · one step: /sawbuck-reins:contract` when the repo is checkable but not yet set up (that one command signs the repo and arms it), and a
   bold `🐴 N caught` (with the latest item) when the check flags a regression or a faked, "gamed"
   win. It never blocks your prompt and hides itself where Sawbuck is not relevant.
 - **A live steering readout** on the band (`🐎 steer X%`, taut `✊` once you are steering more than half of your recent turns): once the repo is

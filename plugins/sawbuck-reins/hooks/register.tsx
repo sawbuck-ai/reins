@@ -223,7 +223,8 @@ async function readSummary($: any): Promise<Summary | null> {
       // recent-window gauge (EMA) when present; fall back to the lifetime rate for older files.
       if (sj && sj.scored) steer = Math.round(((sj.ema != null ? sj.ema : sj.steeringRate) || 0) * 100)
     } catch {}
-    return { caught, latest, armed, active, mem, last, steer }
+    const signed = await present($, 'promptwheel.lock.json')   // signed = has run the one setup step; the band always names the next step
+    return { caught, latest, armed, active, mem, last, steer, signed }
   } catch {
     return null
   }
@@ -310,14 +311,14 @@ export const register: Register = (on, options) => {
     if (s.active) {
       return (
         <Box>
-          <Text dimColor>🐴 sawbuck · watching{icon ? ' · ' + icon : ''}{steerSeg}</Text>
+          <Text dimColor>🐴 sawbuck · watching{icon ? ' · ' + icon : ''}{steerSeg}{s.signed ? '' : ' · /sawbuck-reins:contract to sign'}</Text>
         </Box>
       )
     }
     if (s.armed) {
       return (
         <Box>
-          <Text dimColor>🐴 sawbuck · ready · /sawbuck-reins:watch to arm</Text>
+          <Text dimColor>🐴 sawbuck · one step: /sawbuck-reins:contract</Text>
         </Box>
       )
     }

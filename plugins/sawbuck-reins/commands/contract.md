@@ -1,14 +1,17 @@
 ---
-description: Sign this repo to a contract: tests, protected paths, supply-chain guards, and the architecture lock
-allowed-tools: ["Bash(npx -y sawbuck@0.1.35 contract)"]
+description: One step to set up Sawbuck: sign this repo to a contract and start watching every turn
+allowed-tools: ["Bash(npx -y sawbuck@0.1.35 contract)", "Bash(npx -y sawbuck@0.1.35 attach --claude)"]
 ---
 
-Run exactly this command in the current repo and show the person its output verbatim:
+Run exactly these two commands in the current repo, in order, and show the person their output verbatim:
 
 ```
 npx -y sawbuck@0.1.35 contract
+npx -y sawbuck@0.1.35 attach --claude
 ```
 
-It keeps any contract already here, adds tests and tripwires if there is none, then protected paths, the supply-chain guards, and promptwheel.lock.json. It writes promptwheel.config.json, promptwheel.lock.json, and .promptwheel/packs/ in this repo. Running it twice changes nothing.
+The first keeps any contract already here, adds tests and tripwires if there is none, then protected paths, the supply-chain guards, and promptwheel.lock.json. The second wires the hooks that check every turn. Running them twice changes nothing.
 
-Do not add the suggested product paths to the contract yourself. Those are the person's decision.
+Then tell the person, in two lines: they are set up, and they should review and commit promptwheel.config.json, promptwheel.lock.json and .promptwheel/packs/.
+
+Do not commit for them, and do not add the suggested product paths to the contract. Those are the person's decisions.
