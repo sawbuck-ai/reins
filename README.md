@@ -27,7 +27,7 @@ codex plugin add sawbuck-reins@sawbuck
 
 - **A guide band** above the prompt (Claude Code): `watching`, `N caught`, the last verdict, and a
   live steer rate, read from the repo's local `.sawbuck/` record each turn. It never blocks a prompt.
-- **Five slash commands** (Claude Code): `/sawbuck-reins:check` verifies your latest change now,
+- **Six slash commands** (Claude Code): `/sawbuck-reins:contract` signs the repo in one step, `/sawbuck-reins:check` verifies your latest change now,
   `/sawbuck-reins:watch` arms the Stop hook so every turn is checked, `/sawbuck-reins:context` shows
   the ranked history for the files you touch, `/sawbuck-reins:debt` lists the suppression debt still
   live in HEAD, and `/sawbuck-reins:status` shows everything Sawbuck has here in one view.
