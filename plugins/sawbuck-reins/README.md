@@ -18,7 +18,7 @@ Claude Code asks three things on install: a **scope** (choose **user** so the ba
 
 ## Getting started
 
-You don't need to remember a command. The first time you use Claude Code in a git repository with no contract, Claude finishes what you asked and then offers once to sign the repo. Say yes and it runs `/sawbuck-reins:contract`, which signs the repo and watches every turn. Say anything else and it won't ask again in that directory. Nothing is written or run without that yes, and it never commits for you.
+You don't need to remember a command. The first time you use Claude Code in a git repository with no contract, Claude finishes what you asked and then offers once to sign the repo. Say yes and it runs `/sawbuck-reins:contract`, which signs the repo: every turn checks protected paths, and every commit is re-proved. Say anything else and it won't ask again in that directory. Nothing is written or run without that yes, and it never commits for you.
 
 Outside a git repository there is nothing to check, so the band reads `no repo here` and the plugin gathers nothing and writes nothing.
 
@@ -31,9 +31,8 @@ Outside a git repository there is nothing to check, so the band reads `no repo h
   win. It never blocks your prompt and hides itself where Sawbuck is not relevant.
 - **A live steering readout** on the band (`🐎 steer X%`, taut `✊` once you are steering more than half of your recent turns): once the repo is
   attached (`/sawbuck-reins:watch`), each turn it scores how much you redirected the agent (a light refine, a redirect, or a hard stop) and shows a **recent-window rate**
-  (an EMA over roughly your last 20 scored turns), so it tracks how you are steering lately and falls
-  toward a loose rein as the agent learns your cues, instead of a lifetime average that old turns
-  anchor. It scores the newest turn in the background and never blocks a turn. The judge has two modes (set `judge` in
+  (an EMA over roughly your last 20 scored turns), so it tracks how you are steering lately, instead of a
+  lifetime average that old turns anchor. It scores the newest turn in the background and never blocks a turn. The judge has two modes (set `judge` in
   `/plugin configure sawbuck-reins@sawbuck` or `/config`):
   - **`native`** (default): a separate, lightweight classify call through Claude Code's own model
     API (`$.model.complete`, requesting the Haiku model id), on your **own** Claude plan. Zero
@@ -50,8 +49,8 @@ Outside a git repository there is nothing to check, so the band reads `no repo h
 - **`/sawbuck-reins:check`** verifies your latest change right now (zero-config, no setup): it says
   plainly whether the win was earned in the source, was gamed, is a regression, or could not be
   measured, and Claude sees the verdict, so a gamed one gets fixed in the source.
-- **`/sawbuck-reins:watch`** arms the Stop hook for this repo, so every turn is checked and a faked win
-  is caught and the agent sent back to earn it. Remove it anytime with `sawbuck detach`.
+- **`/sawbuck-reins:watch`** arms the Stop hook for this repo: every turn checks protected paths, every
+  commit is re-proved, and a faked win is sent back to earn it, up to three times by default. Remove it anytime with `sawbuck detach`.
 - **`/sawbuck-reins:context`** the ranked relevant history for the files you are touching right now:
   reverts (do-not-retry), weakened tests, and fragile hot spots, before you act.
 - **`/sawbuck-reins:debt`** the whole-repo live suppression debt: what is still silenced in HEAD now,
@@ -59,8 +58,8 @@ Outside a git repository there is nothing to check, so the band reads `no repo h
 - **`/sawbuck-reins:status`** the inventory: everything Sawbuck has accumulated here in one view,
   what it has caught for you over time, the debt accruing now, and whether it is armed in this repo.
 
-Each command is a plain plugin command: a prompt that tells Claude to run one exact, pinned
-`npx -y sawbuck@0.1.35 ...` through its own Bash tool, pre-approved for that exact command and
+Each command is a plain plugin command: a prompt that tells Claude to run exact, pinned
+`npx -y sawbuck@0.1.36 ...` calls through its own Bash tool, pre-approved for those exact commands and
 nothing else, so Claude Code's permission system is the one in charge. The `sawbuck` CLI rides the
 deterministic, zero-LLM `promptwheel` check and the `@promptwheel/logbook` memory. No `npm install`
 and no manual `sawbuck attach` to start.
@@ -68,9 +67,9 @@ and no manual `sawbuck attach` to start.
 ## What this plugin runs, writes, and sends (the full list)
 
 **Programs it runs.** The mod (`hooks/register.tsx`) runs none: it makes no process call of any
-kind. The six slash commands in `commands/` are prompts; each tells Claude to run one exact
-command, `npx -y sawbuck@0.1.35 <check|attach --claude|context --speak|debt|status>`, through
-Claude's own Bash tool, with `allowed-tools` pre-approving that exact string and nothing else. Claude
+kind. The six slash commands in `commands/` are prompts; each tells Claude to run exact
+commands, `npx -y sawbuck@0.1.36 <contract|check|attach --claude|context --speak|debt|status>` (`/sawbuck-reins:contract` runs `contract`, then `attach --claude`), through
+Claude's own Bash tool, with `allowed-tools` pre-approving those exact strings and nothing else. Claude
 sees the output and can act on it (fix the source after a gamed verdict, for instance). The
 `reins-steering` skill tells Claude to run the pinned `npx -y @sawbuck/reins@0.4.5` CLI the same way.
 Both need Node 18+ and npm on your PATH.
@@ -81,7 +80,7 @@ through the CLIs Claude runs, write inside the repo you attached: the same `stee
 reins CLI scores, the `sawbuck` CLI's own
 record (`.sawbuck/state.json`, `activity.jsonl`, `results.json`), and the memory engine's cache of
 that repo's own git history (`events.jsonl`, `LOGBOOK.md`), which includes the commit author names
-already in the git log. All of it is kept out of `git status` and removed by `sawbuck detach --purge`.
+already in the git log. All of it is kept out of `git status`. `sawbuck detach` removes what it wired, signed contract files stay because they are yours to review, and `--purge` deletes the record.
 To verify a change, the check also runs the repo's own test or metric command (from
 `promptwheel.config.json`, or the detected test script) in throwaway git worktrees, exactly as you
 would run it yourself; that is the only code it executes that is not one of the two pinned packages. `/sawbuck-reins:watch` runs `sawbuck attach --claude`, which writes four things on purpose:
@@ -116,6 +115,6 @@ reply) pair in the background and reads `.sawbuck/` to refresh the band; it neve
 prompt, and your prompt text goes nowhere but that bounded model call. What the band reads from
 `.sawbuck/` (`state.json`, `results.json`, `activity.jsonl`, `steer.json`) is shown to you in the
 band and is not sent anywhere. `turn.complete` stashes the agent's answer for that scoring.
-`ui.render` draws the band above the prompt. None of them block a turn, and all of them stay silent
-in repos where Sawbuck is not attached. The mod registers no commands, tools, or agents; the five
+`ui.render` draws the band above the prompt. None of them block a turn. In a git repo with no contract the band names the one step and the offer adds its one line; otherwise they stay silent
+in repos where Sawbuck is not attached. The mod registers no commands, tools, or agents; the six
 commands are files in `commands/`.

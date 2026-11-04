@@ -2,8 +2,8 @@
 
 The plugin marketplace for [Sawbuck](https://sawbuck.ai). One install puts the check inside your
 coding session: a deterministic, zero-LLM check re-proves every win from the agent's source edits
-alone, so a green that came from editing the test, the grader, or the config is caught and sent back
-to earn it.
+alone, so a test that went from red to green because the test, the grader, or a declared config
+changed is caught and sent back to earn it.
 
 ## Install
 
@@ -27,16 +27,16 @@ codex plugin add sawbuck-reins@sawbuck
 
 - **A guide band** above the prompt (Claude Code): `watching`, `N caught`, the last verdict, and a
   live steer rate, read from the repo's local `.sawbuck/` record each turn. It never blocks a prompt.
-- **Nothing to remember** (Claude Code): in a git repo with no contract, Claude offers once to sign it. Say yes and it signs the repo and watches every turn. Or run `/sawbuck-reins:contract` yourself.
+- **Nothing to remember** (Claude Code): in a git repo with no contract, Claude offers once to sign it. Say yes and it signs the repo: every turn checks protected paths, and every commit is re-proved. Or run `/sawbuck-reins:contract` yourself.
 - **Five more slash commands** (Claude Code): `/sawbuck-reins:check` verifies your latest change now,
-  `/sawbuck-reins:watch` arms the Stop hook so every turn is checked, `/sawbuck-reins:context` shows
+  `/sawbuck-reins:watch` arms the Stop hook (protected paths every turn, re-proof every commit), `/sawbuck-reins:context` shows
   the ranked history for the files you touch, `/sawbuck-reins:debt` lists the suppression debt still
   live in HEAD, and `/sawbuck-reins:status` shows everything Sawbuck has here in one view.
 - **Two skills** (Claude Code, and Codex in beta): `sawbuck-check`, verify that a win was earned in the source
   and not by editing a test, grader, or config; and `reins-steering`, read how much you have been
   steering the agent and the cues you keep giving, from your own local transcripts.
 
-Each command is a prompt that pre-approves one exact `npx -y sawbuck@<pinned version> ...` call, which
+Each command is a prompt that pre-approves the exact `npx -y sawbuck@<pinned version> ...` calls it needs, which
 Claude runs through its own Bash tool. The plugin's hooks module runs no program. The full list of
 what the plugin runs, writes, and sends is in [the plugin README](plugins/sawbuck-reins/README.md).
 
