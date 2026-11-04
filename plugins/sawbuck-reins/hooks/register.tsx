@@ -83,6 +83,37 @@ function parsePressure(txt: string): { pressure: number; axis: string; nudge: st
   return null
 }
 
+// The steer scratchpad: what you keep correcting, in Claude Code's plugin store on this machine, so it follows you
+// across repos and sessions outside any repo, and no folder gets a file. It is shown to the person and never put in a
+// prompt: a nudge is a model's summary of text that includes the agent's own answer, so feeding it back would be a way
+// to steer the agent with its own output. Local only. `sawbuck steers` reads it.
+const MAX_STEERS = 2000
+const SID = Date.now().toString(36)
+const STOP = new Set(['the', 'a', 'an', 'to', 'of', 'and', 'or', 'it', 'this', 'that', 'do', 'not', 'dont', 'use', 'be', 'in', 'on', 'for', 'with', 'is', 'are', 'your', 'you'])
+const steerKey = (n: string) => String(n).toLowerCase().replace(/[^a-z0-9 ]+/g, ' ').split(/\s+/).filter((w) => w && !STOP.has(w)).slice(0, 3).sort().join(' ')
+// the most repeated steer worth a look: at least 3 times, in at least 2 sessions
+function repeatedSteer(list: any[]): { key: string; nudge: string; n: number; repos: number } | null {
+  const g = new Map<string, any>()
+  for (const e of list) {
+    const key = steerKey(e.nudge); if (!key) continue
+    const x = g.get(key) || { key, nudge: e.nudge, n: 0, sessions: new Set(), repos: new Set() }
+    x.n++; x.sessions.add(e.session); x.repos.add(e.repo || 'no repo'); g.set(key, x)
+  }
+  const top = [...g.values()].filter((x) => x.n >= 3 && x.sessions.size >= 2).sort((a, b) => b.n - a.n)[0]
+  return top ? { key: top.key, nudge: top.nudge, n: top.n, repos: top.repos.size } : null
+}
+async function keepSteer($: any, s: { pressure: number; axis?: string; nudge?: string } | null, repo: string): Promise<void> {
+  try {
+    const stats: any = (await $.store.get('steerStats')) || { scored: 0, lost: 0 }
+    if (s) stats.scored++; else stats.lost++
+    await $.store.set('steerStats', stats)
+    if (!s || s.pressure < 1 || !s.nudge) return
+    const list: any = (await $.store.get('steers')) || []
+    list.push({ at: new Date().toISOString(), repo, session: SID, axis: s.axis || '', nudge: s.nudge, pressure: s.pressure })
+    await $.store.set('steers', list.slice(-MAX_STEERS))
+  } catch { /* the scratchpad never blocks a turn */ }
+}
+
 // Which judge to use. userConfig `judge` is the reliable, validated switch (default
 // native). A SAWBUCK_JUDGE in the shell that names a CLI backend means the user scores
 // with the reins CLI: the mod then stays off so a local-ollama setup is not silently
@@ -148,7 +179,7 @@ async function recordNativePair($: any, s: { pressure: number } | null, span: nu
 // row trip nativeBroken and scoring stops for the session (a build or org that blocks model calls
 // fails every time, a one-off overloaded answer does not). A SOFT fail (isAnswered:false /
 // unparseable) stays native but still records the consumed pair so the count doesn't drift.
-async function scoreNative($: any, prior: string, user: string): Promise<void> {
+async function scoreNative($: any, prior: string, user: string, repo: string, attached: boolean): Promise<void> {
   let s: { pressure: number } | null = null
   try {
     // Call it directly - $ members can't be read as values, only called ($.noun.method(...)).
@@ -173,7 +204,8 @@ async function scoreNative($: any, prior: string, user: string): Promise<void> {
     if (!(e && String(e.message) === 'judge timeout') && ++hardFails >= HARD_FAIL_LIMIT) nativeBroken = true
     return   // don't record; the steer rate stays where it was
   }
-  try { await recordNativePair($, s, await steerSpan($)) } catch { /* the band never blocks a turn */ }
+  await keepSteer($, s, repo)
+  if (attached) { try { await recordNativePair($, s, await steerSpan($)) } catch { /* the band never blocks a turn */ } }
 }
 
 // one scoring at a time: steer.json is a read-modify-write, and two quick turns would otherwise
@@ -189,6 +221,9 @@ async function present($: any, path: string): Promise<boolean> {
 // In a git repository, from any folder of it? The engine knows; a build without $.session.repo keeps
 // the old behaviour.
 // Its folder name is what the band shows, so you can see which repo was detected: '' when the engine cannot say.
+async function repeatLine($: any): Promise<string> {
+  try { const r = repeatedSteer(((await $.store.get('steers')) as any[]) || []); return r ? `said ${r.n}x: ${r.nudge}` : '' } catch { return '' }
+}
 async function repoName($: any): Promise<string | null> {
   try {
     const r = await $.session.repo()
@@ -209,7 +244,7 @@ async function readSummary($: any): Promise<Summary | null> {
     // Outside a git repository nothing can be checked, so nothing is gathered: say so and stop, even
     // where an old version left a .sawbuck behind. No judge, no model call, no file.
     const repo = await repoName($)
-    if (repo === null) return { caught: 0, latest: null, armed: false, active: false, mem: false, last: '', steer: null, signed: false, noRepo: true, repo: '' }
+    if (repo === null) return { caught: 0, latest: null, armed: false, active: false, mem: false, last: '', steer: null, signed: false, noRepo: true, repo: '', repeat: await repeatLine($) }
     const active = await present($, '.sawbuck/state.json')
     const armed = (await present($, 'promptwheel.config.json')) || (await present($, 'package.json'))
     // memory-only: logbook history is here, but no check contract (history recall without the gate)
@@ -241,14 +276,14 @@ async function readSummary($: any): Promise<Summary | null> {
       if (sj && sj.scored) steer = Math.round(((sj.ema != null ? sj.ema : sj.steeringRate) || 0) * 100)
     } catch {}
     const signed = await present($, 'promptwheel.lock.json')   // signed = has run the one setup step; the band always names the next step
-    return { caught, latest, armed, active, mem, last, steer, signed, noRepo: false, repo }
+    return { caught, latest, armed, active, mem, last, steer, signed, noRepo: false, repo, repeat: await repeatLine($) }
   } catch {
     return null
   }
 }
 
 // The mod runs no program. The five slash commands live in commands/ as plugin commands: each tells
-// Claude to run one exact, pinned `npx -y sawbuck@0.1.38 ...` through its own Bash tool, under Claude
+// Claude to run one exact, pinned `npx -y sawbuck@0.1.39 ...` through its own Bash tool, under Claude
 // Code's permission system, so Claude sees the verdict and can act on it.
 // One offer per repository, ever: in a git repo with no contract, one line in the system prompt asks Claude to
 // offer to sign it after doing the work. Decided in prompt.compose, which runs before prompt.submit, and kept for
@@ -291,8 +326,8 @@ export const register: Register = (on, options) => {
         if (!(e as any).isMeta && !noise(user)) {
           const prior = pendingAnswer
           pendingAnswer = null
-          if (s && s.active) {
-            scoring = scoring.then(() => scoreNative($, prior, user)).catch(() => {})   // deliberately not awaited
+          if (s && (s.active || s.noRepo)) {
+            scoring = scoring.then(() => scoreNative($, prior, user, s.repo, s.active)).catch(() => {})   // deliberately not awaited
           }
         }
       }
@@ -304,9 +339,9 @@ export const register: Register = (on, options) => {
     try {
       const s = await readSummary($)
       await update($, summaryAtom, () => s)
-      // live watcher, only where sawbuck is attached (.sawbuck/state.json exists). Skip aborted
-      // turns and subagent turns (score the main thread only).
-      if (s && s.active && !e.isAborted && e.agentId === undefined) {
+      // live watcher, where sawbuck is attached (.sawbuck/state.json exists) and outside any repo, where only the
+      // scratchpad records it. Skip aborted turns and subagent turns (score the main thread only).
+      if (s && (s.active || s.noRepo) && !e.isAborted && e.agentId === undefined) {
         const mode = await judgeMode($, options)
         if (mode === 'native' && !nativeBroken) {
           // stash the agent's answer; the next prompt.submit pairs it with the user's reply and scores.
@@ -339,7 +374,7 @@ export const register: Register = (on, options) => {
     if (s.noRepo) {
       return (
         <Box>
-          <Text dimColor>🐴 sawbuck · no repo here</Text>
+          <Text dimColor>🐴 sawbuck · no repo here{s.repeat ? ' · ' + s.repeat : ''}</Text>
         </Box>
       )
     }
@@ -362,7 +397,7 @@ export const register: Register = (on, options) => {
     if (s.active) {
       return (
         <Box>
-          <Text dimColor>🐴 sawbuck · {at}watching{icon ? ' · ' + icon : ''}{steerSeg}{s.signed ? '' : ' · /sawbuck-reins:contract to sign'}</Text>
+          <Text dimColor>🐴 sawbuck · {at}watching{icon ? ' · ' + icon : ''}{steerSeg}{s.repeat ? ' · ' + s.repeat : ''}{s.signed ? '' : ' · /sawbuck-reins:contract to sign'}</Text>
         </Box>
       )
     }

@@ -36,11 +36,17 @@ Outside a git repository there is nothing to check, so the band reads `no repo h
   `/plugin configure sawbuck-reins@sawbuck` or `/config`):
   - **`native`** (default): a separate, lightweight classify call through Claude Code's own model
     API (`$.model.complete`, requesting the Haiku model id), on your **own** Claude plan. Zero
-    setup: no ollama, no key, nothing leaves your Claude account. It runs only in repos where
-    sawbuck is attached. One failed or timed-out call costs one sample; if your build or org
+    setup: no ollama, no key, nothing leaves your Claude account. It runs in repos where sawbuck
+    is attached and in sessions outside any repo, not in repos you have not signed. One failed or timed-out call costs one sample; if your build or org
     blocks model calls (three failed calls in a row), the plugin stops scoring for that session
     and the band shows the last rate it had.
   - **`off`**: no live steer rate from the plugin.
+
+  **The steer scratchpad.** When a reply is scored as a steer, the judge's few-word summary is kept in Claude Code's
+  plugin store on your machine, with the repo name and date, newest 2,000. No folder gets a file, and it follows you
+  across repos. `/sawbuck-reins:steers` shows what you keep repeating: 3 times across 2 sessions. It is shown to you and
+  never added to a prompt, because a summary of a reply that includes the agent's own text should not steer the agent.
+  It counts what the judge saw, so replies that could not be scored make it an undercount, and it says so.
 
   To score with a model of your own instead (a free local `ollama:qwen2.5:7b`, or a hosted key),
   use the `reins` CLI: set `SAWBUCK_JUDGE` and run `reins --append` after a session, or the
@@ -59,7 +65,7 @@ Outside a git repository there is nothing to check, so the band reads `no repo h
   what it has caught for you over time, the debt accruing now, and whether it is armed in this repo.
 
 Each command is a plain plugin command: a prompt that tells Claude to run exact, pinned
-`npx -y sawbuck@0.1.38 ...` calls through its own Bash tool, pre-approved for those exact commands and
+`npx -y sawbuck@0.1.39 ...` calls through its own Bash tool, pre-approved for those exact commands and
 nothing else, so Claude Code's permission system is the one in charge. The `sawbuck` CLI rides the
 deterministic, zero-LLM `promptwheel` check and the `@promptwheel/logbook` memory. No `npm install`
 and no manual `sawbuck attach` to start.
@@ -68,7 +74,7 @@ and no manual `sawbuck attach` to start.
 
 **Programs it runs.** The mod (`hooks/register.tsx`) runs none: it makes no process call of any
 kind. The six slash commands in `commands/` are prompts; each tells Claude to run exact
-commands, `npx -y sawbuck@0.1.38 <contract|check|attach --claude|context --speak|debt|status>` (`/sawbuck-reins:contract` runs `contract`, then `attach --claude`), through
+commands, `npx -y sawbuck@0.1.39 <contract|check|attach --claude|context --speak|debt|status>` (`/sawbuck-reins:contract` runs `contract`, then `attach --claude`), through
 Claude's own Bash tool, with `allowed-tools` pre-approving those exact strings and nothing else. Claude
 sees the output and can act on it (fix the source after a gamed verdict, for instance). The
 `reins-steering` skill tells Claude to run the pinned `npx -y @sawbuck/reins@0.4.5` CLI the same way.
