@@ -32,8 +32,9 @@ Claude Code asks two things on install: a **scope** (choose **user** so the band
   - **`native`** (default): a separate, lightweight classify call through Claude Code's own model
     API (`$.model.complete`, requesting the Haiku model id), on your **own** Claude plan. Zero
     setup: no ollama, no key, nothing leaves your Claude account. It runs only in repos where
-    sawbuck is attached. If your build or org blocks model calls, the plugin stops scoring for
-    that session and the band shows the last rate it had.
+    sawbuck is attached. One failed or timed-out call costs one sample; if your build or org
+    blocks model calls (three failed calls in a row), the plugin stops scoring for that session
+    and the band shows the last rate it had.
   - **`off`**: no live steer rate from the plugin.
 
   To score with a model of your own instead (a free local `ollama:qwen2.5:7b`, or a hosted key),
@@ -53,7 +54,7 @@ Claude Code asks two things on install: a **scope** (choose **user** so the band
   what it has caught for you over time, the debt accruing now, and whether it is armed in this repo.
 
 Each command is a plain plugin command: a prompt that tells Claude to run one exact, pinned
-`npx -y sawbuck@0.1.30 ...` through its own Bash tool, pre-approved for that exact command and
+`npx -y sawbuck@0.1.31 ...` through its own Bash tool, pre-approved for that exact command and
 nothing else, so Claude Code's permission system is the one in charge. The `sawbuck` CLI rides the
 deterministic, zero-LLM `promptwheel` check and the `@promptwheel/logbook` memory. No `npm install`
 and no manual `sawbuck attach` to start.
@@ -62,10 +63,10 @@ and no manual `sawbuck attach` to start.
 
 **Programs it runs.** The mod (`hooks/register.tsx`) runs none: it makes no process call of any
 kind. The five slash commands in `commands/` are prompts; each tells Claude to run one exact
-command, `npx -y sawbuck@0.1.30 <check|attach --claude|context --speak|debt|status>`, through
+command, `npx -y sawbuck@0.1.31 <check|attach --claude|context --speak|debt|status>`, through
 Claude's own Bash tool, with `allowed-tools` pre-approving that exact string and nothing else. Claude
 sees the output and can act on it (fix the source after a gamed verdict, for instance). The
-`reins-steering` skill tells Claude to run the pinned `npx -y @sawbuck/reins@0.4.3` CLI the same way.
+`reins-steering` skill tells Claude to run the pinned `npx -y @sawbuck/reins@0.4.4` CLI the same way.
 Both need Node 18+ and npm on your PATH.
 
 **Files it writes.** The mod writes one file: `.sawbuck/steer.json` (the steer tally, in `native`
@@ -93,7 +94,7 @@ key). A pair
 is bounded: at most the first 600 characters of the agent's answer and 800 of your reply, never the
 whole conversation. The `reins-steering` skill runs `reins wizard` / `reins cues` on demand: they read
 your own local Claude Code or Codex transcripts to find the cues you keep giving, send each bounded
-pair to the judge you chose (a hosted judge asks for confirmation first), and write a short list of
+pair to the judge you chose (a hosted judge asks for `--yes` first), and write a short list of
 cue phrases to `.sawbuck/cues.json` in the repo.
 There is no telemetry, no analytics, and no other network call; the deterministic check never calls
 a model.

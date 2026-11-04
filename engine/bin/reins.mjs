@@ -95,6 +95,7 @@ Usage: reins cues [--append] [--session <path>] [--judge <b>] [--max N] [--json]
               (the per-turn path; carries cues across sessions in this repo)
   --max N     without --append, cap the turns scored (default 400)
   --judge <b> ollama:<model> (default, free, local) | haiku | anthropic:<model> | openai:<model>
+  --yes       proceed without the confirm on a HOSTED (paid) backend
 
 Free on the local ollama default. Seed from your whole history once with: reins wizard.
 `);
@@ -102,6 +103,15 @@ Free on the local ollama default. Seed from your whole history once with: reins 
   }
   if (flag("--judge")) process.env.SAWBUCK_JUDGE = flag("--judge");
   const b = backend();
+  // bounded per call: --append scores at most PER new pairs (oldest-first, so a backlog drains over
+  // turns); a full scan caps at --max newest. Keeps the per-turn background call cheap.
+  const PER = has("--append") ? 40 : (parseInt(flag("--max"), 10) || 400);
+  // a hosted backend is paid: the same confirm the wizard asks for, so the disclosure
+  // ("a hosted judge asks first") holds for every command that reads a transcript with a model
+  if (!b.startsWith("ollama:") && !has("--yes")) {
+    process.stderr.write(`reins cues: ${b} is a HOSTED backend and will make up to ${PER} calls this run (a small cost).\n  re-run with --yes to proceed, or use the free local default (omit --judge).\n`);
+    process.exit(2);
+  }
   const sess = H.resolveSessionPath(flag("--session"));
   if (!sess) { process.stderr.write(`reins cues: no ${harnessName} session transcript found under ${harnessRoot} (pass --session <path>)\n`); process.exit(2); }
   let ctext = ""; try { ctext = readFileSync(sess, "utf8"); } catch { process.stderr.write("reins cues: cannot read " + sess + "\n"); process.exit(2); }
@@ -111,9 +121,6 @@ Free on the local ollama default. Seed from your whole history once with: reins 
   if (has("--append")) { try { const p = JSON.parse(readFileSync(cout, "utf8")); if (p && Array.isArray(p.items)) prior = { session: p.session || "", lastPairs: p.lastPairs || 0, items: p.items }; } catch { /* fresh */ } }
   const startIdx = has("--append") && prior.session === sess ? Math.min(prior.lastPairs, allC.length) : 0;   // same session = resume; new/changed session = score from its start
   let fresh = allC.slice(startIdx);
-  // bounded per call: --append scores at most PER new pairs (oldest-first, so a backlog drains over
-  // turns); a full scan caps at --max newest. Keeps the per-turn background call cheap.
-  const PER = has("--append") ? 40 : (parseInt(flag("--max"), 10) || 400);
   if (fresh.length > PER) fresh = has("--append") ? fresh.slice(0, PER) : fresh.slice(-PER);
   const consumed = startIdx + fresh.length;
   const items = has("--append") ? prior.items.slice() : [];
@@ -163,21 +170,24 @@ try { text = readFileSync(sess, "utf8"); } catch { process.stderr.write("reins: 
 // prior tally from .sawbuck/steer.json, scores only the NEW turn-pairs since the last
 // run, merges, rewrites. One new pair per turn - not a full re-scan (which would be
 // quadratic over a session). The sawbuck statusline reads the same steer.json offline.
+// The pair index (lastPairs) is bound to the session it was counted in: a new session
+// starts at its first pair, and the tallies (scored/steering/ema) roll on across sessions.
 if (has("--append")) {
   const out = join(process.cwd(), ".sawbuck", "steer.json");
   const span = Number(process.env.SAWBUCK_STEER_WINDOW) || 20;   // recent-window span (turns); alpha below
   const alpha = 2 / (span + 1);
-  let prior = { lastPairs: 0, scored: 0, steering: 0, wsum: 0, ema: 0, distribution: { 0: 0, 1: 0, 2: 0, 3: 0 } };
+  let prior = { session: "", lastPairs: 0, scored: 0, steering: 0, wsum: 0, ema: 0, distribution: { 0: 0, 1: 0, 2: 0, 3: 0 } };
   try {
     const p = JSON.parse(readFileSync(out, "utf8"));
-    if (p && p.lastPairs != null) prior = { lastPairs: p.lastPairs, scored: p.scored || 0, steering: p.steering || 0, wsum: p._wsum || 0, ema: p.ema || 0, distribution: p.distribution || prior.distribution };
+    if (p && p.lastPairs != null) prior = { session: p.session || "", lastPairs: p.lastPairs, scored: p.scored || 0, steering: p.steering || 0, wsum: p._wsum || 0, ema: p.ema || 0, distribution: p.distribution || prior.distribution };
   } catch { /* no prior tally = fresh */ }
   const all = H.pairs(text);
   let added = 0;
   // bounded per call (graceful): at most PER new pairs this run, so the first --append on a long
   // session never blocks on hundreds of judge calls at once; a backlog drains over the next turns.
   const PER = 40;
-  const start = Math.min(prior.lastPairs, all.length);
+  // same session = resume where the last run stopped; a new or changed session = its first pair
+  const start = prior.session === sess ? Math.min(prior.lastPairs, all.length) : 0;
   const consumed = Math.min(start + PER, all.length);
   for (const { prior: a, user: u } of all.slice(start, consumed)) {
     let s = null; try { s = await score(a, u); } catch {}
@@ -190,7 +200,7 @@ if (has("--append")) {
     prior.ema = prior.scored === 1 ? x : alpha * x + (1 - alpha) * prior.ema;
   }
   const rate = prior.scored ? prior.steering / prior.scored : 0;   // lifetime rate (kept for older readers of steer.json)
-  const rec = { at: new Date().toISOString(), backend: backend(), lastPairs: consumed, turns: all.length, scored: prior.scored, steering: prior.steering, steeringRate: rate, ema: prior.ema, meanPressure: prior.scored ? prior.wsum / prior.scored : 0, distribution: prior.distribution, _wsum: prior.wsum };
+  const rec = { at: new Date().toISOString(), backend: backend(), session: sess, lastPairs: consumed, turns: all.length, scored: prior.scored, steering: prior.steering, steeringRate: rate, ema: prior.ema, meanPressure: prior.scored ? prior.wsum / prior.scored : 0, distribution: prior.distribution, _wsum: prior.wsum };
   try { mkdirSync(dirname(out), { recursive: true }); writeFileSync(out, JSON.stringify(rec) + "\n"); } catch { process.stderr.write("reins: could not write " + out + "\n"); }
   if (has("--json")) process.stdout.write(JSON.stringify(rec) + "\n");
   else process.stdout.write(`reins: +${added} new turn(s), recent steer ${Math.round(prior.ema * 100)}% (${prior.steering}/${prior.scored} lifetime)\n`);

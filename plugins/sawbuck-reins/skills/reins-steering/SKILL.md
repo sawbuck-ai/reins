@@ -1,6 +1,6 @@
 ---
 name: reins-steering
-description: See how much you have been steering the agent and the cues you keep giving, read from your Codex history. Use when you want to understand or tighten your own steering, or seed the agent with your standing preferences.
+description: See how much you have been steering the agent and the cues you keep giving, read from your Claude Code or Codex history. Use when you want to understand or tighten your own steering, or seed the agent with your standing preferences.
 metadata:
   category: insight
 ---
@@ -10,19 +10,30 @@ metadata:
 To see how much you redirected the agent this session (your steer rate):
 
 ```
-npx -y @sawbuck/reins@0.4.3 --harness codex
+npx -y @sawbuck/reins@0.4.4
 ```
 
-To build a cue inventory, the standing preferences you keep giving, from your Codex chats:
+To build a cue inventory, the standing preferences you keep giving, from your chats:
 
 ```
-npx -y @sawbuck/reins@0.4.3 cues --harness codex --append   # the running inventory, updated per session
-npx -y @sawbuck/reins@0.4.3 wizard --harness codex           # a one-time harvest across your whole history
+npx -y @sawbuck/reins@0.4.4 cues --append   # the running inventory, updated per session
+npx -y @sawbuck/reins@0.4.4 wizard          # a one-time harvest across your whole history
 ```
 
-These read your Codex sessions under `~/.codex/sessions` and score each turn with a local model by
-default (free, nothing leaves your box), or a hosted one you set with `SAWBUCK_JUDGE`. The result is
-written to `.sawbuck/cues.json`.
+These read your Claude Code sessions under `~/.claude/projects` and score each turn with a local
+model by default (free, nothing leaves your box), or a hosted one you set with `SAWBUCK_JUDGE`
+(`haiku`, `anthropic:<model>`, `openai:<model>`). A hosted judge is paid, so `cues` and `wizard`
+stop and ask for `--yes` before they call it. The result is written to `.sawbuck/cues.json`.
+
+## In Codex
+
+Codex keeps its transcripts under `~/.codex/sessions`; add `--harness codex` to each command:
+
+```
+npx -y @sawbuck/reins@0.4.4 --harness codex
+npx -y @sawbuck/reins@0.4.4 cues --harness codex --append
+npx -y @sawbuck/reins@0.4.4 wizard --harness codex
+```
 
 The cues are **leads to review**, not rules the tool adopts for you. Read them, keep the ones that
 are really how you work, and let the deterministic check guard the turns you did not steer.

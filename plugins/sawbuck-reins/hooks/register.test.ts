@@ -165,3 +165,82 @@ test('SAWBUCK_JUDGE=native stays native (no engine shell-out), and the steer win
   // span 5: alpha 2/6; ema after (1, 0) = 1 - 1/3
   expect(Math.abs(rec.ema - (1 - 2 / 6)) < 1e-9).toBe(true)
 })
+
+test('a steer.json from another session is read: the pair index restarts at 1, the tallies carry', async ($, on) => {
+  const texts: string[] = []
+  mock.env(on, {})
+  on('session.start', (_, e) => ({ cwd: e.cwd }))
+  on('fs.exists', (_, e) => ({ value: e.path.endsWith('/.sawbuck/state.json') }))
+  on('fs.read', (_, e) => {
+    if (e.path.endsWith('/.sawbuck/steer.json')) return { value: JSON.stringify({ session: 'native:someothersession', lastPairs: 50, scored: 10, steering: 5, _wsum: 12, ema: 0.5, distribution: { 0: 5, 1: 2, 2: 2, 3: 1 } }) }
+    throw new Error(`ENOENT: ${e.path}`)
+  })
+  on('fs.write', (_, e) => { texts.push(e.text); return { value: undefined } })
+  on('model.complete', () => ({ value: { isAnswered: true, text: '{"pressure":2,"axis":"x","nudge":"y"}', usage: { input_tokens: 1, output_tokens: 1 } } }))
+  on('turn.complete', () => ({ text: '' }))
+  on('prompt.submit', (_, e) => ({ text: e.text }))
+
+  await $.session.start({ cwd: '/repo', surface: 'terminal', isInteractive: true })
+  await $.turn.complete({ answer: 'an answer', durationMs: 1, isAborted: false, turnId: 't1', reason: 'answer' })
+  await $.prompt.submit({ text: 'no, do it the other way' })
+  for (let i = 0; i < 50 && texts.length === 0; i++) await new Promise((r) => setTimeout(r, 20))
+
+  expect(texts.length).toBe(1)
+  const rec = JSON.parse(texts[0])
+  expect(rec.lastPairs).toBe(1)                       // before the fix: 51, and the engine would skip 50 pairs of this session
+  expect(typeof rec.session).toBe('string')
+  expect(rec.session.startsWith('native:')).toBe(true)
+  expect(rec.session).not.toBe('native:someothersession')
+  expect(rec.scored).toBe(11)
+  expect(rec.steering).toBe(6)
+})
+
+test('two hard throws then an answer: scoring continues (one bad call is one lost sample)', async ($, on) => {
+  const models: string[] = []
+  const texts: string[] = []
+  mock.env(on, {})
+  on('session.start', (_, e) => ({ cwd: e.cwd }))
+  on('fs.exists', (_, e) => ({ value: e.path.endsWith('/.sawbuck/state.json') }))
+  on('fs.read', (_, e) => { throw new Error(`ENOENT: ${e.path}`) })
+  on('fs.write', (_, e) => { texts.push(e.text); return { value: undefined } })
+  on('model.complete', (_, e) => {
+    models.push(e.model)
+    if (models.length <= 2) throw new Error('overloaded')
+    return { value: { isAnswered: true, text: '{"pressure":1,"axis":"x","nudge":"y"}', usage: { input_tokens: 1, output_tokens: 1 } } }
+  })
+  on('turn.complete', () => ({ text: '' }))
+  on('prompt.submit', (_, e) => ({ text: e.text }))
+
+  await $.session.start({ cwd: '/repo', surface: 'terminal', isInteractive: true })
+  for (let i = 1; i <= 3; i++) {
+    await $.turn.complete({ answer: 'answer ' + i, durationMs: 1, isAborted: false, turnId: 't' + i, reason: 'answer' })
+    await $.prompt.submit({ text: 'no, change answer ' + i })
+    for (let k = 0; k < 50 && models.length < i; k++) await new Promise((r) => setTimeout(r, 20))
+  }
+  for (let i = 0; i < 50 && texts.length === 0; i++) await new Promise((r) => setTimeout(r, 20))
+
+  expect(models.length).toBe(3)   // the third call still happened
+  expect(texts.length).toBe(1)    // and its sample was recorded
+})
+
+// LAST on purpose: this test leaves the module's native judge switched off for the rest of the file.
+test('three hard throws in a row switch the native judge off for the session', async ($, on) => {
+  const models: string[] = []
+  mock.env(on, {})
+  on('session.start', (_, e) => ({ cwd: e.cwd }))
+  on('fs.exists', (_, e) => ({ value: e.path.endsWith('/.sawbuck/state.json') }))
+  on('fs.read', (_, e) => { throw new Error(`ENOENT: ${e.path}`) })
+  on('fs.write', () => ({ value: undefined }))
+  on('model.complete', (_, e) => { models.push(e.model); throw new Error('org-blocked') })
+  on('turn.complete', () => ({ text: '' }))
+  on('prompt.submit', (_, e) => ({ text: e.text }))
+
+  await $.session.start({ cwd: '/repo', surface: 'terminal', isInteractive: true })
+  for (let i = 1; i <= 4; i++) {
+    await $.turn.complete({ answer: 'answer ' + i, durationMs: 1, isAborted: false, turnId: 't' + i, reason: 'answer' })
+    await $.prompt.submit({ text: 'no, change answer ' + i })
+    await new Promise((r) => setTimeout(r, 100))
+  }
+
+  expect(models.length).toBe(3)   // the fourth turn made no call
+})

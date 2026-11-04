@@ -24,7 +24,14 @@ const summaryAtom = atom({ plugin: 'sawbuck-reins', key: 'summary' } as const, n
 
 // module state: survives within a session, resets on reload (steer.json persists).
 let pendingAnswer: string | null = null   // agent's answer, stashed on turn.complete, scored on the next prompt.submit
-let nativeBroken = false                   // $.model threw (missing / org-blocked) -> stop scoring for this session
+let nativeBroken = false                   // $.model kept throwing (missing / org-blocked) -> stop scoring for this session
+let hardFails = 0                          // consecutive hard throws from $.model.complete; three in a row = broken, one is a lost sample
+const HARD_FAIL_LIMIT = 3
+// Which session the pair index in steer.json belongs to. The API exposes no session id to a mod,
+// so this is a token minted when the module loads (a reload or a new process mints a new one):
+// the engine binds its lastPairs to the transcript path the same way, so a changed session starts
+// its count at the first pair instead of skipping as many pairs as the last session counted.
+const NATIVE_SESSION = 'native:' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8)
 
 // recent-window steer gauge: an EMA over ~STEER_SPAN scored turns, seeded on the first sample so
 // there is no cold-start bias. The band shows how you have steered LATELY, not a lifetime average
@@ -98,11 +105,12 @@ async function judgeMode($: any, options: any): Promise<'native' | 'off'> {
 // we still bump lastPairs so an engine fallback resumes from the right place.
 // The path is fixed text, relative to the session's working directory (the attached repo).
 async function recordNativePair($: any, s: { pressure: number } | null, span: number): Promise<void> {
-  const prior: { lastPairs: number; scored: number; steering: number; wsum: number; ema: number; distribution: Record<number, number> } =
-    { lastPairs: 0, scored: 0, steering: 0, wsum: 0, ema: 0, distribution: { 0: 0, 1: 0, 2: 0, 3: 0 } }
+  const prior: { session: string; lastPairs: number; scored: number; steering: number; wsum: number; ema: number; distribution: Record<number, number> } =
+    { session: '', lastPairs: 0, scored: 0, steering: 0, wsum: 0, ema: 0, distribution: { 0: 0, 1: 0, 2: 0, 3: 0 } }
   try {
     const p = JSON.parse(await $.fs.read('.sawbuck/steer.json'))
     if (p && p.lastPairs != null) {
+      prior.session = typeof p.session === 'string' ? p.session : ''
       prior.lastPairs = p.lastPairs
       prior.scored = p.scored || 0
       prior.steering = p.steering || 0
@@ -111,7 +119,9 @@ async function recordNativePair($: any, s: { pressure: number } | null, span: nu
       prior.distribution = p.distribution || prior.distribution
     }
   } catch { /* no prior tally = fresh */ }
-  prior.lastPairs = (prior.lastPairs || 0) + 1   // consumed one post-opener pair (aligns with engine pairs() index)
+  // consumed one post-opener pair (aligns with engine pairs() index); a tally from another session
+  // keeps its scored/steering/ema (a rolling readout) but the pair index restarts at this session's first
+  prior.lastPairs = prior.session === NATIVE_SESSION ? (prior.lastPairs || 0) + 1 : 1
   if (s) {
     prior.distribution[s.pressure] = (prior.distribution[s.pressure] || 0) + 1
     prior.scored++
@@ -124,7 +134,7 @@ async function recordNativePair($: any, s: { pressure: number } | null, span: nu
   }
   const rate = prior.scored ? prior.steering / prior.scored : 0   // lifetime (kept for older readers of steer.json)
   const rec = {
-    at: new Date().toISOString(), backend: 'native',
+    at: new Date().toISOString(), backend: 'native', session: NATIVE_SESSION,
     lastPairs: prior.lastPairs, turns: prior.lastPairs,
     scored: prior.scored, steering: prior.steering, steeringRate: rate, ema: prior.ema,
     meanPressure: prior.scored ? prior.wsum / prior.scored : 0,
@@ -134,9 +144,10 @@ async function recordNativePair($: any, s: { pressure: number } | null, span: nu
 }
 
 // Score the stashed (agent, user) pair natively. Best-effort, never blocks a turn.
-// A HARD throw (no $.model / org-blocked) trips nativeBroken so the next turn.complete
-// shells the engine instead; a SOFT fail (isAnswered:false / unparseable) stays native
-// but still records the consumed pair so the count doesn't drift.
+// A HARD throw (no $.model / org-blocked / a transient API error) costs one sample; three in a
+// row trip nativeBroken and scoring stops for the session (a build or org that blocks model calls
+// fails every time, a one-off overloaded answer does not). A SOFT fail (isAnswered:false /
+// unparseable) stays native but still records the consumed pair so the count doesn't drift.
 async function scoreNative($: any, prior: string, user: string): Promise<void> {
   let s: { pressure: number } | null = null
   try {
@@ -155,9 +166,11 @@ async function scoreNative($: any, prior: string, user: string): Promise<void> {
       }),
       bound,
     ]).finally(() => clearTimeout(timer))
+    hardFails = 0   // the host answered: whatever the text, the model API is there
     if (r && r.isAnswered !== false && r.text) s = parsePressure(r.text)
   } catch (e: any) {
-    if (!(e && String(e.message) === 'judge timeout')) nativeBroken = true   // a timeout is one lost sample, not a broken host
+    // a timeout is one lost sample, not a broken host; a hard throw counts toward the limit
+    if (!(e && String(e.message) === 'judge timeout') && ++hardFails >= HARD_FAIL_LIMIT) nativeBroken = true
     return   // don't record; the steer rate stays where it was
   }
   try { await recordNativePair($, s, await steerSpan($)) } catch { /* the band never blocks a turn */ }
@@ -217,7 +230,7 @@ async function readSummary($: any): Promise<Summary | null> {
 }
 
 // The mod runs no program. The five slash commands live in commands/ as plugin commands: each tells
-// Claude to run one exact, pinned `npx -y sawbuck@0.1.30 ...` through its own Bash tool, under Claude
+// Claude to run one exact, pinned `npx -y sawbuck@0.1.31 ...` through its own Bash tool, under Claude
 // Code's permission system, so Claude sees the verdict and can act on it.
 export const register: Register = (on, options) => {
   on('prompt.submit', async ($, e, next) => {
