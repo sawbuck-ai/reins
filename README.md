@@ -1,4 +1,4 @@
-# Sawbuck for Claude Code and Codex
+# Sawbuck for Claude Code, with Codex support in beta
 
 The plugin marketplace for [Sawbuck](https://sawbuck.ai). One install puts the check inside your
 coding session: a deterministic, zero-LLM check re-proves every win from the agent's source edits
@@ -14,7 +14,7 @@ Claude Code:
 /plugin install sawbuck-reins@sawbuck
 ```
 
-Codex:
+Codex (beta: the plugin installs and its skills load; the band and slash commands are Claude Code only):
 
 ```
 codex plugin marketplace add sawbuck-ai/reins
@@ -31,7 +31,7 @@ codex plugin add sawbuck-reins@sawbuck
   `/sawbuck-reins:watch` arms the Stop hook so every turn is checked, `/sawbuck-reins:context` shows
   the ranked history for the files you touch, `/sawbuck-reins:debt` lists the suppression debt still
   live in HEAD, and `/sawbuck-reins:status` shows everything Sawbuck has here in one view.
-- **Two skills** (Claude Code and Codex): `sawbuck-check`, verify that a win was earned in the source
+- **Two skills** (Claude Code, and Codex in beta): `sawbuck-check`, verify that a win was earned in the source
   and not by editing a test, grader, or config; and `reins-steering`, read how much you have been
   steering the agent and the cues you keep giving, from your own local transcripts.
 
