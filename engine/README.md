@@ -22,10 +22,10 @@ $ reins
 
 ## Harnesses
 
-reins reads **Claude Code** transcripts today. The parser lives in `scan.mjs`; everything
-downstream works on abstract `{ prior, user }` turn-pairs, so another harness (Codex, Cursor)
-is a parallel module that emits the same pairs plus its own session resolver, not a rewrite.
-`pairs()` is the seam.
+reins reads **Claude Code** transcripts by default and **Codex** transcripts with `--harness codex`
+(or `SAWBUCK_HARNESS=codex`; `codex.mjs` reads `~/.codex/sessions`). Each harness is a module that
+emits the same abstract `{ prior, user }` turn-pairs plus its own session resolver (`scan.mjs` for
+Claude Code, `codex.mjs` for Codex); everything downstream works on the pairs. `pairs()` is the seam.
 
 ## Backend (SAWBUCK_JUDGE)
 
@@ -58,7 +58,7 @@ reins --write          # writes .sawbuck/steer.json; the statusline picks it up
 ## Usage
 
 ```
-reins [--session <path.jsonl>] [--judge <backend>] [-n N] [--json] [--write [path]]
+reins [--session <path.jsonl>] [--judge <backend>] [--harness claude|codex] [-n N] [--json] [--write [path]]
 ```
 
 Defaults to your newest Claude Code session. `-n` scores only the most recent N

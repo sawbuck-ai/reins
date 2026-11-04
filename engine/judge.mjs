@@ -137,6 +137,9 @@ async function openai(model, promptStr) {
 }
 
 export function backend() { return process.env.SAWBUCK_JUDGE || "ollama:qwen2.5:7b"; }
+// a backend that costs money per call (confirm before a batch); ollama is local and free, and
+// "native" is not a CLI backend at all (the plugin scores it in-session; the CLI refuses it)
+export function hosted(b) { return b === "haiku" || b.startsWith("anthropic:") || b.startsWith("openai:"); }
 
 export async function score(prior, user) { return parse(await complete(PROMPT(prior, user), PRESSURE_SCHEMA)); }
 export async function harvestScore(prior, user) { return parseHarvest(await complete(HARVEST_PROMPT(prior, user), HARVEST_SCHEMA)); }

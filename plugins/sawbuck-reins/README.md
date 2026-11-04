@@ -14,7 +14,7 @@ Claude runs through its own Bash tool. The mod itself runs no program.
 
 (`sawbuck` is the marketplace name defined in `.claude-plugin/marketplace.json`.)
 
-Claude Code asks two things on install: a **scope** (choose **user** so the band follows you across your repos) and the **steering judge** (it defaults to a zero-setup `native` one, a small Claude call per scored turn on your own plan; turn it off, or score with the reins CLI instead, see below).
+Claude Code asks three things on install: a **scope** (choose **user** so the band follows you across your repos), the **guide band** (on by default; set it off if you show sawbuck in your own statusline instead, the judge still runs), and the **steering judge** (it defaults to a zero-setup `native` one, a small Claude call per scored turn on your own plan; turn it off, or score with the reins CLI instead, see below).
 
 ## What you get
 
@@ -54,7 +54,7 @@ Claude Code asks two things on install: a **scope** (choose **user** so the band
   what it has caught for you over time, the debt accruing now, and whether it is armed in this repo.
 
 Each command is a plain plugin command: a prompt that tells Claude to run one exact, pinned
-`npx -y sawbuck@0.1.31 ...` through its own Bash tool, pre-approved for that exact command and
+`npx -y sawbuck@0.1.32 ...` through its own Bash tool, pre-approved for that exact command and
 nothing else, so Claude Code's permission system is the one in charge. The `sawbuck` CLI rides the
 deterministic, zero-LLM `promptwheel` check and the `@promptwheel/logbook` memory. No `npm install`
 and no manual `sawbuck attach` to start.
@@ -63,10 +63,10 @@ and no manual `sawbuck attach` to start.
 
 **Programs it runs.** The mod (`hooks/register.tsx`) runs none: it makes no process call of any
 kind. The five slash commands in `commands/` are prompts; each tells Claude to run one exact
-command, `npx -y sawbuck@0.1.31 <check|attach --claude|context --speak|debt|status>`, through
+command, `npx -y sawbuck@0.1.32 <check|attach --claude|context --speak|debt|status>`, through
 Claude's own Bash tool, with `allowed-tools` pre-approving that exact string and nothing else. Claude
 sees the output and can act on it (fix the source after a gamed verdict, for instance). The
-`reins-steering` skill tells Claude to run the pinned `npx -y @sawbuck/reins@0.4.4` CLI the same way.
+`reins-steering` skill tells Claude to run the pinned `npx -y @sawbuck/reins@0.4.5` CLI the same way.
 Both need Node 18+ and npm on your PATH.
 
 **Files it writes.** The mod writes one file: `.sawbuck/steer.json` (the steer tally, in `native`
@@ -78,10 +78,15 @@ that repo's own git history (`events.jsonl`, `LOGBOOK.md`), which includes the c
 already in the git log. All of it is kept out of `git status` and removed by `sawbuck detach --purge`.
 To verify a change, the check also runs the repo's own test or metric command (from
 `promptwheel.config.json`, or the detected test script) in throwaway git worktrees, exactly as you
-would run it yourself; that is the only code it executes that is not one of the two pinned packages. `/sawbuck-reins:watch` runs `sawbuck attach --claude`, which edits two files on purpose:
+would run it yourself; that is the only code it executes that is not one of the two pinned packages. `/sawbuck-reins:watch` runs `sawbuck attach --claude`, which writes four things on purpose:
 `.claude/settings.local.json` in that repo (adds the UserPromptSubmit, SessionStart and Stop hooks
-that run `sawbuck turn` and the check) and `.git/info/exclude` (keeps `.sawbuck/` out of `git
-status`). `sawbuck detach` reverses both exactly. The mod itself never edits build, start-up,
+that run `sawbuck turn` and the check), the repo's git exclude file (`.git/info/exclude`, or where
+git keeps it for a worktree; keeps `.sawbuck/` out of `git status`), an attach receipt under the
+repo's git dir (`.git/sawbuck/attach.json`, what it created, so detach can undo exactly that), and
+one line in the user registry `~/.sawbuck/registry.json` (which repos are attached, for `sawbuck
+doctor --all`). It then runs one verification check at attach time, a `promptwheel run` on the last
+commit in throwaway worktrees, so you know whether it can measure anything here. `sawbuck detach`
+removes the hooks, the exclude block, the receipt and the registry line. The mod itself never edits build, start-up,
 settings or instructions files, and the only file it writes is that one steer tally, which nothing
 runs or obeys: the band and `sawbuck statusline` read it to show a percentage.
 

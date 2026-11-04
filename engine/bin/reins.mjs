@@ -7,7 +7,7 @@ import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { join, dirname, relative } from "node:path";
 import * as claudeHarness from "../scan.mjs";
 import * as codexHarness from "../codex.mjs";
-import { score, backend, harvestScore } from "../judge.mjs";
+import { score, backend, harvestScore, hosted } from "../judge.mjs";
 import { harvest, aggregateCues } from "../wizard.mjs";
 
 // show a path relative to the cwd when it lives under it (clean output, no leaked home dir);
@@ -24,6 +24,14 @@ const { scan } = claudeHarness;   // the aggregator is harness-neutral (it takes
 // for error messages: which harness, and where its transcripts were looked for
 const harnessName = isCodex ? "Codex" : "Claude Code";
 const harnessRoot = isCodex ? join(process.env.CODEX_HOME || "~/.codex", "sessions") : "~/.claude/projects";
+
+// SAWBUCK_JUDGE=native is the plugin's in-session judge (a call through Claude Code's own model API);
+// the CLI has no such backend, so it says so instead of scoring every pair as null
+function refuseNative(cmd) {
+  if (backend() !== "native") return;
+  process.stderr.write(`reins${cmd ? " " + cmd : ""}: SAWBUCK_JUDGE=native is the plugin's in-session judge, not a CLI backend.\n  The CLI scores with a local ollama model (the default, free) or a hosted key: unset SAWBUCK_JUDGE, or set it\n  (or pass --judge) to ollama:<model> | haiku | anthropic:<model> | openai:<model>.\n`);
+  process.exit(2);
+}
 
 // ---- `reins wizard` / `reins harvest`: read your old chats, rank the cues you keep giving ----
 if (argv[0] === "wizard" || argv[0] === "harvest") {
@@ -45,6 +53,7 @@ It reads every turn-pair with a model. On the local ollama default that is free;
     process.exit(0);
   }
   if (flag("--judge")) process.env.SAWBUCK_JUDGE = flag("--judge");
+  refuseNative("wizard");
   const b = backend();
   const sessionsN = parseInt(flag("--sessions"), 10) || 0;
   const maxPairs = parseInt(flag("--max"), 10) || 400;
@@ -52,12 +61,12 @@ It reads every turn-pair with a model. On the local ollama default that is free;
   const sinceMs = sinceDays > 0 ? Date.now() - sinceDays * 86400000 : 0;
   const sessions = H.resolveSessions({ limit: sessionsN, sinceMs });
   if (!sessions.length) { process.stderr.write(`reins wizard: no ${harnessName} sessions found under ${harnessRoot}\n`); process.exit(2); }
-  const hosted = !b.startsWith("ollama:");
-  if (hosted && !has("--yes")) {
+  const paid = hosted(b);
+  if (paid && !has("--yes")) {
     process.stderr.write(`reins wizard: ${b} is a HOSTED backend and will make up to ${maxPairs} calls (a small cost).\n  re-run with --yes to proceed, or use the free local default (omit --judge).\n`);
     process.exit(2);
   }
-  process.stderr.write(`reins wizard: harvesting up to ${maxPairs} turn-pairs from ${sessions.length} session(s) via ${b}${hosted ? " (hosted, paid)" : " (local, free)"}...\n`);
+  process.stderr.write(`reins wizard: harvesting up to ${maxPairs} turn-pairs from ${sessions.length} session(s) via ${b}${paid ? " (hosted, paid)" : " (local, free)"}...\n`);
   const rw = await harvest(harvestScore, { sessions, maxPairs, pairsFn: H.pairs });
   const wf = flag("--write");
   const out = wf && !wf.startsWith("--") ? wf : join(process.cwd(), ".sawbuck", "cues.json");
@@ -102,13 +111,14 @@ Free on the local ollama default. Seed from your whole history once with: reins 
     process.exit(0);
   }
   if (flag("--judge")) process.env.SAWBUCK_JUDGE = flag("--judge");
+  refuseNative("cues");
   const b = backend();
   // bounded per call: --append scores at most PER new pairs (oldest-first, so a backlog drains over
   // turns); a full scan caps at --max newest. Keeps the per-turn background call cheap.
   const PER = has("--append") ? 40 : (parseInt(flag("--max"), 10) || 400);
   // a hosted backend is paid: the same confirm the wizard asks for, so the disclosure
   // ("a hosted judge asks first") holds for every command that reads a transcript with a model
-  if (!b.startsWith("ollama:") && !has("--yes")) {
+  if (hosted(b) && !has("--yes")) {
     process.stderr.write(`reins cues: ${b} is a HOSTED backend and will make up to ${PER} calls this run (a small cost).\n  re-run with --yes to proceed, or use the free local default (omit --judge).\n`);
     process.exit(2);
   }
@@ -160,6 +170,7 @@ Backend is SAWBUCK_JUDGE (default ollama:qwen2.5:7b). Local = free + private.
 }
 
 if (flag("--judge")) process.env.SAWBUCK_JUDGE = flag("--judge");
+refuseNative("");
 const sess = H.resolveSessionPath(flag("--session"));
 if (!sess) { process.stderr.write(`reins: no ${harnessName} session transcript found under ${harnessRoot} (pass --session <path.jsonl>)\n`); process.exit(2); }
 
@@ -186,8 +197,12 @@ if (has("--append")) {
   // bounded per call (graceful): at most PER new pairs this run, so the first --append on a long
   // session never blocks on hundreds of judge calls at once; a backlog drains over the next turns.
   const PER = 40;
-  // same session = resume where the last run stopped; a new or changed session = its first pair
-  const start = prior.session === sess ? Math.min(prior.lastPairs, all.length) : 0;
+  // same session = resume where the last run stopped; a new or changed session = its first pair. A prior
+  // written by the plugin's native judge carries session "native:<token>" and only ever counts the LIVE
+  // session, so it is this transcript: resume by index (the pre-0.4.4 behavior) instead of re-scoring
+  // every pair the native judge already counted, and adopt the transcript path as the session.
+  const livePrior = prior.session === sess || prior.session.startsWith("native:");
+  const start = livePrior ? Math.min(prior.lastPairs, all.length) : 0;
   const consumed = Math.min(start + PER, all.length);
   for (const { prior: a, user: u } of all.slice(start, consumed)) {
     let s = null; try { s = await score(a, u); } catch {}

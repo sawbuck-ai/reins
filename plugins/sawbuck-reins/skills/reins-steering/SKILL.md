@@ -10,15 +10,18 @@ metadata:
 To see how much you redirected the agent this session (your steer rate):
 
 ```
-npx -y @sawbuck/reins@0.4.4
+npx -y @sawbuck/reins@0.4.5
 ```
 
 To build a cue inventory, the standing preferences you keep giving, from your chats:
 
 ```
-npx -y @sawbuck/reins@0.4.4 cues --append   # the running inventory, updated per session
-npx -y @sawbuck/reins@0.4.4 wizard          # a one-time harvest across your whole history
+npx -y @sawbuck/reins@0.4.5 cues --append   # the running inventory, updated per session
+npx -y @sawbuck/reins@0.4.5 wizard          # a one-time harvest across your whole history
 ```
+
+`SAWBUCK_JUDGE=native` is the plugin's in-session judge, not a CLI backend: for these commands leave it unset (a local
+ollama model, free) or set a hosted one, and add `--yes` for a hosted judge.
 
 These read your Claude Code sessions under `~/.claude/projects` and score each turn with a local
 model by default (free, nothing leaves your box), or a hosted one you set with `SAWBUCK_JUDGE`
@@ -30,9 +33,9 @@ stop and ask for `--yes` before they call it. The result is written to `.sawbuck
 Codex keeps its transcripts under `~/.codex/sessions`; add `--harness codex` to each command:
 
 ```
-npx -y @sawbuck/reins@0.4.4 --harness codex
-npx -y @sawbuck/reins@0.4.4 cues --harness codex --append
-npx -y @sawbuck/reins@0.4.4 wizard --harness codex
+npx -y @sawbuck/reins@0.4.5 --harness codex
+npx -y @sawbuck/reins@0.4.5 cues --harness codex --append
+npx -y @sawbuck/reins@0.4.5 wizard --harness codex
 ```
 
 The cues are **leads to review**, not rules the tool adopts for you. Read them, keep the ones that

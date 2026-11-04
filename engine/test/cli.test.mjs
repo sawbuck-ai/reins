@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, writeFileSync, readFileSync, existsSync, rmSync } from "node:fs";
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -75,5 +75,49 @@ test("cues on a hosted judge stops and asks for --yes before any call; --yes pro
     // the local default needs no confirm
     r = await run(d, ["cues", "--append", "--session", a], { SAWBUCK_JUDGE: "ollama:fake", OLLAMA_HOST: o.url });
     assert.equal(r.status, 0, r.stderr);
+  } finally { o.close(); rmSync(d, { recursive: true, force: true }); }
+});
+
+test("--append after the plugin's native judge resumes by index on the live session instead of re-scoring it", async () => {
+  const d = mkdtempSync(join(tmpdir(), "reins-cli-"));
+  const o = await fakeOllama();
+  try {
+    const env = { SAWBUCK_JUDGE: "ollama:fake", OLLAMA_HOST: o.url };
+    const a = join(d, "a.jsonl"); writeFileSync(a, session(3));
+    // the shape register.tsx writes: the session is a native token, two pairs already counted
+    mkdirSync(join(d, ".sawbuck"), { recursive: true });
+    writeFileSync(join(d, ".sawbuck", "steer.json"), JSON.stringify({ at: "2026-11-03T00:00:00.000Z", backend: "native", session: "native:abc123", lastPairs: 2, turns: 2, scored: 2, steering: 1, steeringRate: 0.5, ema: 0.5, meanPressure: 1, distribution: { 0: 1, 1: 0, 2: 1, 3: 0 }, _wsum: 2 }) + "\n");
+    const r = await run(d, ["--append", "--session", a], env);
+    assert.equal(r.status, 0, r.stderr);
+    const rec = JSON.parse(readFileSync(join(d, ".sawbuck", "steer.json"), "utf8"));
+    assert.equal(o.calls.length, 1, "only the third pair is new");
+    assert.equal(rec.scored, 3); assert.equal(rec.lastPairs, 3); assert.equal(rec.session, a, "the transcript path replaces the native token");
+    assert.match(r.stdout, /\+1 new turn/);
+  } finally { o.close(); rmSync(d, { recursive: true, force: true }); }
+});
+
+test("SAWBUCK_JUDGE=native is refused by the CLI with a pointer to the plugin, nothing written; ollama needs no confirm; haiku needs --yes", async () => {
+  const d = mkdtempSync(join(tmpdir(), "reins-cli-"));
+  const o = await fakeOllama();
+  try {
+    const a = join(d, "a.jsonl"); writeFileSync(a, session(1));
+    let r = await run(d, ["cues", "--append", "--session", a], { SAWBUCK_JUDGE: "native", OLLAMA_HOST: o.url });
+    assert.equal(r.status, 2);
+    assert.match(r.stderr, /native is the plugin's in-session judge/); assert.doesNotMatch(r.stderr, /HOSTED/);
+    assert.equal(existsSync(join(d, ".sawbuck", "cues.json")), false, "no run of nulls written");
+    r = await run(d, ["--append", "--session", a], { SAWBUCK_JUDGE: "native", OLLAMA_HOST: o.url });
+    assert.equal(r.status, 2); assert.match(r.stderr, /in-session judge/);
+    assert.equal(existsSync(join(d, ".sawbuck", "steer.json")), false);
+    // --judge native is refused the same way
+    r = await run(d, ["cues", "--append", "--session", a, "--judge", "native"], { OLLAMA_HOST: o.url });
+    assert.equal(r.status, 2); assert.match(r.stderr, /in-session judge/);
+    // the local default: no confirm, scores
+    r = await run(d, ["cues", "--append", "--session", a], { SAWBUCK_JUDGE: "ollama:fake", OLLAMA_HOST: o.url });
+    assert.equal(r.status, 0, r.stderr); assert.equal(o.calls.length, 1);
+    // a hosted backend: the confirm, before any call
+    r = await run(d, ["--append", "--session", a, "--judge", "haiku"], { OLLAMA_HOST: o.url });
+    assert.equal(r.status, 0, "the bare --append path does not confirm (unchanged); " + r.stderr);
+    r = await run(d, ["cues", "--session", a, "--judge", "haiku"], { OLLAMA_HOST: o.url });
+    assert.equal(r.status, 2); assert.match(r.stderr, /HOSTED backend/); assert.match(r.stderr, /--yes/);
   } finally { o.close(); rmSync(d, { recursive: true, force: true }); }
 });
