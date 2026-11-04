@@ -233,7 +233,33 @@ async function readSummary($: any): Promise<Summary | null> {
 // The mod runs no program. The five slash commands live in commands/ as plugin commands: each tells
 // Claude to run one exact, pinned `npx -y sawbuck@0.1.35 ...` through its own Bash tool, under Claude
 // Code's permission system, so Claude sees the verdict and can act on it.
+// One offer per repository, ever: in a git repo with no contract, one line in the system prompt asks Claude to
+// offer to sign it after doing the work. Decided in prompt.compose, which runs before prompt.submit, and kept for
+// that session so the prompt stays stable. Nothing is written or run without the person's yes. Asked-already lives
+// in $.store, per directory, outside the repo.
+const OFFER = "Sawbuck is installed and this repository has no contract yet. Do the person's request first and in full. Then end your reply with one short line of your own offering to sign this repository, saying it writes a contract and a lock file and watches each turn, and ask yes or no. Offer once, at the end of your first reply, and do not raise it again. If you are a subagent, ignore this. Only if they say yes, invoke the sawbuck-reins:contract skill. Never sign without that yes."
+let offerDecided = false, offering = false
+async function decideOffer($: any): Promise<void> {
+  if (offerDecided) return
+  offerDecided = true
+  try {
+    if (await present($, 'promptwheel.lock.json')) return
+    if (!(await present($, '.git'))) return
+    const key = 'offered:' + (await $.session.cwd())
+    if (await $.store.get(key)) return
+    await $.store.set(key, true)
+    offering = true
+  } catch { /* the offer never blocks a prompt */ }
+}
+
 export const register: Register = (on, options) => {
+  on('prompt.compose', async ($, e, next) => {
+    const r = await next(e)
+    await decideOffer($)
+    if (!offering) return r
+    return { sections: [...r.sections, { id: 'sawbuck-reins:offer', text: OFFER, scope: 'session' as const }] }
+  })
+
   on('prompt.submit', async ($, e, next) => {
     try {
       const s = await readSummary($)

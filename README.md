@@ -27,7 +27,7 @@ codex plugin add sawbuck-reins@sawbuck
 
 - **A guide band** above the prompt (Claude Code): `watching`, `N caught`, the last verdict, and a
   live steer rate, read from the repo's local `.sawbuck/` record each turn. It never blocks a prompt.
-- **One step to start** (Claude Code): the band tells you to run `/sawbuck-reins:contract`, which signs the repo and starts watching every turn.
+- **Nothing to remember** (Claude Code): in a git repo with no contract, Claude offers once to sign it. Say yes and it signs the repo and watches every turn. Or run `/sawbuck-reins:contract` yourself.
 - **Five more slash commands** (Claude Code): `/sawbuck-reins:check` verifies your latest change now,
   `/sawbuck-reins:watch` arms the Stop hook so every turn is checked, `/sawbuck-reins:context` shows
   the ranked history for the files you touch, `/sawbuck-reins:debt` lists the suppression debt still

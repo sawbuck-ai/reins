@@ -244,3 +244,23 @@ test('three hard throws in a row switch the native judge off for the session', a
 
   expect(models.length).toBe(3)   // the fourth turn made no call
 })
+
+test('the offer: a git repo with no contract gets one line once per directory, a signed repo gets none, and nothing is written', async ($, on) => {
+  const writes: string[] = []
+  let hasLock = false
+  mock.env(on, {})
+  on('session.start', (_, e) => ({ cwd: e.cwd }))
+  on('fs.exists', (_, e) => ({ value: e.path.endsWith('.git') || (hasLock && e.path.endsWith('promptwheel.lock.json')) }))
+  on('fs.read', (_, e) => { throw new Error(`ENOENT: ${e.path}`) })
+  on('fs.write', (_, e) => { writes.push(e.path); return { value: undefined } })
+  on('prompt.compose', () => ({ sections: [{ id: 'intro', text: 'x', scope: 'shared' as const }] }))
+  on('session.cwd', () => ({ value: '/repo' }))
+  const store = new Map<string, unknown>()
+  on('store.get', (_, e) => ({ value: store.get(e.key) }))
+  on('store.set', (_, e) => { store.set(e.key, e.value); return { value: undefined } })
+  await $.session.start({ cwd: '/repo', surface: 'terminal', isInteractive: true })
+  const r = await $.prompt.compose({ model: 'm', promptModel: 'm', surfaces: [], tools: [], outputStyle: null, traits: [] })
+  expect(r.sections.some((s) => s.id === 'sawbuck-reins:offer')).toBe(true)
+  expect(writes).toEqual([])
+  expect([...store.keys()]).toEqual(['offered:/repo'])
+})

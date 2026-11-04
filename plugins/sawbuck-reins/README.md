@@ -16,6 +16,10 @@ Claude runs through its own Bash tool. The mod itself runs no program.
 
 Claude Code asks three things on install: a **scope** (choose **user** so the band follows you across your repos), the **guide band** (on by default; set it off if you show sawbuck in your own statusline instead, the judge still runs), and the **steering judge** (it defaults to a zero-setup `native` one, a small Claude call per scored turn on your own plan; turn it off, or score with the reins CLI instead, see below).
 
+## Getting started
+
+You don't need to remember a command. The first time you use Claude Code in a git repository with no contract, Claude finishes what you asked and then offers once to sign the repo. Say yes and it runs `/sawbuck-reins:contract`, which signs the repo and watches every turn. Say anything else and it won't ask again in that directory. Nothing is written or run without that yes, and it never commits for you.
+
 ## What you get
 
 - **A guide band** above the prompt, read from the repo's local `.sawbuck/` record each turn:
@@ -101,6 +105,7 @@ whole conversation. The `reins-steering` skill runs `reins wizard` / `reins cues
 your own local Claude Code or Codex transcripts to find the cues you keep giving, send each bounded
 pair to the judge you chose (a hosted judge asks for `--yes` first), and write a short list of
 cue phrases to `.sawbuck/cues.json` in the repo.
+The offer adds one line to Claude's system prompt, in a git repository with no contract, for the session it first appears in; which directories have been asked is kept in Claude Code's plugin store on your machine.
 There is no telemetry, no analytics, and no other network call; the deterministic check never calls
 a model.
 
