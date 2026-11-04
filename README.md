@@ -14,7 +14,7 @@ Claude Code:
 /plugin install sawbuck-reins@sawbuck
 ```
 
-Codex (beta: the plugin installs and its skills load; the band and slash commands are Claude Code only):
+Codex (beta: the plugin installs, but it has not been run end to end; the band and slash commands are Claude Code only):
 
 ```
 codex plugin marketplace add sawbuck-ai/reins
