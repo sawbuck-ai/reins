@@ -1,3 +1,4 @@
 node_modules/
 .sawbuck/
-.promptwheel/
+.promptwheel/*
+!.promptwheel/packs/

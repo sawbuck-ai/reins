@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "items": [
+    "cap:engine:net",
+    "host:api.anthropic.com",
+    "host:api.openai.com",
+    "module:engine",
+    "module:plugins",
+    "scripthash:engine/package.json:test:f90321a3f3beab5b",
+    "workflow:.github/workflows/ci.yml"
+  ]
+}
