@@ -186,6 +186,12 @@ async function present($: any, path: string): Promise<boolean> {
   try { await $.fs.read(path); return true } catch { return false }
 }
 
+// In a git repository, from any folder of it? The engine knows; a build without $.session.repo keeps
+// the old behaviour.
+async function inRepo($: any): Promise<boolean> {
+  try { return (await $.session.repo()) !== null } catch { return true }
+}
+
 // Read the session repo's sawbuck status. Fast: file reads only, never shells, never blocks.
 // Every path is fixed text relative to the session's working directory.
 // null = not a sawbuck-relevant repo (hide the band).
@@ -195,6 +201,9 @@ async function readSummary($: any): Promise<Summary | null> {
     // a test command thanks to zero-config). Show the band for either; hide otherwise.
     // Only `active` runs the judge or writes under .sawbuck/: an unattached repo gets the
     // "ready" label and nothing else (no model call, no files).
+    // Outside a git repository nothing can be checked, so nothing is gathered: say so and stop, even
+    // where an old version left a .sawbuck behind. No judge, no model call, no file.
+    if (!(await inRepo($))) return { caught: 0, latest: null, armed: false, active: false, mem: false, last: '', steer: null, signed: false, noRepo: true }
     const active = await present($, '.sawbuck/state.json')
     const armed = (await present($, 'promptwheel.config.json')) || (await present($, 'package.json'))
     // memory-only: logbook history is here, but no check contract (history recall without the gate)
@@ -224,7 +233,7 @@ async function readSummary($: any): Promise<Summary | null> {
       if (sj && sj.scored) steer = Math.round(((sj.ema != null ? sj.ema : sj.steeringRate) || 0) * 100)
     } catch {}
     const signed = await present($, 'promptwheel.lock.json')   // signed = has run the one setup step; the band always names the next step
-    return { caught, latest, armed, active, mem, last, steer, signed }
+    return { caught, latest, armed, active, mem, last, steer, signed, noRepo: false }
   } catch {
     return null
   }
@@ -319,6 +328,13 @@ export const register: Register = (on, options) => {
     } catch { /* $.env is best-effort; default to showing the band */ }
 
     const { Box, Text } = $.ui.resolve(e)
+    if (s.noRepo) {
+      return (
+        <Box>
+          <Text dimColor>🐴 sawbuck · no repo here</Text>
+        </Box>
+      )
+    }
     const icon = ({ verified: '✓', gamed: '🚩', regression: '✗', inconclusive: '≈', allowed: '✎' } as Record<string, string>)[s.last] || ''
     // the steer icon reads the RECENT rate (the % beside it carries the detail): reins slack (🐎)
     // when under half your recent turns are steers, taut (✊) past half.

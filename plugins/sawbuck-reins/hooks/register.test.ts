@@ -264,3 +264,23 @@ test('the offer: a git repo with no contract gets one line once per directory, a
   expect(writes).toEqual([])
   expect([...store.keys()]).toEqual(['offered:/repo'])
 })
+
+test('outside a git repository: no judge, no model call and no file, even where an old .sawbuck was left behind', async ($, on) => {
+  const writes: string[] = []
+  const models: unknown[] = []
+  mock.env(on, {})
+  on('session.start', (_, e) => ({ cwd: e.cwd }))
+  on('session.repo', () => ({ value: null }))
+  on('fs.exists', (_, e) => ({ value: e.path.endsWith('/.sawbuck/state.json') || e.path.endsWith('package.json') }))
+  on('fs.read', (_, e) => { throw new Error(`ENOENT: ${e.path}`) })
+  on('fs.write', (_, e) => { writes.push(e.path); return { value: undefined } })
+  on('model.complete', (_, e) => { models.push(e.model); return { value: { isAnswered: true, text: '{"pressure":2,"axis":"x","nudge":"y"}', usage: { input: 1, output: 1 } } } })
+  on('turn.complete', () => ({ text: '' }))
+  on('prompt.submit', (_, e) => ({ text: e.text }))
+  await $.session.start({ cwd: '/notes', surface: 'terminal', isInteractive: true })
+  await $.turn.complete({ answer: 'done', durationMs: 1, isAborted: false, turnId: 't1', reason: 'answer' })
+  await $.prompt.submit({ text: 'no, change the approach' })
+  await new Promise((r) => setTimeout(r, 150))
+  expect(models).toEqual([])
+  expect(writes).toEqual([])
+})
