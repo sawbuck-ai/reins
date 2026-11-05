@@ -1,6 +1,6 @@
 # sawbuck-reins
 
-Sawbuck in Claude Code, one install. A guide band above the prompt plus five slash commands, so
+Sawbuck in Claude Code, one install. A guide band above the prompt plus six slash commands, so
 you can catch your agent gaming a metric without leaving the session or touching the CLI. The band
 and the steering judge are a mod (a hooks module); the commands are plain plugin commands that
 Claude runs through its own Bash tool. The mod itself runs no program.
@@ -34,17 +34,18 @@ Outside a git repository there is nothing to check, so the band reads `no repo h
 - **Your rules and shape, on demand.** `/sawbuck-reins:rules` and `/sawbuck-reins:shape` read your history when you ask.
 
   **Your steering shape.** `/sawbuck-reins:shape` labels a sample of your messages once and draws what you push on: 11 spokes
-  in 4 groups, with a card at `~/.sawbuck/shape.svg`. Only totals are kept, and each run is saved with its date to compare
+  in 4 groups once 200 messages are labelled (the 4 groups alone before that), with a card at `~/.sawbuck/shape.svg`. The sampled
+  messages and their labels are deleted when the check finishes. Only totals are kept, one line per run with its date, to compare
   later. It says what you pushed on, not how good you are, and the 0 to 99 scale is relative to your own top spoke.
   It also reads short excerpts of up to 120 past turns and names at most 3 habits the agent has that you never push on.
   Each must quote the agent from 3 turns, a plain check confirms the quotes, and the excerpts are deleted after. Your own
   messages are never shown. These are leads from one read: on one person, two models named the same two habits and
   differed on the third.
 
-  **Find your unwritten rules.** `/sawbuck-reins:rules` gathers what you typed to Claude Code on this machine, with copies
+  **The rules you keep enforcing.** Tested on one person so far. `/sawbuck-reins:rules` gathers what you typed to Claude Code on this machine, with copies
   and likely secrets removed, and asks the model once for the rules you keep enforcing. Your messages go to the model,
   like any prompt. Every proposed rule must carry at least 2 quotes that a plain check finds in your own words. Nothing
-  is added unless you pick it. Rules you keep go in `~/.claude/CLAUDE.md`, which applies to you in every repo and no repo shares, or in one repo's
+  is added unless you pick it, and the gathered messages and quotes are deleted when the check finishes. Rules you keep go in `~/.claude/CLAUDE.md`, which applies to you in every repo and no repo shares, or in one repo's
   `CLAUDE.md` if the team should have them. If two rules can pull apart, it proposes a line saying which wins: on Opus, two such
   rules lost the test rule 4 of 10 times, and 0 of 20 with that line, in scenarios we wrote. Secret filtering is by pattern, so it can miss one: read `~/.sawbuck/rule-input.txt` first
   if your history might hold any.
@@ -58,9 +59,13 @@ Outside a git repository there is nothing to check, so the band reads `no repo h
 - **`/sawbuck-reins:check`** verifies your latest change right now (zero-config, no setup): it says
   plainly whether the win was earned in the source, was gamed, is a regression, or could not be
   measured, and Claude sees the verdict, so a gamed one gets fixed in the source.
+- **`/sawbuck-reins:audit`** reads your agent files (`CLAUDE.md`, `AGENTS.md`, `.cursorrules`) for rules that can pull
+  against each other, and proposes a line saying which wins. It runs no program and needs no history.
+- **`/sawbuck-reins:status`** shows what Sawbuck has here in one view: what it caught, the debt now, whether it is
+  watching, and what you keep telling the agent.
 
 Each command is a plain plugin command: a prompt that tells Claude to run exact, pinned
-`npx -y sawbuck@0.1.47 ...` calls through its own Bash tool, pre-approved for those exact commands and
+`npx -y sawbuck@0.1.48 ...` calls through its own Bash tool, pre-approved for those exact commands and
 nothing else, so Claude Code's permission system is the one in charge. The `sawbuck` CLI rides the
 deterministic, zero-LLM `promptwheel` check and the `@promptwheel/logbook` memory. No `npm install`
 and no manual `sawbuck attach` to start.
@@ -69,14 +74,20 @@ and no manual `sawbuck attach` to start.
 
 **Programs it runs.** The mod (`hooks/register.tsx`) runs none: it makes no process call of any
 kind. The slash commands in `commands/` are prompts; each tells Claude to run exact
-commands, `npx -y sawbuck@0.1.47 <contract|check|attach|rules|shape|status>` (`/sawbuck-reins:contract` runs `contract`, then `attach`), through
+commands, `npx -y sawbuck@0.1.48 <contract|check|attach|rules|shape|status>` (`/sawbuck-reins:contract` runs `contract`, then `attach`), through
 Claude's own Bash tool, with `allowed-tools` pre-approving those exact strings and nothing else. Claude
 sees the output and can act on it (fix the source after a gamed verdict, for instance). The
 `reins-steering` skill tells Claude to run the pinned `npx -y @sawbuck/reins@0.4.5` CLI the same way.
 Both need Node 18+ and npm on your PATH.
 
 **Files it writes.** The mod writes one file: `.sawbuck/steer.json` (the steer tally, in `native`
-mode, at that fixed path relative to the session's working directory). The commands and skills,
+mode, at that fixed path relative to the session's working directory). `/sawbuck-reins:rules` and
+`/sawbuck-reins:shape` write under `~/.sawbuck/`: your gathered messages and what the model wrote from them
+(`rule-input.txt`, `rule-candidates.json`, `shape-input.txt`, `shape-labels.json`, `shape-turns.txt`,
+`shape-notsaid.json`), all deleted when the check finishes, and what stays: `shape-history.jsonl` (totals per
+run) and the card (`shape.svg`, `shape.png`). A rule you pick is added to the file you choose: `~/.claude/CLAUDE.md`
+or the repo's `CLAUDE.md`, `AGENTS.md` or `.cursorrules`. `sawbuck attach` adds the repo to `~/.sawbuck/registry.json`.
+The other commands and skills,
 through the CLIs Claude runs, write inside the repo you attached: the same `steer.json` when the
 reins CLI scores, the `sawbuck` CLI's own
 record (`.sawbuck/state.json`, `activity.jsonl`, `results.json`), and the memory engine's cache of
@@ -114,11 +125,12 @@ The offer adds one line to Claude's system prompt, in a git repository with no c
 There is no telemetry, no analytics, and no other network call; the deterministic check never calls
 a model.
 
-**What each hook does.** The mod has three. `prompt.submit` scores the previous (agent answer, your
+**What each hook does.** The mod has four. `prompt.compose` adds the one-line offer, in a git repository with
+no rules, once per directory. `prompt.submit` scores the previous (agent answer, your
 reply) pair in the background and reads `.sawbuck/` to refresh the band; it never changes your
 prompt, and your prompt text goes nowhere but that bounded model call. What the band reads from
 `.sawbuck/` (`state.json`, `results.json`, `activity.jsonl`, `steer.json`) is shown to you in the
 band and is not sent anywhere. `turn.complete` stashes the agent's answer for that scoring.
 `ui.render` draws the band above the prompt. None of them block a turn. In a git repo with no contract the band names the one step and the offer adds its one line; otherwise they stay silent
-in repos where Sawbuck is not attached. The mod registers no commands, tools, or agents; the five
+in repos where Sawbuck is not attached. The mod registers no commands, tools, or agents; the six
 commands are files in `commands/`.

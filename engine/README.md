@@ -32,8 +32,8 @@ Claude Code, `codex.mjs` for Codex); everything downstream works on the pairs. `
 The judge model is a socket. Set `SAWBUCK_JUDGE` (default `ollama:qwen2.5:7b`):
 
 - `ollama:<model>`, local, free, private (nothing leaves your box). `OLLAMA_HOST`
-  overrides the endpoint. Benchmarked default `qwen2.5:7b`: fastest, smallest, and
-  tied-best accuracy against an opus-labeled gold, model size did not help.
+  overrides the endpoint. The default is `qwen2.5:7b`. On one person's history it called steering far more often than
+  an Opus reading did (62% against 24%), so read its rate as a rough one.
 - `haiku`, Anthropic `claude-haiku-5-5` (needs `ANTHROPIC_API_KEY`); zero VRAM,
   about $0.00005 per turn.
 - `anthropic:<model>`, any Anthropic model.
@@ -83,6 +83,5 @@ candidates from your history to review, not rules it adopts for you.
 ## Honest limits
 
 A single-turn judge: it sees the agent action and your reply, not the whole thread.
-Models agree on the *shape* (pressure within one level ~95% of the time) more than
-on exact per-turn scores, so read the seismograph and the distribution, not any one
-cell.
+Models agree more on the overall picture than on any one turn's score, so read the
+distribution, not a single cell.

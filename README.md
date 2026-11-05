@@ -14,7 +14,7 @@ Claude Code:
 /plugin install sawbuck-reins@sawbuck
 ```
 
-Codex (beta: the plugin installs, but it has not been run end to end; the band and slash commands are Claude Code only):
+Codex (untested: the plugin installs, but it has not been run end to end; the band and slash commands are Claude Code only):
 
 ```
 codex plugin marketplace add sawbuck-ai/reins
@@ -29,8 +29,8 @@ codex plugin add sawbuck-reins@sawbuck
   read from the repo's local `.sawbuck/` record each turn. It never blocks a prompt.
 - **Nothing to remember** (Claude Code): in a git repo with no rules, Claude offers once to add them. Say yes and it writes the rule and wires the check: every turn checks protected paths, and every commit is re-proved. Or run `/sawbuck-reins:contract` yourself.
 - **`/sawbuck-reins:audit`** finds rules in your agent files that can pull against each other, and proposes which wins.
-- **`/sawbuck-reins:rules`** proposes the rules you keep enforcing, with quotes from your own messages, and you pick what to keep.
-- **`/sawbuck-reins:shape`** shows what you push on, from a sample of your own messages, and names habits the agent has that you never push on, with the agent's own words.
+- **`/sawbuck-reins:rules`** proposes the rules you keep enforcing, with quotes from your own messages, and you pick what to keep. Tested on one person so far.
+- **`/sawbuck-reins:shape`** shows what you push on, from a sample of your own messages, and names habits the agent has that you never push on, with the agent's own words. Leads from one read, tested on one person.
 - **`/sawbuck-reins:status`** shows what it caught, the debt, and what you keep telling the agent.
 - **Two more slash commands** (Claude Code): `/sawbuck-reins:check` verifies your latest change now, and
   `/sawbuck-reins:contract` gives the repo its rules and wires the Stop hook (protected paths every turn, re-proof every commit).

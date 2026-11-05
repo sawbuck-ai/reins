@@ -206,7 +206,7 @@ async function scoreNative($: any, prior: string, user: string, repo: string, at
 }
 
 // one scoring at a time: steer.json is a read-modify-write, and two quick turns would otherwise
-// interleave their 12 s model calls and lose a sample
+// interleave their model calls (up to 30 s each) and lose a sample
 let scoring: Promise<void> = Promise.resolve()
 
 // Is the file there? $.fs.exists where the build has it; an older build answers by reading.
@@ -281,7 +281,7 @@ async function readSummary($: any): Promise<Summary | null> {
 }
 
 // The mod runs no program. The slash commands live in commands/ as plugin commands: each tells
-// Claude to run one exact, pinned `npx -y sawbuck@0.1.47 ...` through its own Bash tool, under Claude
+// Claude to run one exact, pinned `npx -y sawbuck@0.1.48 ...` through its own Bash tool, under Claude
 // Code's permission system, so Claude sees the verdict and can act on it.
 // One offer per repository, ever: in a git repo with no rules, one line in the system prompt asks Claude to
 // offer to sign it after doing the work. Decided in prompt.compose, which runs before prompt.submit, and kept for
