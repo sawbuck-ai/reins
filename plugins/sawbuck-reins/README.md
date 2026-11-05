@@ -36,7 +36,7 @@ Outside a git repository there is nothing to check, so the band reads `no repo h
 
   **Your steering shape.** `/sawbuck-reins:shape` labels a sample of your messages once and draws what you push on: 11 spokes
   in 4 groups, with a card at `~/.sawbuck/shape.svg`. Only totals are kept, and each run is saved with its date to compare
-  later. It also counts what the agent did over your last 90 days, with no model, leaving out scratch work and edits made by a script. Counts are often wrong, so before naming a pattern the model reads up to 6 short excerpts of the turns behind it, once, and they are deleted afterwards. Only totals are kept. It names two kinds of pattern, each with a rule to try: fighting it (you push and it keeps happening) and not said (it happens, you never push, and no rule covers it). It says what you pushed on, not how good you are, and the 0 to 99 scale is relative to your own top spoke.
+  later. It says what you pushed on, not how good you are, and the 0 to 99 scale is relative to your own top spoke.
 
   **Find your unwritten rules.** `/sawbuck-reins:rules` gathers what you typed to Claude Code on this machine, with copies
   and likely secrets removed, and asks the model once for the rules you keep enforcing. Your messages go to the model,
@@ -55,12 +55,6 @@ Outside a git repository there is nothing to check, so the band reads `no repo h
 - **`/sawbuck-reins:check`** verifies your latest change right now (zero-config, no setup): it says
   plainly whether the win was earned in the source, was gamed, is a regression, or could not be
   measured, and Claude sees the verdict, so a gamed one gets fixed in the source.
-- **`/sawbuck-reins:context`** the ranked relevant history for the files you are touching right now:
-  reverts (do-not-retry), weakened tests, and fragile hot spots, before you act.
-- **`/sawbuck-reins:debt`** the whole-repo live suppression debt: what is still silenced in HEAD now,
-  disabled tests first, risk-ranked by how fragile each file is. Run it on demand (it scans HEAD).
-- **`/sawbuck-reins:status`** the inventory: everything Sawbuck has accumulated here in one view,
-  what it has caught for you over time, the debt accruing now, and whether it is armed in this repo.
 
 Each command is a plain plugin command: a prompt that tells Claude to run exact, pinned
 `npx -y sawbuck@0.1.45 ...` calls through its own Bash tool, pre-approved for those exact commands and
@@ -72,7 +66,7 @@ and no manual `sawbuck attach` to start.
 
 **Programs it runs.** The mod (`hooks/register.tsx`) runs none: it makes no process call of any
 kind. The slash commands in `commands/` are prompts; each tells Claude to run exact
-commands, `npx -y sawbuck@0.1.45 <contract|check|attach --claude|context --speak|debt|status>` (`/sawbuck-reins:contract` runs `contract`, then `attach --claude`), through
+commands, `npx -y sawbuck@0.1.45 <contract|check|attach|rules|shape>` (`/sawbuck-reins:contract` runs `contract`, then `attach --claude`), through
 Claude's own Bash tool, with `allowed-tools` pre-approving those exact strings and nothing else. Claude
 sees the output and can act on it (fix the source after a gamed verdict, for instance). The
 `reins-steering` skill tells Claude to run the pinned `npx -y @sawbuck/reins@0.4.5` CLI the same way.

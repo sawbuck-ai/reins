@@ -1,19 +1,19 @@
 ---
-description: One step to set up Sawbuck: sign this repo to a contract and start watching every turn
-allowed-tools: ["Bash(npx -y sawbuck@0.1.45 contract)", "Bash(npx -y sawbuck@0.1.45 attach --claude)"]
+description: One step to set up Sawbuck: give this repo its rules and check every turn
+allowed-tools: ["Bash(npx -y sawbuck@0.1.45 contract)", "Bash(npx -y sawbuck@0.1.45 attach)"]
 ---
 
-Run exactly these two commands in the current repo, in order, and show the person their output verbatim. The first also adds the rules to AGENTS.md, and to CLAUDE.md or .cursorrules if they exist, and on a GitHub repo writes .github/workflows/sawbuck.yml, so tell them that:
+Run exactly these two commands in the current repo, in order, and show the person their output verbatim. The first adds the rule to AGENTS.md, and to CLAUDE.md or .cursorrules if they exist.
 
 ```
 npx -y sawbuck@0.1.45 contract
-npx -y sawbuck@0.1.45 attach --claude
+npx -y sawbuck@0.1.45 attach
 ```
 
-The first keeps any contract already here, adds tests and tripwires if there is none, then protected paths, the supply-chain guards, and promptwheel.lock.json. The second wires the hooks that check every turn. Running them twice changes nothing.
+The first keeps any rules already here, adds your tests if there are none, and sets the protected paths. The second wires the hooks that check every turn. Running them twice changes nothing.
 
-Then tell the person, in two lines: they are set up, and they should review and commit AGENTS.md, promptwheel.config.json, promptwheel.lock.json, .github/workflows/sawbuck.yml if it was added, and .promptwheel/packs/.
+Then tell the person, in two lines: they are set up, they should review and commit AGENTS.md and promptwheel.config.json, and `npx sawbuck contract --full` adds supply-chain guards, a repo lock and a CI check when they want them.
 
-Do not commit for them, and do not add the suggested product paths to the contract. Those are the person's decisions.
+Do not commit for them, and do not add the suggested product paths. Those are the person's decisions.
 
 Then add one line: `/sawbuck-reins:rules` can propose the rules they keep enforcing, from their own messages, if they want them written down.

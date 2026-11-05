@@ -271,7 +271,7 @@ test('the offer: a git repo with no contract gets one line once per directory, a
   let hasLock = false
   mock.env(on, { SAWBUCK_JUDGE: 'native' })
   on('session.start', (_, e) => ({ cwd: e.cwd }))
-  on('fs.exists', (_, e) => ({ value: e.path.endsWith('.git') || (hasLock && e.path.endsWith('promptwheel.lock.json')) }))
+  on('fs.exists', (_, e) => ({ value: e.path.endsWith('.git') || (hasLock && e.path.endsWith('promptwheel.config.json')) }))
   on('fs.read', (_, e) => { throw new Error(`ENOENT: ${e.path}`) })
   on('fs.write', (_, e) => { writes.push(e.path); return { value: undefined } })
   on('prompt.compose', () => ({ sections: [{ id: 'intro', text: 'x', scope: 'shared' as const }] }))

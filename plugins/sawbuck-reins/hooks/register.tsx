@@ -272,7 +272,7 @@ async function readSummary($: any): Promise<Summary | null> {
       // a week without an update is history, not a reading (the judge is off unless someone turned it on)
       if (sj && sj.scored && !(sj.at && Date.now() - Date.parse(sj.at) > 7 * 864e5)) steer = Math.round(((sj.ema != null ? sj.ema : sj.steeringRate) || 0) * 100)
     } catch {}
-    const signed = await present($, 'promptwheel.lock.json')   // signed = has run the one setup step; the band always names the next step
+    const signed = await present($, 'promptwheel.config.json')   // signed = has run the one setup step; the band always names the next step
     return { caught, latest, armed, active, mem, last, steer, signed, noRepo: false, repo, repeat: await repeatLine($) }
   } catch {
     return null
@@ -282,17 +282,17 @@ async function readSummary($: any): Promise<Summary | null> {
 // The mod runs no program. The slash commands live in commands/ as plugin commands: each tells
 // Claude to run one exact, pinned `npx -y sawbuck@0.1.45 ...` through its own Bash tool, under Claude
 // Code's permission system, so Claude sees the verdict and can act on it.
-// One offer per repository, ever: in a git repo with no contract, one line in the system prompt asks Claude to
+// One offer per repository, ever: in a git repo with no rules, one line in the system prompt asks Claude to
 // offer to sign it after doing the work. Decided in prompt.compose, which runs before prompt.submit, and kept for
 // that session so the prompt stays stable. Nothing is written or run without the person's yes. Asked-already lives
 // in $.store, per directory, outside the repo.
-const OFFER = "Sawbuck is installed and this repository has no contract yet. Do the person's request first and in full. Then end your reply with one short line of your own offering to sign this repository, saying it writes a contract and a lock file, adds the rules to AGENTS.md (and CLAUDE.md if there is one), adds a CI check on GitHub repos, and watches each turn, and ask yes or no. Offer once, at the end of your first reply, and do not raise it again. If you are a subagent, ignore this. Only if they say yes, invoke the sawbuck-reins:contract skill. Never sign without that yes."
+const OFFER = "Sawbuck is installed and this repository has no rules yet. Do the person's request first and in full. Then end your reply with one short line of your own offering to add them, saying it writes a rule to AGENTS.md, sets protected paths in promptwheel.config.json, and checks each turn, and ask yes or no. Offer once, at the end of your first reply, and do not raise it again. If you are a subagent, ignore this. Only if they say yes, invoke the sawbuck-reins:contract skill. Never do it without that yes."
 let offerDecided = false, offering = false
 async function decideOffer($: any): Promise<void> {
   if (offerDecided) return
   offerDecided = true
   try {
-    if (await present($, 'promptwheel.lock.json')) return
+    if (await present($, 'promptwheel.config.json')) return
     if (!(await present($, '.git'))) return
     const key = 'offered:' + (await $.session.cwd())
     if (await $.store.get(key)) return
@@ -393,7 +393,7 @@ export const register: Register = (on, options) => {
     if (s.active) {
       return (
         <Box>
-          <Text dimColor>🐴 sawbuck · {at}watching{icon ? ' · ' + icon : ''}{steerSeg}{s.repeat ? ' · ' + s.repeat : ''}{s.signed ? '' : ' · /sawbuck-reins:contract to sign'}</Text>
+          <Text dimColor>🐴 sawbuck · {at}watching{icon ? ' · ' + icon : ''}{steerSeg}{s.repeat ? ' · ' + s.repeat : ''}{s.signed ? '' : ' · /sawbuck-reins:contract to add rules'}</Text>
         </Box>
       )
     }
