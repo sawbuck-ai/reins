@@ -9,4 +9,4 @@ Run exactly this command in the current repo and show the person its output verb
 npx -y sawbuck@0.1.44 status
 ```
 
-It shows what the check has caught over time, the suppression debt accruing now, the steer rate, and whether the Stop hook is armed in this repo.
+It shows what the check has caught over time, the suppression debt accruing now, and whether the Stop hook is armed in this repo.
