@@ -334,3 +334,18 @@ test('the scratchpad keeps the newest 2000 steers', async ($, on) => {
   expect(list.length).toBe(2000)
   expect(list[1999].nudge).toBe('newest one')
 })
+
+test('the memory band names no command that is gone: it points at the CLI for history', async ($, on) => {
+  mock.env(on, { SAWBUCK_JUDGE: 'off' })
+  on('session.start', (_, e) => ({ cwd: e.cwd }))
+  on('session.cwd', () => ({ value: '/repo' }))
+  on('fs.exists', (_, e) => ({ value: e.path.endsWith('.git') || e.path.endsWith('LOGBOOK.md') }))
+  on('fs.read', (_, e) => { throw new Error(`ENOENT: ${e.path}`) })
+  on('turn.complete', () => ({ text: '' }))
+  await $.session.start({ cwd: '/repo', surface: 'terminal', isInteractive: true })
+  await $.turn.complete({ answer: 'done', durationMs: 1, isAborted: false, turnId: 't1', reason: 'answer' })
+  const ui = await $.ui.mount({ plugin: 'sawbuck-reins', surface: 'terminal', component: 'AbovePrompt', props: { hasSurvey: false, isWorking: false } as any })
+  const band = await ui.find({ type: 'Text', text: /memory/ })
+  expect(band?.text).toContain('sawbuck context')
+  expect(band?.text).not.toContain('/sawbuck-reins:context')
+})

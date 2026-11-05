@@ -8,9 +8,9 @@
   "plugins": [
     {
       "name": "sawbuck-reins",
-      "version": "0.5.39",
+      "version": "0.5.40",
       "source": "./plugins/sawbuck-reins",
-      "description": "One install wires the sawbuck guide band (watching / N caught / last verdict / steer rate) plus six slash commands: /sawbuck-reins:contract (one step: sign the repo and start watching), /sawbuck-reins:check (verify now), /sawbuck-reins:watch (arm the Stop hook), /sawbuck-reins:context (ranked history), /sawbuck-reins:debt (live suppression debt), /sawbuck-reins:status (the inventory). The mod runs no program; the commands run the pinned sawbuck CLI through Claude's own Bash tool."
+      "description": "One install wires the sawbuck guide band (watching / N caught / last verdict / steer rate) plus five slash commands: /sawbuck-reins:contract (sign the repo and check every turn), /sawbuck-reins:check (verify now), /sawbuck-reins:audit (rules that pull against each other), /sawbuck-reins:rules (the rules you keep enforcing), /sawbuck-reins:shape (what you push on). The mod runs no program; the commands run the pinned sawbuck CLI through Claude's own Bash tool."
     }
   ]
 }

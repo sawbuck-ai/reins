@@ -1,6 +1,6 @@
 # sawbuck-reins
 
-Sawbuck in Claude Code, one install. A guide band above the prompt plus six slash commands, so
+Sawbuck in Claude Code, one install. A guide band above the prompt plus five slash commands, so
 you can catch your agent gaming a metric without leaving the session or touching the CLI. The band
 and the steering judge are a mod (a hooks module); the commands are plain plugin commands that
 Claude runs through its own Bash tool. The mod itself runs no program.
@@ -56,7 +56,7 @@ Outside a git repository there is nothing to check, so the band reads `no repo h
   measured, and Claude sees the verdict, so a gamed one gets fixed in the source.
 
 Each command is a plain plugin command: a prompt that tells Claude to run exact, pinned
-`npx -y sawbuck@0.1.46 ...` calls through its own Bash tool, pre-approved for those exact commands and
+`npx -y sawbuck@0.1.47 ...` calls through its own Bash tool, pre-approved for those exact commands and
 nothing else, so Claude Code's permission system is the one in charge. The `sawbuck` CLI rides the
 deterministic, zero-LLM `promptwheel` check and the `@promptwheel/logbook` memory. No `npm install`
 and no manual `sawbuck attach` to start.
@@ -65,7 +65,7 @@ and no manual `sawbuck attach` to start.
 
 **Programs it runs.** The mod (`hooks/register.tsx`) runs none: it makes no process call of any
 kind. The slash commands in `commands/` are prompts; each tells Claude to run exact
-commands, `npx -y sawbuck@0.1.46 <contract|check|attach|rules|shape>` (`/sawbuck-reins:contract` runs `contract`, then `attach --claude`), through
+commands, `npx -y sawbuck@0.1.47 <contract|check|attach|rules|shape>` (`/sawbuck-reins:contract` runs `contract`, then `attach`), through
 Claude's own Bash tool, with `allowed-tools` pre-approving those exact strings and nothing else. Claude
 sees the output and can act on it (fix the source after a gamed verdict, for instance). The
 `reins-steering` skill tells Claude to run the pinned `npx -y @sawbuck/reins@0.4.5` CLI the same way.
@@ -77,18 +77,20 @@ through the CLIs Claude runs, write inside the repo you attached: the same `stee
 reins CLI scores, the `sawbuck` CLI's own
 record (`.sawbuck/state.json`, `activity.jsonl`, `results.json`), and the memory engine's cache of
 that repo's own git history (`events.jsonl`, `LOGBOOK.md`), which includes the commit author names
-already in the git log. All of it is kept out of `git status`. `sawbuck detach` removes what it wired, signed contract files stay because they are yours to review, and `--purge` deletes the record.
+already in the git log. All of it is kept out of `git status`. `sawbuck detach` removes the hooks and the receipt; signed contract files stay because they are yours to review, and the record stays too, still out of `git status`, until `--purge` deletes it and the exclude lines.
 To verify a change, the check also runs the repo's own test or metric command (from
 `promptwheel.config.json`, or the detected test script) in throwaway git worktrees, exactly as you
-would run it yourself; that is the only code it executes that is not one of the two pinned packages. `/sawbuck-reins:contract` runs `sawbuck attach`, which writes four things on purpose:
+would run it yourself; that is the only code it executes that is not one of the two pinned packages. `/sawbuck-reins:contract` runs `sawbuck attach`, which writes these on purpose:
 `.claude/settings.local.json` in that repo (adds the UserPromptSubmit, SessionStart and Stop hooks
 that run `sawbuck turn` and the check), the repo's git exclude file (`.git/info/exclude`, or where
 git keeps it for a worktree; keeps `.sawbuck/` out of `git status`), an attach receipt under the
 repo's git dir (`.git/sawbuck/attach.json`, what it created, so detach can undo exactly that), and
-one line in the user registry `~/.sawbuck/registry.json` (which repos are attached, for `sawbuck
-doctor --all`). It then runs one verification check at attach time, a `promptwheel run` on the last
+in a signed repo `.sawbuck/state.json` (the turn baseline). `sawbuck attach --dry-run` lists them. It then runs one verification check at attach time, a `promptwheel run` on the last
 commit in throwaway worktrees, so you know whether it can measure anything here. `sawbuck detach`
-removes the hooks, the exclude block, the receipt and the registry line. The mod itself never edits build, start-up,
+removes the hooks and the receipt; the exclude block stays while the record it hides is on disk, and
+`sawbuck detach --purge` removes both. One limit: `.claude/settings.local.json` is kept out of git, so
+taking the hooks out of it shows in no diff and the check cannot see it; `sawbuck doctor` reads the
+receipt and says the hooks are gone. The mod itself never edits build, start-up,
 settings or instructions files, and the only file it writes is that one steer tally, which nothing
 runs or obeys: the band and `sawbuck statusline` read it to show a percentage.
 
@@ -113,5 +115,5 @@ prompt, and your prompt text goes nowhere but that bounded model call. What the 
 `.sawbuck/` (`state.json`, `results.json`, `activity.jsonl`, `steer.json`) is shown to you in the
 band and is not sent anywhere. `turn.complete` stashes the agent's answer for that scoring.
 `ui.render` draws the band above the prompt. None of them block a turn. In a git repo with no contract the band names the one step and the offer adds its one line; otherwise they stay silent
-in repos where Sawbuck is not attached. The mod registers no commands, tools, or agents; the six
+in repos where Sawbuck is not attached. The mod registers no commands, tools, or agents; the five
 commands are files in `commands/`.
