@@ -12,7 +12,7 @@ npx -y sawbuck@0.1.47 attach
 
 The first keeps any rules already here, adds your tests if there are none, and sets the protected paths. The second wires the hooks that check every turn. Running them twice changes nothing.
 
-Then tell the person, in two lines: they are set up, they should review and commit AGENTS.md and promptwheel.config.json, and `npx sawbuck contract --full` adds supply-chain guards, a repo lock and a CI check when they want them.
+Then tell the person, in two lines: they are set up, they should review and commit AGENTS.md and promptwheel.config.json, and `npx sawbuck contract --full` adds supply-chain guards, a repo lock and a CI check when they want them. For a team, `npx sawbuck attach --shared` writes a hooks file they can commit.
 
 Do not commit for them, and do not add the suggested product paths. Those are the person's decisions.
 

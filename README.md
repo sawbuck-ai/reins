@@ -27,14 +27,15 @@ codex plugin add sawbuck-reins@sawbuck
 
 - **A guide band** above the prompt (Claude Code): `watching`, `N caught`, and the last verdict,
   read from the repo's local `.sawbuck/` record each turn. It never blocks a prompt.
-- **Nothing to remember** (Claude Code): in a git repo with no contract, Claude offers once to sign it. Say yes and it signs the repo: every turn checks protected paths, and every commit is re-proved. Or run `/sawbuck-reins:contract` yourself.
+- **Nothing to remember** (Claude Code): in a git repo with no rules, Claude offers once to add them. Say yes and it writes the rule and wires the check: every turn checks protected paths, and every commit is re-proved. Or run `/sawbuck-reins:contract` yourself.
 - **`/sawbuck-reins:audit`** finds rules in your agent files that can pull against each other, and proposes which wins.
 - **`/sawbuck-reins:rules`** proposes the rules you keep enforcing, with quotes from your own messages, and you pick what to keep.
-- **`/sawbuck-reins:shape`** shows what you push on, from a sample of your own messages.
+- **`/sawbuck-reins:shape`** shows what you push on, from a sample of your own messages, and names habits the agent has that you never push on, with the agent's own words.
+- **`/sawbuck-reins:status`** shows what it caught, the debt, and what you keep telling the agent.
 - **Two more slash commands** (Claude Code): `/sawbuck-reins:check` verifies your latest change now, and
-  `/sawbuck-reins:contract` signs the repo and arms the Stop hook (protected paths every turn, re-proof every commit).
+  `/sawbuck-reins:contract` gives the repo its rules and wires the Stop hook (protected paths every turn, re-proof every commit).
   The rest is the CLI: `npx sawbuck context` shows the ranked history for the files you touch, `npx sawbuck debt`
-  lists the suppression debt still live in HEAD, and `npx sawbuck status` shows everything Sawbuck has here in one view.
+  lists the suppression debt still live in HEAD.
 - **Two skills** (Claude Code, and Codex untested): `sawbuck-check`, verify that a win was earned in the source
   and not by editing a test, grader, or config; and `reins-steering`, read how much you have been
   steering the agent and the cues you keep giving, from your own local transcripts.

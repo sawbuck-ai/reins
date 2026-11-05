@@ -36,6 +36,10 @@ Outside a git repository there is nothing to check, so the band reads `no repo h
   **Your steering shape.** `/sawbuck-reins:shape` labels a sample of your messages once and draws what you push on: 11 spokes
   in 4 groups, with a card at `~/.sawbuck/shape.svg`. Only totals are kept, and each run is saved with its date to compare
   later. It says what you pushed on, not how good you are, and the 0 to 99 scale is relative to your own top spoke.
+  It also reads short excerpts of up to 120 past turns and names at most 3 habits the agent has that you never push on.
+  Each must quote the agent from 3 turns, a plain check confirms the quotes, and the excerpts are deleted after. Your own
+  messages are never shown. These are leads from one read: on one person, two models named the same two habits and
+  differed on the third.
 
   **Find your unwritten rules.** `/sawbuck-reins:rules` gathers what you typed to Claude Code on this machine, with copies
   and likely secrets removed, and asks the model once for the rules you keep enforcing. Your messages go to the model,
@@ -65,7 +69,7 @@ and no manual `sawbuck attach` to start.
 
 **Programs it runs.** The mod (`hooks/register.tsx`) runs none: it makes no process call of any
 kind. The slash commands in `commands/` are prompts; each tells Claude to run exact
-commands, `npx -y sawbuck@0.1.47 <contract|check|attach|rules|shape>` (`/sawbuck-reins:contract` runs `contract`, then `attach`), through
+commands, `npx -y sawbuck@0.1.47 <contract|check|attach|rules|shape|status>` (`/sawbuck-reins:contract` runs `contract`, then `attach`), through
 Claude's own Bash tool, with `allowed-tools` pre-approving those exact strings and nothing else. Claude
 sees the output and can act on it (fix the source after a gamed verdict, for instance). The
 `reins-steering` skill tells Claude to run the pinned `npx -y @sawbuck/reins@0.4.5` CLI the same way.
@@ -90,7 +94,8 @@ commit in throwaway worktrees, so you know whether it can measure anything here.
 removes the hooks and the receipt; the exclude block stays while the record it hides is on disk, and
 `sawbuck detach --purge` removes both. One limit: `.claude/settings.local.json` is kept out of git, so
 taking the hooks out of it shows in no diff and the check cannot see it; `sawbuck doctor` reads the
-receipt and says the hooks are gone. The mod itself never edits build, start-up,
+receipt and says the hooks are gone. `sawbuck attach --shared` avoids it: the hooks go in a tracked
+`.claude/settings.json`, and a removal shows in git. The mod itself never edits build, start-up,
 settings or instructions files, and the only file it writes is that one steer tally, which nothing
 runs or obeys: the band and `sawbuck statusline` read it to show a percentage.
 
