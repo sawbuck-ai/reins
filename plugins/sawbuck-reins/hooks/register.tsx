@@ -282,8 +282,8 @@ async function readSummary($: any): Promise<Summary | null> {
   }
 }
 
-// The mod runs no program. The five slash commands live in commands/ as plugin commands: each tells
-// Claude to run one exact, pinned `npx -y sawbuck@0.1.42 ...` through its own Bash tool, under Claude
+// The mod runs no program. The slash commands live in commands/ as plugin commands: each tells
+// Claude to run one exact, pinned `npx -y sawbuck@0.1.43 ...` through its own Bash tool, under Claude
 // Code's permission system, so Claude sees the verdict and can act on it.
 // One offer per repository, ever: in a git repo with no contract, one line in the system prompt asks Claude to
 // offer to sign it after doing the work. Decided in prompt.compose, which runs before prompt.submit, and kept for

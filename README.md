@@ -29,7 +29,7 @@ codex plugin add sawbuck-reins@sawbuck
   live steer rate, read from the repo's local `.sawbuck/` record each turn. It never blocks a prompt.
 - **Nothing to remember** (Claude Code): in a git repo with no contract, Claude offers once to sign it. Say yes and it signs the repo: every turn checks protected paths, and every commit is re-proved. Or run `/sawbuck-reins:contract` yourself.
 - **Five more slash commands** (Claude Code): `/sawbuck-reins:check` verifies your latest change now,
-  `/sawbuck-reins:watch` arms the Stop hook (protected paths every turn, re-proof every commit), `/sawbuck-reins:context` shows
+  `/sawbuck-reins:contract` signs the repo and arms the Stop hook (protected paths every turn, re-proof every commit), `/sawbuck-reins:context` shows
   the ranked history for the files you touch, `/sawbuck-reins:debt` lists the suppression debt still
   live in HEAD, and `/sawbuck-reins:status` shows everything Sawbuck has here in one view.
 - **Two skills** (Claude Code, and Codex in beta): `sawbuck-check`, verify that a win was earned in the source

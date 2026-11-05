@@ -32,7 +32,7 @@ Outside a git repository there is nothing to check, so the band reads `no repo h
   bold `🐴 N caught` (with the latest item) when the check flags a regression or a faked, "gamed"
   win. It never blocks your prompt and hides itself where Sawbuck is not relevant.
 - **A live steering readout** on the band (`🐎 steer X%`, taut `✊` once you are steering more than half of your recent turns): once the repo is
-  attached (`/sawbuck-reins:watch`), each turn it scores how much you redirected the agent (a light refine, a redirect, or a hard stop) and shows a **recent-window rate**
+  signed (`/sawbuck-reins:contract`), each turn it scores how much you redirected the agent (a light refine, a redirect, or a hard stop) and shows a **recent-window rate**
   (an EMA over roughly your last 20 scored turns), so it tracks how you are steering lately, instead of a
   lifetime average that old turns anchor. It scores the newest turn in the background and never blocks a turn. The judge has two modes (set `judge` in
   `/plugin configure sawbuck-reins@sawbuck` or `/config`):
@@ -63,8 +63,6 @@ Outside a git repository there is nothing to check, so the band reads `no repo h
 - **`/sawbuck-reins:check`** verifies your latest change right now (zero-config, no setup): it says
   plainly whether the win was earned in the source, was gamed, is a regression, or could not be
   measured, and Claude sees the verdict, so a gamed one gets fixed in the source.
-- **`/sawbuck-reins:watch`** arms the Stop hook for this repo: every turn checks protected paths, every
-  commit is re-proved, and a faked win is sent back to earn it, up to three times by default. Remove it anytime with `sawbuck detach`.
 - **`/sawbuck-reins:context`** the ranked relevant history for the files you are touching right now:
   reverts (do-not-retry), weakened tests, and fragile hot spots, before you act.
 - **`/sawbuck-reins:debt`** the whole-repo live suppression debt: what is still silenced in HEAD now,
@@ -73,7 +71,7 @@ Outside a git repository there is nothing to check, so the band reads `no repo h
   what it has caught for you over time, the debt accruing now, and whether it is armed in this repo.
 
 Each command is a plain plugin command: a prompt that tells Claude to run exact, pinned
-`npx -y sawbuck@0.1.42 ...` calls through its own Bash tool, pre-approved for those exact commands and
+`npx -y sawbuck@0.1.43 ...` calls through its own Bash tool, pre-approved for those exact commands and
 nothing else, so Claude Code's permission system is the one in charge. The `sawbuck` CLI rides the
 deterministic, zero-LLM `promptwheel` check and the `@promptwheel/logbook` memory. No `npm install`
 and no manual `sawbuck attach` to start.
@@ -81,8 +79,8 @@ and no manual `sawbuck attach` to start.
 ## What this plugin runs, writes, and sends (the full list)
 
 **Programs it runs.** The mod (`hooks/register.tsx`) runs none: it makes no process call of any
-kind. The six slash commands in `commands/` are prompts; each tells Claude to run exact
-commands, `npx -y sawbuck@0.1.42 <contract|check|attach --claude|context --speak|debt|status>` (`/sawbuck-reins:contract` runs `contract`, then `attach --claude`), through
+kind. The slash commands in `commands/` are prompts; each tells Claude to run exact
+commands, `npx -y sawbuck@0.1.43 <contract|check|attach --claude|context --speak|debt|status>` (`/sawbuck-reins:contract` runs `contract`, then `attach --claude`), through
 Claude's own Bash tool, with `allowed-tools` pre-approving those exact strings and nothing else. Claude
 sees the output and can act on it (fix the source after a gamed verdict, for instance). The
 `reins-steering` skill tells Claude to run the pinned `npx -y @sawbuck/reins@0.4.5` CLI the same way.
