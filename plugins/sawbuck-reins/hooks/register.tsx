@@ -64,7 +64,8 @@ AGENT just did: ${String(a).slice(0, 600)}
 USER replied: ${String(u).replace(/\s+/g, ' ').slice(0, 800)}
 JSON:`
 
-// EXACT copy of engine/judge.mjs parse(): strip reasoning <think>, take the last JSON object, clamp.
+// engine/judge.mjs parse(): strip reasoning <think>, take the last JSON object, clamp. One difference: the nudge keeps
+// 80 characters, not 48, so an 8-word note is not cut mid-word where the person reads it.
 function parsePressure(txt: string): { pressure: number; axis: string; nudge: string } | null {
   txt = String(txt).replace(/<think>[\s\S]*?<\/think>/g, '')
   const cands = txt.match(/\{[^{}]*\}/g) || []
@@ -75,7 +76,7 @@ function parsePressure(txt: string): { pressure: number; axis: string; nudge: st
         return {
           pressure: Math.max(0, Math.min(3, parseInt(j.pressure, 10) || 0)),
           axis: String(j.axis || '').slice(0, 16),
-          nudge: String(j.nudge || '').slice(0, 48),
+          nudge: String(j.nudge || '').slice(0, 80),
         }
       }
     } catch { /* keep scanning */ }
