@@ -28,6 +28,7 @@ codex plugin add sawbuck-reins@sawbuck
 - **A guide band** above the prompt (Claude Code): `watching`, `N caught`, and the last verdict,
   read from the repo's local `.sawbuck/` record each turn. It never blocks a prompt.
 - **Nothing to remember** (Claude Code): in a git repo with no contract, Claude offers once to sign it. Say yes and it signs the repo: every turn checks protected paths, and every commit is re-proved. Or run `/sawbuck-reins:contract` yourself.
+- **`/sawbuck-reins:audit`** finds rules in your agent files that can pull against each other, and proposes which wins.
 - **`/sawbuck-reins:rules`** proposes the rules you keep enforcing, with quotes from your own messages, and you pick what to keep.
 - **`/sawbuck-reins:shape`** shows what you push on, what the agent did, and the gap between them.
 - **More slash commands** (Claude Code): `/sawbuck-reins:check` verifies your latest change now,

@@ -34,7 +34,7 @@ Outside a git repository there is nothing to check, so the band reads `no repo h
 - **Your rules and shape, on demand.** `/sawbuck-reins:rules` and `/sawbuck-reins:shape` read your history when you ask.
   Nothing is scored per turn unless you turn on the live judge, below.
 
-  **Your steering shape.** `/sawbuck-reins:shape` labels a sample of your messages once and draws what you push on: 12 spokes
+  **Your steering shape.** `/sawbuck-reins:shape` labels a sample of your messages once and draws what you push on: 11 spokes
   in 4 groups, with a card at `~/.sawbuck/shape.svg`. Only totals are kept, and each run is saved with its date to compare
   later. It also counts what the agent did over your last 90 days, with no model, leaving out scratch work, and checks your written rules by keyword. It names two kinds of pattern, each with a rule to try: fighting it (you push and it keeps happening) and not said (it happens, you never push, and no rule covers it). It says what you pushed on, not how good you are, and the 0 to 99 scale is relative to your own top spoke.
 
@@ -49,8 +49,9 @@ Outside a git repository there is nothing to check, so the band reads `no repo h
   **The live judge (off by default, will be removed).** Set `judge` to `native` in `/plugin configure sawbuck-reins@sawbuck`
   for a live `steer X%` on the band: one small classify call per turn through Claude Code's own model API, on your own plan,
   in signed repos and outside any repo. It also keeps a few-word summary of each steer in Claude Code's plugin store, shown by
-  `/sawbuck-reins:steers` and never added to a prompt. To score with your own model, set `SAWBUCK_JUDGE` and use the `reins`
+  `sawbuck steers` and never added to a prompt. To score with your own model, set `SAWBUCK_JUDGE` and use the `reins`
   CLI through the `reins-steering` skill; the plugin judge then stays off, so nothing is billed twice.
+- **`/sawbuck-reins:audit`** reads your existing `CLAUDE.md`, `AGENTS.md` and `.cursorrules`, names rules that can pull against each other, and proposes a line saying which wins. No history needed. On Opus, two such rules beat the test rule 4 of 10 times, and 0 of 20 with that line, in scenarios we wrote.
 - **`/sawbuck-reins:check`** verifies your latest change right now (zero-config, no setup): it says
   plainly whether the win was earned in the source, was gamed, is a regression, or could not be
   measured, and Claude sees the verdict, so a gamed one gets fixed in the source.
