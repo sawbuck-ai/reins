@@ -50,6 +50,10 @@ Outside a git repository there is nothing to check, so the band reads `no repo h
   never added to a prompt, because a summary of a reply that includes the agent's own text should not steer the agent.
   It counts what the judge saw, so replies that could not be scored make it an undercount, and it says so.
 
+  **Your steering shape.** `/sawbuck-reins:shape` labels a sample of your messages once and draws what you push on: 12 spokes
+  in 4 groups, with a card at `~/.sawbuck/shape.svg`. Only totals are kept, and each run is saved with its date to compare
+  later. It says what you pushed on, not how good you are, and the 0 to 99 scale is relative to your own top spoke.
+
   **Find your unwritten rules.** `/sawbuck-reins:rules` gathers what you typed to Claude Code on this machine, with copies
   and likely secrets removed, and asks the model once for the rules you keep enforcing. Your messages go to the model,
   like any prompt. Every proposed rule must carry at least 2 quotes that a plain check finds in your own words. Nothing
