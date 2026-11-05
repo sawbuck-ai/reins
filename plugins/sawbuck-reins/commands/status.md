@@ -1,12 +1,12 @@
 ---
 description: The inventory: everything sawbuck has here in one view
-allowed-tools: ["Bash(npx -y sawbuck@0.1.44 status)"]
+allowed-tools: ["Bash(npx -y sawbuck@0.1.45 status)"]
 ---
 
 Run exactly this command in the current repo and show the person its output verbatim:
 
 ```
-npx -y sawbuck@0.1.44 status
+npx -y sawbuck@0.1.45 status
 ```
 
 It shows what the check has caught over time, the suppression debt accruing now, and whether the Stop hook is armed in this repo.
