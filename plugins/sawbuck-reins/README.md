@@ -42,7 +42,8 @@ Outside a git repository there is nothing to check, so the band reads `no repo h
   and likely secrets removed, and asks the model once for the rules you keep enforcing. Your messages go to the model,
   like any prompt. Every proposed rule must carry at least 2 quotes that a plain check finds in your own words. Nothing
   is added unless you pick it. Rules you keep go in `~/.claude/CLAUDE.md`, which applies to you in every repo and no repo shares, or in one repo's
-  `CLAUDE.md` if the team should have them. Secret filtering is by pattern, so it can miss one: read `~/.sawbuck/rule-input.txt` first
+  `CLAUDE.md` if the team should have them. If two rules can pull apart, it proposes a line saying which wins: on Opus, two such
+  rules lost the test rule 4 of 10 times, and 0 of 20 with that line, in scenarios we wrote. Secret filtering is by pattern, so it can miss one: read `~/.sawbuck/rule-input.txt` first
   if your history might hold any.
 
   **The live judge (off by default, will be removed).** Set `judge` to `native` in `/plugin configure sawbuck-reins@sawbuck`
