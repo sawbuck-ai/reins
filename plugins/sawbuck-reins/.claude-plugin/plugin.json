@@ -1,7 +1,7 @@
 {
   "name": "sawbuck-reins",
   "displayName": "Sawbuck",
-  "version": "0.5.31",
+  "version": "0.5.32",
   "description": "Sawbuck in Claude Code, one install: the guide band (watching / N caught / last verdict / live steer rate) plus six slash commands, /sawbuck-reins:contract (one step: sign the repo and start watching), /sawbuck-reins:check (try it now), /sawbuck-reins:watch (arm the Stop hook), /sawbuck-reins:context (ranked history for the files you touch), /sawbuck-reins:debt (the repo's live suppression debt), and /sawbuck-reins:status (the inventory). The mod itself runs no program.",
   "keywords": [
     "sawbuck",

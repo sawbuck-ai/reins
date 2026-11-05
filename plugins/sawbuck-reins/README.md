@@ -50,6 +50,12 @@ Outside a git repository there is nothing to check, so the band reads `no repo h
   never added to a prompt, because a summary of a reply that includes the agent's own text should not steer the agent.
   It counts what the judge saw, so replies that could not be scored make it an undercount, and it says so.
 
+  **Find your unwritten rules.** `/sawbuck-reins:rules` gathers what you typed to Claude Code on this machine, with copies
+  and likely secrets removed, and asks the model once for the rules you keep enforcing. Your messages go to the model,
+  like any prompt. Every proposed rule must carry at least 2 quotes that a plain check finds in your own words. Nothing
+  is added unless you pick it. Secret filtering is by pattern, so it can miss one: read `~/.sawbuck/rule-input.txt` first
+  if your history might hold any.
+
   To score with a model of your own instead (a free local `ollama:qwen2.5:7b`, or a hosted key),
   use the `reins` CLI: set `SAWBUCK_JUDGE` and run `reins --append` after a session, or the
   `reins-steering` skill below. When `SAWBUCK_JUDGE` names a CLI backend the plugin judge stays off
@@ -67,7 +73,7 @@ Outside a git repository there is nothing to check, so the band reads `no repo h
   what it has caught for you over time, the debt accruing now, and whether it is armed in this repo.
 
 Each command is a plain plugin command: a prompt that tells Claude to run exact, pinned
-`npx -y sawbuck@0.1.41 ...` calls through its own Bash tool, pre-approved for those exact commands and
+`npx -y sawbuck@0.1.42 ...` calls through its own Bash tool, pre-approved for those exact commands and
 nothing else, so Claude Code's permission system is the one in charge. The `sawbuck` CLI rides the
 deterministic, zero-LLM `promptwheel` check and the `@promptwheel/logbook` memory. No `npm install`
 and no manual `sawbuck attach` to start.
@@ -76,7 +82,7 @@ and no manual `sawbuck attach` to start.
 
 **Programs it runs.** The mod (`hooks/register.tsx`) runs none: it makes no process call of any
 kind. The six slash commands in `commands/` are prompts; each tells Claude to run exact
-commands, `npx -y sawbuck@0.1.41 <contract|check|attach --claude|context --speak|debt|status>` (`/sawbuck-reins:contract` runs `contract`, then `attach --claude`), through
+commands, `npx -y sawbuck@0.1.42 <contract|check|attach --claude|context --speak|debt|status>` (`/sawbuck-reins:contract` runs `contract`, then `attach --claude`), through
 Claude's own Bash tool, with `allowed-tools` pre-approving those exact strings and nothing else. Claude
 sees the output and can act on it (fix the source after a gamed verdict, for instance). The
 `reins-steering` skill tells Claude to run the pinned `npx -y @sawbuck/reins@0.4.5` CLI the same way.
