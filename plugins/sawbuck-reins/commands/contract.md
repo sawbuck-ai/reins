@@ -15,3 +15,5 @@ The first keeps any contract already here, adds tests and tripwires if there is 
 Then tell the person, in two lines: they are set up, and they should review and commit AGENTS.md, promptwheel.config.json, promptwheel.lock.json, .github/workflows/sawbuck.yml if it was added, and .promptwheel/packs/.
 
 Do not commit for them, and do not add the suggested product paths to the contract. Those are the person's decisions.
+
+Then add one line: `/sawbuck-reins:rules` can propose the rules they keep enforcing, from their own messages, if they want them written down.

@@ -53,7 +53,8 @@ Outside a git repository there is nothing to check, so the band reads `no repo h
   **Find your unwritten rules.** `/sawbuck-reins:rules` gathers what you typed to Claude Code on this machine, with copies
   and likely secrets removed, and asks the model once for the rules you keep enforcing. Your messages go to the model,
   like any prompt. Every proposed rule must carry at least 2 quotes that a plain check finds in your own words. Nothing
-  is added unless you pick it. Secret filtering is by pattern, so it can miss one: read `~/.sawbuck/rule-input.txt` first
+  is added unless you pick it. Rules you keep in `~/.sawbuck/rules.md`, one per line, go into `AGENTS.md` in every repo you
+  sign, so review that file before committing to a shared repo. Secret filtering is by pattern, so it can miss one: read `~/.sawbuck/rule-input.txt` first
   if your history might hold any.
 
   To score with a model of your own instead (a free local `ollama:qwen2.5:7b`, or a hosted key),

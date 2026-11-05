@@ -1,6 +1,6 @@
 ---
 description: Find the rules you keep enforcing and never wrote down, from your own messages
-allowed-tools: ["Bash(npx -y sawbuck@0.1.43 rules --prepare)", "Bash(npx -y sawbuck@0.1.43 rules --check ~/.sawbuck/rule-candidates.json)", "Read(~/.sawbuck/rule-input.txt)", "Write(~/.sawbuck/rule-candidates.json)"]
+allowed-tools: ["Bash(npx -y sawbuck@0.1.43 rules --prepare)", "Bash(npx -y sawbuck@0.1.43 rules --check ~/.sawbuck/rule-candidates.json)", "Read(~/.sawbuck/rule-input.txt)", "Write(~/.sawbuck/rule-candidates.json)", "Edit(~/.sawbuck/rules.md)", "Write(~/.sawbuck/rules.md)"]
 ---
 
 Tell the person first, in one line: this reads their own messages from Claude Code history and sends them to the model once.
@@ -21,4 +21,4 @@ npx -y sawbuck@0.1.43 rules --prepare
 npx -y sawbuck@0.1.43 rules --check ~/.sawbuck/rule-candidates.json
 ```
 
-5. Show the output verbatim. Only rules listed there count. Ask which ones they want, and where: CLAUDE.md, or a protected path in the contract. Add only what they pick. Do not add any rule on your own, and do not commit.
+5. Show the output verbatim. Only rules listed there count. Ask which ones they want, and where: this repo only (CLAUDE.md), or every repo they sign (`~/.sawbuck/rules.md`, one rule per line; `/sawbuck-reins:contract` carries those into AGENTS.md). Add only what they pick. Do not add any rule on your own, and do not commit.
