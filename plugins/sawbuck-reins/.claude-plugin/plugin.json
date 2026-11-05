@@ -1,8 +1,8 @@
 {
   "name": "sawbuck-reins",
   "displayName": "Sawbuck",
-  "version": "0.5.37",
-  "description": "Sawbuck in Claude Code, one install: the guide band (watching / N caught / last verdict) plus /sawbuck-reins:contract (give the repo its rules and check every turn), /sawbuck-reins:audit (find rules that pull against each other), /sawbuck-reins:rules (propose the rules you keep enforcing), /sawbuck-reins:shape (what you push on), and /sawbuck-reins:check (try it now). The mod itself runs no program.",
+  "version": "0.5.38",
+  "description": "Sawbuck in Claude Code, one install: the guide band (watching / N caught / last verdict / steer rate) plus /sawbuck-reins:contract (give the repo its rules and check every turn), /sawbuck-reins:audit (find rules that pull against each other), /sawbuck-reins:rules (propose the rules you keep enforcing), /sawbuck-reins:shape (what you push on), and /sawbuck-reins:check (try it now). The mod itself runs no program.",
   "keywords": [
     "sawbuck",
     "reward-hacking",
@@ -25,13 +25,13 @@
   "userConfig": {
     "judge": {
       "type": "string",
-      "title": "Live steering judge (off by default, will be removed)",
-      "description": "Off by default: /sawbuck-reins:rules and /sawbuck-reins:shape read your history when you ask, with no call per turn. native turns on a live steer rate, with one small call per turn through Claude Code's own model API on your plan.",
+      "title": "Live steering judge",
+      "description": "On by default: one call per turn through Claude Code's own model API, on your plan, using Sonnet, to show how much you steer. off stops it. /sawbuck-reins:rules and /sawbuck-reins:shape work either way.",
       "options": [
         "native",
         "off"
       ],
-      "default": "off"
+      "default": "native"
     },
     "band": {
       "type": "string",

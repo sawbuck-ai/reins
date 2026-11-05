@@ -49,7 +49,7 @@ test('a SAWBUCK_JUDGE that names a CLI backend turns the plugin judge off: no mo
   expect(runs).toEqual([])
 })
 
-test('the judge is off by default: an attached repo gets no model call and no steer file', async ($, on) => {
+test('the judge is on by default, and uses Sonnet', async ($, on) => {
   const writes: string[] = []
   const models: string[] = []
   mock.env(on, {})
@@ -66,8 +66,7 @@ test('the judge is off by default: an attached repo gets no model call and no st
   await $.prompt.submit({ text: 'no, change the approach.' })
   await new Promise((r) => setTimeout(r, 100))
 
-  expect(models).toEqual([])
-  expect(writes).toEqual([])
+  expect(models).toEqual(['claude-sonnet-5-5'])
 })
 
 test('the native judge writes the steer tally at the fixed relative path', async ($, on) => {
@@ -95,7 +94,7 @@ test('the native judge writes the steer tally at the fixed relative path', async
   for (let i = 0; i < 50 && writes.length === 0; i++) await new Promise((r) => setTimeout(r, 20))
 
   expect(probes.length, 'the band probed the record: ' + probes.join(',')).toBeGreaterThan(0)
-  expect(models).toEqual(['claude-haiku-5-5'])
+  expect(models).toEqual(['claude-sonnet-5-5'])
   expect(writes.length).toBe(1)
   expect(writes[0].path).toMatch(/(^|\/)\.sawbuck\/steer\.json$/)
   const rec = JSON.parse(writes[0].text)
@@ -179,7 +178,7 @@ test('SAWBUCK_JUDGE=native stays native (no engine shell-out), and the steer win
   for (let i = 0; i < 50 && texts.length < 2; i++) await new Promise((r) => setTimeout(r, 20))
 
   expect(runs).toEqual([])
-  expect(models).toEqual(['claude-haiku-5-5', 'claude-haiku-5-5'])
+  expect(models).toEqual(['claude-sonnet-5-5', 'claude-sonnet-5-5'])
   const rec = JSON.parse(texts[1])
   expect(rec.scored).toBe(2)
   expect(rec.steering).toBe(1)

@@ -18,9 +18,9 @@ Claude Code asks three things on install: a **scope** (choose **user** so the ba
 
 ## Getting started
 
-You don't need to remember a command. The first time you use Claude Code in a git repository with no contract, Claude finishes what you asked and then offers once to sign the repo. Say yes and it runs `/sawbuck-reins:contract`, which signs the repo: every turn checks protected paths, and every commit is re-proved. Say anything else and it won't ask again in that directory. Nothing is written or run without that yes, and it never commits for you.
+You don't need to remember a command. The first time you use Claude Code in a git repository with no rules, Claude finishes what you asked and then offers once to add them. Say yes and it runs `/sawbuck-reins:contract`: every turn checks protected paths, and every commit is re-proved. Say anything else and it won't ask again in that directory. Nothing is written or run without that yes, and it never commits for you.
 
-A new contract starts by watching. Protected paths, new install scripts and sources outside the registry block from day one. New dependencies and structure changes show as notes, so ordinary work stays green. On a GitHub repo with a test command, signing also adds a CI check. Run `npx -y sawbuck contract --strict` to block everything, or `--no-ci` to skip CI.
+Plain setup writes the rule and protected paths. `npx -y sawbuck contract --full` adds supply-chain guards, a repo lock and a CI check, starting as notes; add `--strict` to block.
 
 Outside a git repository there is nothing to check, so the band reads `no repo here` and no file is written. The steer judge still runs there unless `judge` is off, keeping your corrections in the plugin store on this machine.
 
@@ -32,7 +32,6 @@ Outside a git repository there is nothing to check, so the band reads `no repo h
   bold `🐴 N caught` (with the latest item) when the check flags a regression or a faked, "gamed"
   win. It never blocks your prompt and hides itself where Sawbuck is not relevant.
 - **Your rules and shape, on demand.** `/sawbuck-reins:rules` and `/sawbuck-reins:shape` read your history when you ask.
-  Nothing is scored per turn unless you turn on the live judge, below.
 
   **Your steering shape.** `/sawbuck-reins:shape` labels a sample of your messages once and draws what you push on: 11 spokes
   in 4 groups, with a card at `~/.sawbuck/shape.svg`. Only totals are kept, and each run is saved with its date to compare
@@ -46,18 +45,18 @@ Outside a git repository there is nothing to check, so the band reads `no repo h
   rules lost the test rule 4 of 10 times, and 0 of 20 with that line, in scenarios we wrote. Secret filtering is by pattern, so it can miss one: read `~/.sawbuck/rule-input.txt` first
   if your history might hold any.
 
-  **The live judge (off by default, will be removed).** Set `judge` to `native` in `/plugin configure sawbuck-reins@sawbuck`
-  for a live `steer X%` on the band: one small classify call per turn through Claude Code's own model API, on your own plan,
-  in signed repos and outside any repo. It also keeps a few-word summary of each steer in Claude Code's plugin store, shown by
-  `sawbuck steers` and never added to a prompt. To score with your own model, set `SAWBUCK_JUDGE` and use the `reins`
-  CLI through the `reins-steering` skill; the plugin judge then stays off, so nothing is billed twice.
-- **`/sawbuck-reins:audit`** reads your existing `CLAUDE.md`, `AGENTS.md` and `.cursorrules`, names rules that can pull against each other, and proposes a line saying which wins. No history needed. On Opus, two such rules beat the test rule 4 of 10 times, and 0 of 20 with that line, in scenarios we wrote.
+  **The live judge (on by default).** A live `steer X%` on the band: one classify call per turn through Claude Code's own model
+  API, using Sonnet, on your own plan, in attached repos and outside any repo. Sonnet was picked by test: against a careful Opus
+  reading of 200 real turns from one person, it scored kappa 0.66, Opus 0.70, Haiku 0.41. Set `judge` to `off` in `/plugin configure
+  sawbuck-reins@sawbuck` to stop it. It also keeps a few-word summary of each steer in Claude Code's plugin store, shown by `sawbuck
+  steers` and never added to a prompt. To score with your own model, set `SAWBUCK_JUDGE` and use the `reins` CLI through the
+  `reins-steering` skill; the plugin judge then stays off, so nothing is billed twice.
 - **`/sawbuck-reins:check`** verifies your latest change right now (zero-config, no setup): it says
   plainly whether the win was earned in the source, was gamed, is a regression, or could not be
   measured, and Claude sees the verdict, so a gamed one gets fixed in the source.
 
 Each command is a plain plugin command: a prompt that tells Claude to run exact, pinned
-`npx -y sawbuck@0.1.45 ...` calls through its own Bash tool, pre-approved for those exact commands and
+`npx -y sawbuck@0.1.46 ...` calls through its own Bash tool, pre-approved for those exact commands and
 nothing else, so Claude Code's permission system is the one in charge. The `sawbuck` CLI rides the
 deterministic, zero-LLM `promptwheel` check and the `@promptwheel/logbook` memory. No `npm install`
 and no manual `sawbuck attach` to start.
@@ -66,7 +65,7 @@ and no manual `sawbuck attach` to start.
 
 **Programs it runs.** The mod (`hooks/register.tsx`) runs none: it makes no process call of any
 kind. The slash commands in `commands/` are prompts; each tells Claude to run exact
-commands, `npx -y sawbuck@0.1.45 <contract|check|attach|rules|shape>` (`/sawbuck-reins:contract` runs `contract`, then `attach --claude`), through
+commands, `npx -y sawbuck@0.1.46 <contract|check|attach|rules|shape>` (`/sawbuck-reins:contract` runs `contract`, then `attach --claude`), through
 Claude's own Bash tool, with `allowed-tools` pre-approving those exact strings and nothing else. Claude
 sees the output and can act on it (fix the source after a gamed verdict, for instance). The
 `reins-steering` skill tells Claude to run the pinned `npx -y @sawbuck/reins@0.4.5` CLI the same way.
@@ -81,7 +80,7 @@ that repo's own git history (`events.jsonl`, `LOGBOOK.md`), which includes the c
 already in the git log. All of it is kept out of `git status`. `sawbuck detach` removes what it wired, signed contract files stay because they are yours to review, and `--purge` deletes the record.
 To verify a change, the check also runs the repo's own test or metric command (from
 `promptwheel.config.json`, or the detected test script) in throwaway git worktrees, exactly as you
-would run it yourself; that is the only code it executes that is not one of the two pinned packages. `/sawbuck-reins:watch` runs `sawbuck attach --claude`, which writes four things on purpose:
+would run it yourself; that is the only code it executes that is not one of the two pinned packages. `/sawbuck-reins:contract` runs `sawbuck attach`, which writes four things on purpose:
 `.claude/settings.local.json` in that repo (adds the UserPromptSubmit, SessionStart and Stop hooks
 that run `sawbuck turn` and the check), the repo's git exclude file (`.git/info/exclude`, or where
 git keeps it for a worktree; keeps `.sawbuck/` out of `git status`), an attach receipt under the
@@ -94,7 +93,7 @@ settings or instructions files, and the only file it writes is that one steer ta
 runs or obeys: the band and `sawbuck statusline` read it to show a percentage.
 
 **What it sends, and where.** In the default `native` mode, one small classify call per turn through
-Claude Code's own model API (`$.model.complete`, requesting the Haiku model id), on your own Claude
+Claude Code's own model API (`$.model.complete`, requesting the Sonnet model id), on your own Claude
 plan, containing the agent's last answer and your reply so it can score how much you steered. `off`
 sends nothing. If you score with the reins CLI instead, it sends the same pair to the judge you
 configured with `SAWBUCK_JUDGE` (a local ollama model, nothing leaves your machine, or your own API

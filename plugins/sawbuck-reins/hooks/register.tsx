@@ -9,9 +9,9 @@ const summaryAtom = atom({ plugin: 'sawbuck-reins', key: 'summary' } as const, n
 // --- the live steering judge ------------------------------------------------
 // The band's "🐎/✊ steer X%" comes from .sawbuck/steer.json, which this mod fills in
 // ONE way: native scores the newest turn-pair with one small call through Claude Code's
-// own model API ($.model.complete, the Haiku model id), on the user's own plan. It is OFF
-// by default and on its way out: /rules and /shape read the history on demand, and one
-// live percentage could not be defended. The mod runs NO program: a user who scores with
+// own model API ($.model.complete), on the user's own plan, on by default. Sonnet: against a careful Opus reading of 200
+// real turns it reached kappa 0.66, Opus 0.70, Haiku 0.41, and Haiku over-called steering at 70% to 54%. Always read the
+// rate with its judge named. The mod runs NO program: a user who scores with
 // the reins CLI instead (SAWBUCK_JUDGE set: local ollama or a hosted key) runs
 // `reins --append` themselves, through the reins-steering skill, and the mod stays
 // out of the way so nothing is billed twice.
@@ -114,10 +114,10 @@ async function keepSteer($: any, s: { pressure: number; axis?: string; nudge?: s
   } catch { /* the scratchpad never blocks a turn */ }
 }
 
-// Which judge to use: off unless asked for. SAWBUCK_JUDGE in the shell wins (native turns it on, a CLI backend means
-// the user scores with the reins CLI, so a local-ollama setup is never billed for native on top); else userConfig.
+// Which judge to use: on unless turned off. SAWBUCK_JUDGE in the shell wins (a CLI backend means the user scores with the
+// reins CLI, so a local-ollama setup is never billed for native on top); else userConfig.
 async function judgeMode($: any, options: any): Promise<'native' | 'off'> {
-  const cfg = options && options.judge === 'native' ? 'native' : 'off'
+  const cfg = options && options.judge === 'off' ? 'off' : 'native'
   try {
     const envv = await $.env.get('SAWBUCK_JUDGE')
     const v = envv == null ? '' : String(envv).trim().toLowerCase()
@@ -183,13 +183,13 @@ async function scoreNative($: any, prior: string, user: string, repo: string, at
     // the host honors timeoutMs; a local race makes the bound the mod's own, so one call that never
     // settles costs one sample, never the rest of the session's scoring (the chain is serialized)
     let timer: any
-    const bound = new Promise<never>((_, reject) => { timer = setTimeout(() => reject(new Error('judge timeout')), 15000) })
+    const bound = new Promise<never>((_, reject) => { timer = setTimeout(() => reject(new Error('judge timeout')), 30000) })
     const r: any = await Promise.race([
       $.model.complete({
-        model: 'claude-haiku-5-5',   // full id works on every build ('haiku' alias needs >=2.1.309)
+        model: 'claude-sonnet-5-5',
         prompt: PROMPT(prior, user),
         maxTokens: 200,
-        timeoutMs: 12000,
+        timeoutMs: 28000,
       }),
       bound,
     ]).finally(() => clearTimeout(timer))
@@ -269,7 +269,7 @@ async function readSummary($: any): Promise<Summary | null> {
     try {
       const sj = JSON.parse(await $.fs.read('.sawbuck/steer.json'))
       // recent-window gauge (EMA) when present; fall back to the lifetime rate for older files.
-      // a week without an update is history, not a reading (the judge is off unless someone turned it on)
+      // a week without an update is history, not a reading (the judge was turned off, or the plugin is not running)
       if (sj && sj.scored && !(sj.at && Date.now() - Date.parse(sj.at) > 7 * 864e5)) steer = Math.round(((sj.ema != null ? sj.ema : sj.steeringRate) || 0) * 100)
     } catch {}
     const signed = await present($, 'promptwheel.config.json')   // signed = has run the one setup step; the band always names the next step
@@ -280,7 +280,7 @@ async function readSummary($: any): Promise<Summary | null> {
 }
 
 // The mod runs no program. The slash commands live in commands/ as plugin commands: each tells
-// Claude to run one exact, pinned `npx -y sawbuck@0.1.45 ...` through its own Bash tool, under Claude
+// Claude to run one exact, pinned `npx -y sawbuck@0.1.46 ...` through its own Bash tool, under Claude
 // Code's permission system, so Claude sees the verdict and can act on it.
 // One offer per repository, ever: in a git repo with no rules, one line in the system prompt asks Claude to
 // offer to sign it after doing the work. Decided in prompt.compose, which runs before prompt.submit, and kept for
