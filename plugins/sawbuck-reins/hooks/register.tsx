@@ -8,10 +8,10 @@ const summaryAtom = atom({ plugin: 'sawbuck-reins', key: 'summary' } as const, n
 
 // --- the live steering judge ------------------------------------------------
 // The band's "🐎/✊ steer X%" comes from .sawbuck/steer.json, which this mod fills in
-// ONE way: native (DEFAULT) scores the newest turn-pair with one small call through
-// Claude Code's own model API ($.model.complete, the Haiku model id), on the user's
-// own plan: zero setup, no ollama, no key. Disclosed in the README; `off` in the
-// `judge` userConfig turns it off. The mod runs NO program: a user who scores with
+// ONE way: native scores the newest turn-pair with one small call through Claude Code's
+// own model API ($.model.complete, the Haiku model id), on the user's own plan. It is OFF
+// by default and on its way out: /rules and /shape read the history on demand, and one
+// live percentage could not be defended. The mod runs NO program: a user who scores with
 // the reins CLI instead (SAWBUCK_JUDGE set: local ollama or a hosted key) runs
 // `reins --append` themselves, through the reins-steering skill, and the mod stays
 // out of the way so nothing is billed twice.
@@ -114,21 +114,17 @@ async function keepSteer($: any, s: { pressure: number; axis?: string; nudge?: s
   } catch { /* the scratchpad never blocks a turn */ }
 }
 
-// Which judge to use. userConfig `judge` is the reliable, validated switch (default
-// native). A SAWBUCK_JUDGE in the shell that names a CLI backend means the user scores
-// with the reins CLI: the mod then stays off so a local-ollama setup is not silently
-// billed for native on top. SAWBUCK_JUDGE=native keeps native.
+// Which judge to use: off unless asked for. SAWBUCK_JUDGE in the shell wins (native turns it on, a CLI backend means
+// the user scores with the reins CLI, so a local-ollama setup is never billed for native on top); else userConfig.
 async function judgeMode($: any, options: any): Promise<'native' | 'off'> {
-  const cfg = options && typeof options.judge === 'string' ? options.judge : 'native'
-  if (cfg === 'off') return 'off'
+  const cfg = options && options.judge === 'native' ? 'native' : 'off'
   try {
     const envv = await $.env.get('SAWBUCK_JUDGE')
     const v = envv == null ? '' : String(envv).trim().toLowerCase()
-    if (v === 'off' || v === 'none' || v === '0' || v === 'false') return 'off'
-    if (v === 'native' || v === '') return 'native'
-    return 'off'   // a CLI backend is configured: the reins CLI scores, not the mod
-  } catch { /* $.env provenance is undocumented; ignore and stay native */ }
-  return 'native'
+    if (v === 'native') return 'native'
+    if (v) return 'off'
+  } catch { /* $.env provenance is undocumented; ignore it */ }
+  return cfg
 }
 
 // Record one consumed turn-pair into .sawbuck/steer.json, in the engine's exact
@@ -273,7 +269,8 @@ async function readSummary($: any): Promise<Summary | null> {
     try {
       const sj = JSON.parse(await $.fs.read('.sawbuck/steer.json'))
       // recent-window gauge (EMA) when present; fall back to the lifetime rate for older files.
-      if (sj && sj.scored) steer = Math.round(((sj.ema != null ? sj.ema : sj.steeringRate) || 0) * 100)
+      // a week without an update is history, not a reading (the judge is off unless someone turned it on)
+      if (sj && sj.scored && !(sj.at && Date.now() - Date.parse(sj.at) > 7 * 864e5)) steer = Math.round(((sj.ema != null ? sj.ema : sj.steeringRate) || 0) * 100)
     } catch {}
     const signed = await present($, 'promptwheel.lock.json')   // signed = has run the one setup step; the band always names the next step
     return { caught, latest, armed, active, mem, last, steer, signed, noRepo: false, repo, repeat: await repeatLine($) }
@@ -283,7 +280,7 @@ async function readSummary($: any): Promise<Summary | null> {
 }
 
 // The mod runs no program. The slash commands live in commands/ as plugin commands: each tells
-// Claude to run one exact, pinned `npx -y sawbuck@0.1.43 ...` through its own Bash tool, under Claude
+// Claude to run one exact, pinned `npx -y sawbuck@0.1.44 ...` through its own Bash tool, under Claude
 // Code's permission system, so Claude sees the verdict and can act on it.
 // One offer per repository, ever: in a git repo with no contract, one line in the system prompt asks Claude to
 // offer to sign it after doing the work. Decided in prompt.compose, which runs before prompt.submit, and kept for
@@ -361,8 +358,7 @@ export const register: Register = (on, options) => {
     }
     // opt out of the above-prompt band (e.g. you show sawbuck in your own statusline instead).
     // Primary switch is the `band` userConfig (reliable, applies on reload, no restart); the
-    // SAWBUCK_BAND env is a no-config fallback. The judge still runs each turn either way, so
-    // .sawbuck/steer.json keeps updating for the statusline to read.
+    // SAWBUCK_BAND env is a no-config fallback.
     if (options && options.band === 'off') return next(e)
     try {
       const bv = await $.env.get('SAWBUCK_BAND')

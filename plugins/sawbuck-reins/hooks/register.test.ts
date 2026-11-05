@@ -49,11 +49,32 @@ test('a SAWBUCK_JUDGE that names a CLI backend turns the plugin judge off: no mo
   expect(runs).toEqual([])
 })
 
+test('the judge is off by default: an attached repo gets no model call and no steer file', async ($, on) => {
+  const writes: string[] = []
+  const models: string[] = []
+  mock.env(on, {})
+  on('session.start', (_, e) => ({ cwd: e.cwd }))
+  on('fs.exists', (_, e) => ({ value: e.path.endsWith('/.sawbuck/state.json') }))
+  on('fs.read', (_, e) => { throw new Error(`ENOENT: ${e.path}`) })
+  on('fs.write', (_, e) => { writes.push(e.path); return { value: undefined } })
+  on('model.complete', (_, e) => { models.push(e.model); return { value: { isAnswered: false, reason: 'api-error', status: null } } })
+  on('turn.complete', () => ({ text: '' }))
+  on('prompt.submit', (_, e) => ({ text: e.text }))
+
+  await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
+  await $.turn.complete({ answer: 'done', durationMs: 1, isAborted: false, turnId: 't1', reason: 'answer' })
+  await $.prompt.submit({ text: 'no, change the approach.' })
+  await new Promise((r) => setTimeout(r, 100))
+
+  expect(models).toEqual([])
+  expect(writes).toEqual([])
+})
+
 test('the native judge writes the steer tally at the fixed relative path', async ($, on) => {
   const writes: { path: string; text: string }[] = []
   const models: string[] = []
   const probes: string[] = []
-  mock.env(on, {})
+  mock.env(on, { SAWBUCK_JUDGE: 'native' })
   on('session.start', (_, e) => ({ cwd: e.cwd }))
   // attached repo: the record exists; nothing else is on disk. The engine resolves the
   // mod's relative path against the session cwd before a hook beneath sees it.
@@ -87,7 +108,7 @@ test('the native judge writes the steer tally at the fixed relative path', async
 test('an unattached repo gets no model call and no file', async ($, on) => {
   const writes: string[] = []
   const models: string[] = []
-  mock.env(on, {})
+  mock.env(on, { SAWBUCK_JUDGE: 'native' })
   on('session.start', (_, e) => ({ cwd: e.cwd }))
   on('fs.exists', () => ({ value: false }))
   on('fs.read', (_, e) => { throw new Error(`ENOENT: ${e.path}`) })
@@ -108,7 +129,7 @@ test('an unattached repo gets no model call and no file', async ($, on) => {
 test('a noise reply ("ok", a task notification) is not a pair: no model call, and the stash waits for a real reply', async ($, on) => {
   const models: string[] = []
   const writes: string[] = []
-  mock.env(on, {})
+  mock.env(on, { SAWBUCK_JUDGE: 'native' })
   on('session.start', (_, e) => ({ cwd: e.cwd }))
   on('fs.exists', (_, e) => ({ value: e.path.endsWith('/.sawbuck/state.json') }))
   on('fs.read', (_, e) => { throw new Error(`ENOENT: ${e.path}`) })
@@ -168,7 +189,7 @@ test('SAWBUCK_JUDGE=native stays native (no engine shell-out), and the steer win
 
 test('a steer.json from another session is read: the pair index restarts at 1, the tallies carry', async ($, on) => {
   const texts: string[] = []
-  mock.env(on, {})
+  mock.env(on, { SAWBUCK_JUDGE: 'native' })
   on('session.start', (_, e) => ({ cwd: e.cwd }))
   on('fs.exists', (_, e) => ({ value: e.path.endsWith('/.sawbuck/state.json') }))
   on('fs.read', (_, e) => {
@@ -198,7 +219,7 @@ test('a steer.json from another session is read: the pair index restarts at 1, t
 test('two hard throws then an answer: scoring continues (one bad call is one lost sample)', async ($, on) => {
   const models: string[] = []
   const texts: string[] = []
-  mock.env(on, {})
+  mock.env(on, { SAWBUCK_JUDGE: 'native' })
   on('session.start', (_, e) => ({ cwd: e.cwd }))
   on('fs.exists', (_, e) => ({ value: e.path.endsWith('/.sawbuck/state.json') }))
   on('fs.read', (_, e) => { throw new Error(`ENOENT: ${e.path}`) })
@@ -226,7 +247,7 @@ test('two hard throws then an answer: scoring continues (one bad call is one los
 // LAST on purpose: this test leaves the module's native judge switched off for the rest of the file.
 test('three hard throws in a row switch the native judge off for the session', async ($, on) => {
   const models: string[] = []
-  mock.env(on, {})
+  mock.env(on, { SAWBUCK_JUDGE: 'native' })
   on('session.start', (_, e) => ({ cwd: e.cwd }))
   on('fs.exists', (_, e) => ({ value: e.path.endsWith('/.sawbuck/state.json') }))
   on('fs.read', (_, e) => { throw new Error(`ENOENT: ${e.path}`) })
@@ -248,7 +269,7 @@ test('three hard throws in a row switch the native judge off for the session', a
 test('the offer: a git repo with no contract gets one line once per directory, a signed repo gets none, and nothing is written', async ($, on) => {
   const writes: string[] = []
   let hasLock = false
-  mock.env(on, {})
+  mock.env(on, { SAWBUCK_JUDGE: 'native' })
   on('session.start', (_, e) => ({ cwd: e.cwd }))
   on('fs.exists', (_, e) => ({ value: e.path.endsWith('.git') || (hasLock && e.path.endsWith('promptwheel.lock.json')) }))
   on('fs.read', (_, e) => { throw new Error(`ENOENT: ${e.path}`) })
@@ -269,7 +290,7 @@ test('outside a git repository: steers land in the store, no file is written, no
   const writes: string[] = []
   const models: unknown[] = []
   const store = new Map<string, unknown>()
-  mock.env(on, {})
+  mock.env(on, { SAWBUCK_JUDGE: 'native' })
   on('session.start', (_, e) => ({ cwd: e.cwd }))
   on('session.repo', () => ({ value: null }))
   on('fs.exists', (_, e) => ({ value: e.path.endsWith('/.sawbuck/state.json') || e.path.endsWith('package.json') }))
@@ -296,7 +317,7 @@ test('outside a git repository: steers land in the store, no file is written, no
 
 test('the scratchpad keeps the newest 2000 steers', async ($, on) => {
   const store = new Map<string, unknown>([['steers', Array.from({ length: 2000 }, (_, i) => ({ nudge: `old ${i}`, session: 's', repo: '' }))]])
-  mock.env(on, {})
+  mock.env(on, { SAWBUCK_JUDGE: 'native' })
   on('session.start', (_, e) => ({ cwd: e.cwd }))
   on('session.repo', () => ({ value: null }))
   on('fs.exists', () => ({ value: false }))

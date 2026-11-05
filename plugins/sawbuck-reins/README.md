@@ -31,24 +31,8 @@ Outside a git repository there is nothing to check, so the band reads `no repo h
   `🐴 sawbuck · one step: /sawbuck-reins:contract` when the repo is checkable but not yet set up (that one command signs the repo and arms it), and a
   bold `🐴 N caught` (with the latest item) when the check flags a regression or a faked, "gamed"
   win. It never blocks your prompt and hides itself where Sawbuck is not relevant.
-- **A live steering readout** on the band (`🐎 steer X%`, taut `✊` once you are steering more than half of your recent turns): once the repo is
-  signed (`/sawbuck-reins:contract`), each turn it scores how much you redirected the agent (a light refine, a redirect, or a hard stop) and shows a **recent-window rate**
-  (an EMA over roughly your last 20 scored turns), so it tracks how you are steering lately, instead of a
-  lifetime average that old turns anchor. It scores the newest turn in the background and never blocks a turn. The judge has two modes (set `judge` in
-  `/plugin configure sawbuck-reins@sawbuck` or `/config`):
-  - **`native`** (default): a separate, lightweight classify call through Claude Code's own model
-    API (`$.model.complete`, requesting the Haiku model id), on your **own** Claude plan. Zero
-    setup: no ollama, no key, nothing leaves your Claude account. It runs in repos where sawbuck
-    is attached and in sessions outside any repo, not in repos you have not signed. One failed or timed-out call costs one sample; if your build or org
-    blocks model calls (three failed calls in a row), the plugin stops scoring for that session
-    and the band shows the last rate it had.
-  - **`off`**: no live steer rate from the plugin.
-
-  **The steer scratchpad.** When a reply is scored as a steer, the judge's few-word summary is kept in Claude Code's
-  plugin store on your machine, with the repo name and date, newest 2,000. No folder gets a file, and it follows you
-  across repos. `/sawbuck-reins:steers` shows what you keep repeating: 3 times across 2 sessions. It is shown to you and
-  never added to a prompt, because a summary of a reply that includes the agent's own text should not steer the agent.
-  It counts what the judge saw, so replies that could not be scored make it an undercount, and it says so.
+- **Your rules and shape, on demand.** `/sawbuck-reins:rules` and `/sawbuck-reins:shape` read your history when you ask.
+  Nothing is scored per turn unless you turn on the live judge, below.
 
   **Your steering shape.** `/sawbuck-reins:shape` labels a sample of your messages once and draws what you push on: 12 spokes
   in 4 groups, with a card at `~/.sawbuck/shape.svg`. Only totals are kept, and each run is saved with its date to compare
@@ -57,14 +41,15 @@ Outside a git repository there is nothing to check, so the band reads `no repo h
   **Find your unwritten rules.** `/sawbuck-reins:rules` gathers what you typed to Claude Code on this machine, with copies
   and likely secrets removed, and asks the model once for the rules you keep enforcing. Your messages go to the model,
   like any prompt. Every proposed rule must carry at least 2 quotes that a plain check finds in your own words. Nothing
-  is added unless you pick it. Rules you keep in `~/.sawbuck/rules.md`, one per line, go into `AGENTS.md` in every repo you
-  sign, so review that file before committing to a shared repo. Secret filtering is by pattern, so it can miss one: read `~/.sawbuck/rule-input.txt` first
+  is added unless you pick it. Rules you keep go in `~/.claude/CLAUDE.md`, which applies to you in every repo and no repo shares, or in one repo's
+  `CLAUDE.md` if the team should have them. Secret filtering is by pattern, so it can miss one: read `~/.sawbuck/rule-input.txt` first
   if your history might hold any.
 
-  To score with a model of your own instead (a free local `ollama:qwen2.5:7b`, or a hosted key),
-  use the `reins` CLI: set `SAWBUCK_JUDGE` and run `reins --append` after a session, or the
-  `reins-steering` skill below. When `SAWBUCK_JUDGE` names a CLI backend the plugin judge stays off
-  on its own, so an existing local-ollama setup is never billed for native on top.
+  **The live judge (off by default, will be removed).** Set `judge` to `native` in `/plugin configure sawbuck-reins@sawbuck`
+  for a live `steer X%` on the band: one small classify call per turn through Claude Code's own model API, on your own plan,
+  in signed repos and outside any repo. It also keeps a few-word summary of each steer in Claude Code's plugin store, shown by
+  `/sawbuck-reins:steers` and never added to a prompt. To score with your own model, set `SAWBUCK_JUDGE` and use the `reins`
+  CLI through the `reins-steering` skill; the plugin judge then stays off, so nothing is billed twice.
 - **`/sawbuck-reins:check`** verifies your latest change right now (zero-config, no setup): it says
   plainly whether the win was earned in the source, was gamed, is a regression, or could not be
   measured, and Claude sees the verdict, so a gamed one gets fixed in the source.
@@ -76,7 +61,7 @@ Outside a git repository there is nothing to check, so the band reads `no repo h
   what it has caught for you over time, the debt accruing now, and whether it is armed in this repo.
 
 Each command is a plain plugin command: a prompt that tells Claude to run exact, pinned
-`npx -y sawbuck@0.1.43 ...` calls through its own Bash tool, pre-approved for those exact commands and
+`npx -y sawbuck@0.1.44 ...` calls through its own Bash tool, pre-approved for those exact commands and
 nothing else, so Claude Code's permission system is the one in charge. The `sawbuck` CLI rides the
 deterministic, zero-LLM `promptwheel` check and the `@promptwheel/logbook` memory. No `npm install`
 and no manual `sawbuck attach` to start.
@@ -85,7 +70,7 @@ and no manual `sawbuck attach` to start.
 
 **Programs it runs.** The mod (`hooks/register.tsx`) runs none: it makes no process call of any
 kind. The slash commands in `commands/` are prompts; each tells Claude to run exact
-commands, `npx -y sawbuck@0.1.43 <contract|check|attach --claude|context --speak|debt|status>` (`/sawbuck-reins:contract` runs `contract`, then `attach --claude`), through
+commands, `npx -y sawbuck@0.1.44 <contract|check|attach --claude|context --speak|debt|status>` (`/sawbuck-reins:contract` runs `contract`, then `attach --claude`), through
 Claude's own Bash tool, with `allowed-tools` pre-approving those exact strings and nothing else. Claude
 sees the output and can act on it (fix the source after a gamed verdict, for instance). The
 `reins-steering` skill tells Claude to run the pinned `npx -y @sawbuck/reins@0.4.5` CLI the same way.

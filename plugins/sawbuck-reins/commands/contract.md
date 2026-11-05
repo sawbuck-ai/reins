@@ -1,13 +1,13 @@
 ---
 description: One step to set up Sawbuck: sign this repo to a contract and start watching every turn
-allowed-tools: ["Bash(npx -y sawbuck@0.1.43 contract)", "Bash(npx -y sawbuck@0.1.43 attach --claude)"]
+allowed-tools: ["Bash(npx -y sawbuck@0.1.44 contract)", "Bash(npx -y sawbuck@0.1.44 attach --claude)"]
 ---
 
 Run exactly these two commands in the current repo, in order, and show the person their output verbatim. The first also adds the rules to AGENTS.md, and to CLAUDE.md or .cursorrules if they exist, and on a GitHub repo writes .github/workflows/sawbuck.yml, so tell them that:
 
 ```
-npx -y sawbuck@0.1.43 contract
-npx -y sawbuck@0.1.43 attach --claude
+npx -y sawbuck@0.1.44 contract
+npx -y sawbuck@0.1.44 attach --claude
 ```
 
 The first keeps any contract already here, adds tests and tripwires if there is none, then protected paths, the supply-chain guards, and promptwheel.lock.json. The second wires the hooks that check every turn. Running them twice changes nothing.

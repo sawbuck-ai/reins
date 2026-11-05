@@ -25,8 +25,8 @@ codex plugin add sawbuck-reins@sawbuck
 
 ## What you get
 
-- **A guide band** above the prompt (Claude Code): `watching`, `N caught`, the last verdict, and a
-  live steer rate, read from the repo's local `.sawbuck/` record each turn. It never blocks a prompt.
+- **A guide band** above the prompt (Claude Code): `watching`, `N caught`, and the last verdict,
+  read from the repo's local `.sawbuck/` record each turn. It never blocks a prompt.
 - **Nothing to remember** (Claude Code): in a git repo with no contract, Claude offers once to sign it. Say yes and it signs the repo: every turn checks protected paths, and every commit is re-proved. Or run `/sawbuck-reins:contract` yourself.
 - **`/sawbuck-reins:rules`** proposes the rules you keep enforcing, with quotes from your own messages, and you pick what to keep.
 - **`/sawbuck-reins:shape`** shows what you push on, what the agent did, and the gap between them.
@@ -52,7 +52,7 @@ what the plugin runs, writes, and sends is in [the plugin README](plugins/sawbuc
 
 ## Links
 
-- Sawbuck: https://sawbuck.ai (the check at /check, contracts at /contracts, memory and steering at /memory)
+- Sawbuck: https://sawbuck.ai (the check at /check, contracts at /contracts)
 - The CLI: https://github.com/sawbuck-ai/sawbuck (`npm i -g sawbuck`, or `npx sawbuck check` with no install)
 - The engine the check runs on: https://github.com/promptwheel-ai/promptwheel
 

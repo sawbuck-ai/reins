@@ -1,8 +1,8 @@
 {
   "name": "sawbuck-reins",
   "displayName": "Sawbuck",
-  "version": "0.5.33",
-  "description": "Sawbuck in Claude Code, one install: the guide band (watching / N caught / last verdict / live steer rate) plus slash commands, /sawbuck-reins:contract (one step: sign the repo and start watching), /sawbuck-reins:check (try it now), /sawbuck-reins:rules (propose the rules you keep enforcing), /sawbuck-reins:shape (what you push on, and what you never said), /sawbuck-reins:context (ranked history for the files you touch), /sawbuck-reins:debt (the repo's live suppression debt), and /sawbuck-reins:status (the inventory). The mod itself runs no program.",
+  "version": "0.5.34",
+  "description": "Sawbuck in Claude Code, one install: the guide band (watching / N caught / last verdict) plus slash commands, /sawbuck-reins:contract (one step: sign the repo and start watching), /sawbuck-reins:check (try it now), /sawbuck-reins:rules (propose the rules you keep enforcing), /sawbuck-reins:shape (what you push on, and what you never said), /sawbuck-reins:context (ranked history for the files you touch), /sawbuck-reins:debt (the repo's live suppression debt), and /sawbuck-reins:status (the inventory). The mod itself runs no program.",
   "keywords": [
     "sawbuck",
     "reward-hacking",
@@ -25,18 +25,18 @@
   "userConfig": {
     "judge": {
       "type": "string",
-      "title": "Live steering judge",
-      "description": "How the band's steer rate is scored each turn. native: one small call through Claude Code's own model API, on your own plan, zero setup, no key. off: no live steer rate from the plugin (score with the reins CLI instead: set SAWBUCK_JUDGE and run reins --append, see the reins-steering skill).",
+      "title": "Live steering judge (off by default, will be removed)",
+      "description": "Off by default: /sawbuck-reins:rules and /sawbuck-reins:shape read your history when you ask, with no call per turn. native turns on a live steer rate, with one small call per turn through Claude Code's own model API on your plan.",
       "options": [
         "native",
         "off"
       ],
-      "default": "native"
+      "default": "off"
     },
     "band": {
       "type": "string",
       "title": "Guide band",
-      "description": "Show the guide band above your prompt. Set to off if you show sawbuck in your own statusline instead (sawbuck statusline, below the prompt), so it does not appear twice. The judge still runs either way, so the statusline stays live.",
+      "description": "Show the guide band above your prompt. Set to off if you show sawbuck in your own statusline instead (sawbuck statusline, below the prompt), so it does not appear twice.",
       "options": [
         "on",
         "off"
