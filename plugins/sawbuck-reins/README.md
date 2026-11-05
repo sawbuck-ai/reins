@@ -52,7 +52,7 @@ Outside a git repository there is nothing to check, so the band reads `no repo h
 
   **Your steering shape.** `/sawbuck-reins:shape` labels a sample of your messages once and draws what you push on: 12 spokes
   in 4 groups, with a card at `~/.sawbuck/shape.svg`. Only totals are kept, and each run is saved with its date to compare
-  later. It also counts what the agent did, from your history, with no model, and names two kinds of pattern: fighting it (you push and it keeps happening) and not said (it happens and you never push). It says what you pushed on, not how good you are, and the 0 to 99 scale is relative to your own top spoke.
+  later. It also counts what the agent did over your last 90 days, with no model, leaving out scratch work, and checks your written rules by keyword. It names two kinds of pattern, each with a rule to try: fighting it (you push and it keeps happening) and not said (it happens, you never push, and no rule covers it). It says what you pushed on, not how good you are, and the 0 to 99 scale is relative to your own top spoke.
 
   **Find your unwritten rules.** `/sawbuck-reins:rules` gathers what you typed to Claude Code on this machine, with copies
   and likely secrets removed, and asks the model once for the rules you keep enforcing. Your messages go to the model,
