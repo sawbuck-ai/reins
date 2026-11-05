@@ -289,7 +289,7 @@ async function readSummary($: any): Promise<Summary | null> {
 // offer to sign it after doing the work. Decided in prompt.compose, which runs before prompt.submit, and kept for
 // that session so the prompt stays stable. Nothing is written or run without the person's yes. Asked-already lives
 // in $.store, per directory, outside the repo.
-const OFFER = "Sawbuck is installed and this repository has no contract yet. Do the person's request first and in full. Then end your reply with one short line of your own offering to sign this repository, saying it writes a contract and a lock file, adds a CI check on GitHub repos, and watches each turn, and ask yes or no. Offer once, at the end of your first reply, and do not raise it again. If you are a subagent, ignore this. Only if they say yes, invoke the sawbuck-reins:contract skill. Never sign without that yes."
+const OFFER = "Sawbuck is installed and this repository has no contract yet. Do the person's request first and in full. Then end your reply with one short line of your own offering to sign this repository, saying it writes a contract and a lock file, adds the rules to AGENTS.md (and CLAUDE.md if there is one), adds a CI check on GitHub repos, and watches each turn, and ask yes or no. Offer once, at the end of your first reply, and do not raise it again. If you are a subagent, ignore this. Only if they say yes, invoke the sawbuck-reins:contract skill. Never sign without that yes."
 let offerDecided = false, offering = false
 async function decideOffer($: any): Promise<void> {
   if (offerDecided) return

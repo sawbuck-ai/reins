@@ -1,4 +1,4 @@
-# Sawbuck for Claude Code, with Codex support in beta
+# Sawbuck for Claude Code, with Codex untested
 
 The plugin marketplace for [Sawbuck](https://sawbuck.ai). One install puts the check inside your
 coding session: a deterministic, zero-LLM check re-proves every win from the agent's source edits
@@ -28,11 +28,11 @@ codex plugin add sawbuck-reins@sawbuck
 - **A guide band** above the prompt (Claude Code): `watching`, `N caught`, the last verdict, and a
   live steer rate, read from the repo's local `.sawbuck/` record each turn. It never blocks a prompt.
 - **Nothing to remember** (Claude Code): in a git repo with no contract, Claude offers once to sign it. Say yes and it signs the repo: every turn checks protected paths, and every commit is re-proved. Or run `/sawbuck-reins:contract` yourself.
-- **Five more slash commands** (Claude Code): `/sawbuck-reins:check` verifies your latest change now,
+- **More slash commands** (Claude Code): `/sawbuck-reins:check` verifies your latest change now,
   `/sawbuck-reins:contract` signs the repo and arms the Stop hook (protected paths every turn, re-proof every commit), `/sawbuck-reins:context` shows
   the ranked history for the files you touch, `/sawbuck-reins:debt` lists the suppression debt still
   live in HEAD, and `/sawbuck-reins:status` shows everything Sawbuck has here in one view.
-- **Two skills** (Claude Code, and Codex in beta): `sawbuck-check`, verify that a win was earned in the source
+- **Two skills** (Claude Code, and Codex untested): `sawbuck-check`, verify that a win was earned in the source
   and not by editing a test, grader, or config; and `reins-steering`, read how much you have been
   steering the agent and the cues you keep giving, from your own local transcripts.
 

@@ -20,9 +20,9 @@ Claude Code asks three things on install: a **scope** (choose **user** so the ba
 
 You don't need to remember a command. The first time you use Claude Code in a git repository with no contract, Claude finishes what you asked and then offers once to sign the repo. Say yes and it runs `/sawbuck-reins:contract`, which signs the repo: every turn checks protected paths, and every commit is re-proved. Say anything else and it won't ask again in that directory. Nothing is written or run without that yes, and it never commits for you.
 
-A new contract starts by watching. Protected paths, new install scripts and sources outside the registry block from day one. New dependencies and structure changes show as notes, so ordinary work stays green. On a GitHub repo with a test command, signing also adds a CI check. Run `sawbuck contract --strict` to block everything, or `--no-ci` to skip CI.
+A new contract starts by watching. Protected paths, new install scripts and sources outside the registry block from day one. New dependencies and structure changes show as notes, so ordinary work stays green. On a GitHub repo with a test command, signing also adds a CI check. Run `npx -y sawbuck contract --strict` to block everything, or `--no-ci` to skip CI.
 
-Outside a git repository there is nothing to check, so the band reads `no repo here` and the plugin gathers nothing and writes nothing.
+Outside a git repository there is nothing to check, so the band reads `no repo here` and no file is written. The steer judge still runs there unless `judge` is off, keeping your corrections in the plugin store on this machine.
 
 ## What you get
 
