@@ -3,7 +3,7 @@ description: One step to set up Sawbuck: sign this repo to a contract and start 
 allowed-tools: ["Bash(npx -y sawbuck@0.1.39 contract)", "Bash(npx -y sawbuck@0.1.39 attach --claude)"]
 ---
 
-Run exactly these two commands in the current repo, in order, and show the person their output verbatim:
+Run exactly these two commands in the current repo, in order, and show the person their output verbatim. On a GitHub repo the first also writes .github/workflows/sawbuck.yml, so tell them that:
 
 ```
 npx -y sawbuck@0.1.39 contract
