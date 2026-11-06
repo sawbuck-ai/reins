@@ -1,7 +1,8 @@
 # sawbuck-reins
 
-Sawbuck in Claude Code, one install. A guide band above the prompt plus six slash commands, so
-you can catch your agent gaming a metric without leaving the session or touching the CLI. The band
+Sawbuck in Claude Code, one install. It finds the rules you keep telling your agent, helps you write
+them down, and re-runs your tests to prove they held: six slash commands and a guide band above the
+prompt, without leaving the session or touching the CLI. The band
 and the steering judge are a mod (a hooks module); the commands are plain plugin commands that
 Claude runs through its own Bash tool. The mod itself runs no program.
 
