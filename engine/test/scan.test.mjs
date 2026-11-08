@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert";
-import { pairs, scan } from "../scan.mjs";
+import { pairs, scan, stripPaste } from "../scan.mjs";
 import { parse } from "../judge.mjs";
 
 const L = (o) => JSON.stringify(o);
@@ -8,6 +8,18 @@ const asst = (t = "did a thing") => L({ type: "assistant", message: { content: [
 const user = (s) => L({ type: "user", userType: "external", message: { content: s } });
 const toolres = L({ type: "user", userType: "external", message: { content: [{ type: "tool_result", content: "x" }] } });
 const meta = L({ type: "user", isMeta: true, message: { content: "reminder" } });
+
+test("stripPaste(): a pasted trace goes as one block, a bare headline and plain words stay, fences and quotes go", () => {
+  const trace = "TypeError: Cannot read properties of undefined (reading 'status')\n    at health (/app/src/server.js:42:15)\n    at Layer.handle [as handle_request] (/app/node_modules/express/lib/router/layer.js:95:5)\n\nmake it shorter";
+  assert.equal(stripPaste(trace), "make it shorter");
+  assert.equal(stripPaste("TypeError: x is undefined"), "TypeError: x is undefined");
+  assert.equal(stripPaste("make it shorter please"), "make it shorter please");
+  assert.equal(stripPaste("fix this\n```js\nconst a = 1\n```\nthanks"), "fix this\n \nthanks".replace("\n \n", "\n \n").trim());
+  assert.equal(stripPaste("> quoted line\nmy reply"), "my reply");
+  assert.equal(stripPaste("Traceback (most recent call last):\n  File \"a.py\", line 3, in <module>\nValueError: bad"), "ValueError: bad");
+  const p = pairs([asst(), user("hello there"), asst(), user(trace)].join("\n"));   // "hi" is under 3 chars, which pairs() skips as noise
+  assert.equal(p.length, 1); assert.equal(p[0].user, "make it shorter");
+});
 
 test("pairs(): excludes opener, tool_result, meta, task-notifications", () => {
   const text = [

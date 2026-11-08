@@ -56,12 +56,35 @@ function noise(t: string): boolean {
 
 // EXACT copy of engine/judge.mjs PROMPT (the 600/800 slicing that lives in
 // scan.mjs pairs() is applied inline here since we score a live pair, not the transcript).
+// EXACT copy of engine/scan.mjs stripPaste(): a pasted trace (headline plus frames), fenced blocks and quoted lines are
+// removed before the judge reads the turn; a bare headline stays. Measured in proof-bench/judge (2026-11-07): a trace
+// pasted first read as a steer 16 of 50 times when the reply alone did not; with the block gone, the base rate.
+const FRAME = /^(at\s+\S.*\(.*:\d+(:\d+)?\)|at\s+\S+:\d+(:\d+)?|File\s+"[^"]+",\s+line\s+\d+|\S+\.(go|py|js|ts|rb|java):\d+)/
+const HEAD = /^(\w*(Error|Exception|Traceback)\b|panic:|Unhandled|Uncaught)/
+function stripPaste(t: string): string {
+  t = String(t).replace(/```[\s\S]*?```/g, ' ')
+  const lines = t.split('\n'), keep: string[] = []
+  let i = 0
+  while (i < lines.length) {
+    const s = lines[i].trim()
+    if (s.startsWith('>')) { i++; continue }
+    if (HEAD.test(s) || FRAME.test(s)) {
+      let j = i + 1
+      while (j < lines.length && (FRAME.test(lines[j].trim()) || (!lines[j].trim() && j + 1 < lines.length && FRAME.test(lines[j + 1].trim())))) j++
+      if (j > i + 1 || FRAME.test(s)) { i = j; continue }
+    }
+    keep.push(lines[i]); i++
+  }
+  const out = keep.join('\n').trim()
+  return out || t
+}
+
 const PROMPT = (a: string, u: string) =>
 `You rate how much a developer's message STEERS an AI coding agent's current work.
 Output ONLY one JSON object: {"pressure":0-3,"axis":"one-word","nudge":"<=8 words"}
 pressure: 0 passive (approval like "yes/go/do it", a pure question, or a brand-new unrelated task; NOT steering current work). 1 light refine (small adjustment to the SAME work: tone, length, scope, emphasis, "a bit more X", "also Y"). 2 redirect (change the approach/direction of current work). 3 hard stop ("no/stop/undo/revert", reject and restart).
 AGENT just did: ${String(a).slice(0, 600)}
-USER replied: ${String(u).replace(/\s+/g, ' ').slice(0, 800)}
+USER replied: ${stripPaste(u).replace(/\s+/g, ' ').slice(0, 800)}
 JSON:`
 
 // engine/judge.mjs parse(): strip reasoning <think>, take the last JSON object, clamp. One difference: the nudge keeps

@@ -40,6 +40,31 @@ const noise = (t) => {
   return false;
 };
 
+// A pasted stack trace (its headline line with the frame lines after it), fenced code blocks and quoted lines are
+// removed before the judge reads a turn. Measured 2026-11-07 (proof-bench/judge): a trace pasted before the reply
+// used to read as a steer 16 of 50 times when the reply alone did not; with the block gone, 13, the base rate, and the
+// reading matched the reply alone 97 of 100 times. A headline typed on its own ("TypeError: x") stays: it is the
+// person's words. EXACT copy in the plugin's register.tsx; change both or neither.
+const FRAME = /^(at\s+\S.*\(.*:\d+(:\d+)?\)|at\s+\S+:\d+(:\d+)?|File\s+"[^"]+",\s+line\s+\d+|\S+\.(go|py|js|ts|rb|java):\d+)/;
+const HEAD = /^(\w*(Error|Exception|Traceback)\b|panic:|Unhandled|Uncaught)/;
+export function stripPaste(t) {
+  t = String(t).replace(/```[\s\S]*?```/g, " ");
+  const lines = t.split("\n"), keep = [];
+  let i = 0;
+  while (i < lines.length) {
+    const s = lines[i].trim();
+    if (s.startsWith(">")) { i++; continue; }
+    if (HEAD.test(s) || FRAME.test(s)) {
+      let j = i + 1;
+      while (j < lines.length && (FRAME.test(lines[j].trim()) || (!lines[j].trim() && j + 1 < lines.length && FRAME.test(lines[j + 1].trim())))) j++;
+      if (j > i + 1 || FRAME.test(s)) { i = j; continue; }
+    }
+    keep.push(lines[i]); i++;
+  }
+  const out = keep.join("\n").trim();
+  return out || t;
+}
+
 // Extract the (prior-agent, user-turn) pairs to score: every non-opener human turn
 // that followed an agent action.
 export function pairs(text) {
@@ -52,7 +77,7 @@ export function pairs(text) {
     const t = humanText(o);
     if (t === null || noise(t)) continue;
     if (!seen) { seen = true; continue; }       // opener = a request, not a steer
-    if (prev) out.push({ prior: prev.slice(0, 600), user: t.replace(/\s+/g, " ").slice(0, 800) });
+    if (prev) out.push({ prior: prev.slice(0, 600), user: stripPaste(t).replace(/\s+/g, " ").slice(0, 800) });
     prev = "";
   }
   return out;

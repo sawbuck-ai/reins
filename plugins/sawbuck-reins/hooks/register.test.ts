@@ -349,3 +349,26 @@ test('the memory band names no command that is gone: it points at the CLI for hi
   expect(band?.text).toContain('sawbuck context')
   expect(band?.text).not.toContain('/sawbuck-reins:context')
 })
+
+test('a stack trace pasted before the reply never reaches the judge: the prompt carries the words, not the frames', async ($, on) => {
+  const prompts: string[] = []
+  let last: string | null = null
+  on('session.start', (_, e) => ({ cwd: e.cwd }))
+  on('process.run', () => ({ value: { exitCode: 0, stdout: '', stderr: '', isStdoutTruncated: false, isStderrTruncated: false } }))
+  on('fs.exists', (_, e) => ({ value: e.path.endsWith('/.sawbuck/state.json') }))
+  on('fs.read', (_, e) => { if (e.path.endsWith('/.sawbuck/steer.json') && last != null) return { value: last }; throw new Error(`ENOENT: ${e.path}`) })
+  on('fs.write', (_, e) => { last = e.text; return { value: undefined } })
+  on('model.complete', (_, e) => { prompts.push(String((e as any).prompt)); return { value: { isAnswered: true, text: '{"pressure":1,"axis":"x","nudge":"y"}', usage: { input_tokens: 1, output_tokens: 1 } } } })
+  on('turn.complete', () => ({ text: '' }))
+  on('prompt.submit', (_, e) => ({ text: e.text }))
+
+  await $.session.start({ cwd: '/repo', surface: 'terminal', isInteractive: true })
+  await $.turn.complete({ answer: 'added the endpoint', durationMs: 1, isAborted: false, turnId: 't1', reason: 'answer' })
+  await $.prompt.submit({ text: "TypeError: Cannot read properties of undefined (reading 'status')\n    at health (/app/src/server.js:42:15)\n    at Layer.handle (/app/node_modules/express/lib/router/layer.js:95:5)\n\nmake it shorter" })
+  for (let i = 0; i < 50 && prompts.length < 1; i++) await new Promise((r) => setTimeout(r, 20))
+
+  expect(prompts.length).toBe(1)
+  expect(prompts[0]).toContain('USER replied: make it shorter')
+  expect(prompts[0]).not.toContain('server.js:42')
+  expect(prompts[0]).not.toContain('TypeError')
+})
