@@ -28,9 +28,9 @@ Outside a git repository there is nothing to check, so the band reads `no repo h
 ## What you get
 
 - **A guide band** above the prompt, read from the repo's local `.sawbuck/` record each turn:
-  a quiet `🐴 sawbuck · watching` (with the last verdict, `✓` verified / `🚩` gamed) when armed,
-  `🐴 sawbuck · one step: /sawbuck-reins:contract` when the repo is checkable but not yet set up (that one command signs the repo and arms it), and a
-  bold `🐴 N caught` (with the latest item) when the check flags a regression or a faked, "gamed"
+  a quiet `sawbuck · watching` (with the last verdict, `✓` verified / `🚩` gamed) when armed,
+  `sawbuck · one step: /sawbuck-reins:contract` when the repo is checkable but not yet set up (that one command signs the repo and arms it), and a
+  bold `N caught` (with the latest item) when the check flags a regression or a faked, "gamed"
   win. It never blocks your prompt and hides itself where Sawbuck is not relevant.
 - **Your rules and shape, on demand.** `/sawbuck-reins:rules` and `/sawbuck-reins:shape` read your history when you ask.
 

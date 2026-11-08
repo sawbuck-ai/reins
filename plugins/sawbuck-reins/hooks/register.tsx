@@ -7,7 +7,7 @@ import type { Summary } from '../types'
 const summaryAtom = atom({ plugin: 'sawbuck-reins', key: 'summary' } as const, null)
 
 // --- the live steering judge ------------------------------------------------
-// The band's "🐎/✊ steer X%" comes from .sawbuck/steer.json, which this mod fills in
+// The band's "steer X%" comes from .sawbuck/steer.json, which this mod fills in
 // ONE way: native scores the newest turn-pair with one small call through Claude Code's
 // own model API ($.model.complete), on the user's own plan, on by default. Sonnet: against a careful Opus reading of 200
 // real turns it reached kappa 0.66, Opus 0.70, Haiku 0.41, and Haiku over-called steering at 70% to 54%. Always read the
@@ -394,21 +394,19 @@ export const register: Register = (on, options) => {
     if (s.noRepo) {
       return (
         <Box>
-          <Text dimColor>🐴 sawbuck · no repo here{s.repeat ? ' · ' + s.repeat : ''}</Text>
+          <Text dimColor>sawbuck · no repo here{s.repeat ? ' · ' + s.repeat : ''}</Text>
         </Box>
       )
     }
     const icon = ({ verified: '✓', gamed: '🚩', regression: '✗', inconclusive: '≈', allowed: '✎' } as Record<string, string>)[s.last] || ''
-    // the steer icon reads the RECENT rate (the % beside it carries the detail): reins slack (🐎)
-    // when under half your recent turns are steers, taut (✊) past half.
-    const grip = (s.steer ?? 0) >= 50 ? '✊' : '🐎'
-    const steerSeg = s.steer != null ? ` · ${grip} steer ${s.steer}%` : ''
+    // the steer segment reads the RECENT rate; the % carries the detail
+    const steerSeg = s.steer != null ? ` · steer ${s.steer}%` : ''
     const at = s.repo ? s.repo + ' · ' : ''
 
     if (s.caught > 0) {
       return (
         <Box>
-          <Text color="yellow" weight="bold">🐴 sawbuck · {at}{s.caught} caught</Text>
+          <Text color="yellow" weight="bold">sawbuck · {at}{s.caught} caught</Text>
           {s.latest ? <Text dimColor> · {s.latest.kind} on {s.latest.file}</Text> : null}
           {steerSeg ? <Text dimColor>{steerSeg}</Text> : null}
         </Box>
@@ -417,20 +415,20 @@ export const register: Register = (on, options) => {
     if (s.active) {
       return (
         <Box>
-          <Text dimColor>🐴 sawbuck · {at}watching{icon ? ' · ' + icon : ''}{steerSeg}{s.repeat ? ' · ' + s.repeat : ''}{s.signed ? '' : ' · /sawbuck-reins:contract to add rules'}</Text>
+          <Text dimColor>sawbuck · {at}watching{icon ? ' · ' + icon : ''}{steerSeg}{s.repeat ? ' · ' + s.repeat : ''}{s.signed ? '' : ' · /sawbuck-reins:contract to add rules'}</Text>
         </Box>
       )
     }
     if (s.armed) {
       return (
         <Box>
-          <Text dimColor>🐴 sawbuck · {at}one step: /sawbuck-reins:contract</Text>
+          <Text dimColor>sawbuck · {at}one step: /sawbuck-reins:contract</Text>
         </Box>
       )
     }
     return (
       <Box>
-        <Text dimColor>🐴 sawbuck · memory · npx sawbuck context for history</Text>
+        <Text dimColor>sawbuck · memory · npx sawbuck context for history</Text>
       </Box>
     )
   })
