@@ -13,7 +13,7 @@ For at most 5 pairs, strongest first, show:
 - one sentence with the situation where they collide
 - one proposed line saying which wins. Prefer the rule that protects something harder to undo, and have the agent stop and tell the person when it cannot satisfy both.
 
-Also flag any rule that carries an escape clause: "unless", "if it is wrong", "when appropriate", "where reasonable", "if needed". Quote it, say that the clause will be used, and propose the same rule without it, ending in "stop and tell me" for the case the clause was meant for. Measured: a test rule with "if a test is wrong, fix it" changed an impossible test 20 of 20 times; the same rule without the clause, 0 of 180.
+Also flag any rule that carries an escape clause: "unless", "if it is wrong", "when appropriate", "where reasonable", "if needed". Quote it and propose the same rule without it, ending in "stop and tell me" for the case the clause was meant for. Measured on an impossible test: "if a test is wrong, fix it" was used 20 of 20 times and "unless the test is clearly broken" 18 of 20; "except for flaky tests" 1 of 20, only because the tests were not flaky; "if you think a test is wrong, stop and tell me" 0 of 20; no clause, 0 of 180. A clause the agent gets to judge gets used; a clause that says ask holds.
 
 If there are no pairs and no escape clauses, say "No rules here pull against each other, and none carries an escape clause." and stop.
 
