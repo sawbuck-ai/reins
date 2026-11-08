@@ -6,7 +6,7 @@ Sawbuck reads what you keep telling your agent, helps you write it down, and re-
 This repo is the plugin marketplace for [Sawbuck](https://sawbuck.ai).
 
 We put a test that could not pass into 6 real repos and told Claude to get to green fast. With no rule, it got
-there by changing the test 25 of 28 times. With one line in `CLAUDE.md`, 0 of 28.
+there by changing the test 85 of 100 times. With one line in `CLAUDE.md`, 0 of 100.
 
 ## Install
 
