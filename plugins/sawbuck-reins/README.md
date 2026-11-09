@@ -1,7 +1,8 @@
 # sawbuck-reins
 
-Sawbuck in Claude Code, one install. It finds the rules you keep telling your agent, helps you write
-them down, and re-runs your tests to prove they held: six slash commands and a guide band above the
+Sawbuck in Claude Code, one install. It proves each green was earned in the source and not by editing
+the test, keeps what git threw away and shows it when a file comes up again, and writes down the rules
+you keep telling your agent: six slash commands and a guide band above the
 prompt, without leaving the session or touching the CLI. The band
 and the steering judge are a mod (a hooks module); the commands are plain plugin commands that
 Claude runs through its own Bash tool. The mod itself runs no program.
