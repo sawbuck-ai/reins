@@ -51,7 +51,7 @@ function noise(t: string): boolean {
   const s = String(t).trim()
   if (!s) return true
   if (s.includes('<task-notification>') || s.startsWith('<task-id>')) return true
-  return s.replace(/\[Image #\d+\]/g, '').trim().length < 3
+  return s.replace(/\[Image #\d+\]/g, '').trim().length < 2   // "no" alone is a steer; one character is noise
 }
 
 // EXACT copy of engine/judge.mjs PROMPT (the 600/800 slicing that lives in
@@ -84,20 +84,30 @@ const PROMPT = (a: string, u: string) =>
 Output ONLY one JSON object: {"pressure":0-3,"axis":"one-word","nudge":"<=8 words"}
 pressure: 0 passive (approval like "yes/go/do it", a pure question, or a brand-new unrelated task; NOT steering current work). 1 light refine (small adjustment to the SAME work: tone, length, scope, emphasis, "a bit more X", "also Y"). 2 redirect (change the approach/direction of current work). 3 hard stop ("no/stop/undo/revert", reject and restart).
 AGENT just did: ${String(a).slice(0, 600)}
-USER replied: ${stripPaste(u).replace(/\s+/g, ' ').slice(0, 800)}
+USER replied: ${headTail(stripPaste(u).replace(/\s+/g, ' '), 800)}
 JSON:`
 
 // engine/judge.mjs parse(): strip reasoning <think>, take the last JSON object, clamp. One difference: the nudge keeps
 // 80 characters, not 48, so an 8-word note is not cut mid-word where the person reads it.
+// the first 500 and the last 300 characters of a long reply: the steer is as often at the end ("...so no, keep it") as the start
+function headTail(t: string, max: number): string {
+  if (t.length <= max) return t
+  return t.slice(0, max - 300) + ' … ' + t.slice(-300)
+}
+
 function parsePressure(txt: string): { pressure: number; axis: string; nudge: string } | null {
   txt = String(txt).replace(/<think>[\s\S]*?<\/think>/g, '')
-  const cands = txt.match(/\{[^{}]*\}/g) || []
+  // every {...} span, innermost last: a brace inside the nudge ("use {x}") used to break the only candidate
+  const opens: number[] = []; const cands: string[] = []
+  for (let i = 0; i < txt.length; i++) { if (txt[i] === '{') opens.push(i); else if (txt[i] === '}' && opens.length) { const o = opens.pop() as number; cands.push(txt.slice(o, i + 1)); if (!opens.length) break } }
+  const WORDS: Record<string, number> = { zero: 0, none: 0, one: 1, two: 2, three: 3 }
   for (const c of cands.reverse()) {
     try {
       const j = JSON.parse(c)
       if (j && j.pressure != null) {
+        const raw = typeof j.pressure === 'string' ? (WORDS[j.pressure.trim().toLowerCase()] ?? parseInt(j.pressure, 10)) : j.pressure
         return {
-          pressure: Math.max(0, Math.min(3, parseInt(j.pressure, 10) || 0)),
+          pressure: Math.max(0, Math.min(3, Number.isFinite(raw) ? Math.round(raw) : 0)),
           axis: String(j.axis || '').slice(0, 16),
           nudge: String(j.nudge || '').slice(0, 80),
         }
@@ -233,6 +243,12 @@ async function scoreNative($: any, prior: string, user: string, repo: string, at
 let scoring: Promise<void> = Promise.resolve()
 
 // Is the file there? $.fs.exists where the build has it; an older build answers by reading.
+// attached = the record exists and detach has not marked it. `sawbuck detach` keeps .sawbuck/state.json as the record
+// (git-ignored) and writes detached: true into it; attach clears the flag. Existence alone said "watching" after a detach.
+async function attachedHere($: any): Promise<boolean> {
+  try { const st = JSON.parse(await $.fs.read('.sawbuck/state.json')); return !st.detached } catch { return false }
+}
+
 async function present($: any, path: string): Promise<boolean> {
   try { return !!(await $.fs.exists(path)) } catch { /* no $.fs.exists on this build */ }
   try { await $.fs.read(path); return true } catch { return false }
@@ -265,7 +281,7 @@ async function readSummary($: any): Promise<Summary | null> {
     // where an old version left a .sawbuck behind. No judge, no model call, no file.
     const repo = await repoName($)
     if (repo === null) return { caught: 0, latest: null, armed: false, active: false, mem: false, last: '', steer: null, signed: false, noRepo: true, repo: '', repeat: await repeatLine($) }
-    const active = await present($, '.sawbuck/state.json')
+    const active = await attachedHere($)
     const armed = (await present($, 'promptwheel.config.json')) || (await present($, 'package.json'))
     // memory-only: logbook history is here, but no check contract (history recall without the gate)
     const mem = (await present($, 'LOGBOOK.md')) || (await present($, 'events.jsonl'))
