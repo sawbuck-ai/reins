@@ -20,5 +20,8 @@ golden files, with a deterministic, zero-LLM re-run. It reports plainly whether 
 or **could not be measured**. If it says gamed, the win is not real: fix the source so the result
 survives the source-only re-run, then check again.
 
+If you follow superpowers' `verification-before-completion`, this is its RUN step for a test win: the test
+output says the suite is green; this says whether the green was earned in the source.
+
 This is zero-config and never touches your working tree. It is the honest answer to "did that
 actually work, or did I just make the test stop complaining."

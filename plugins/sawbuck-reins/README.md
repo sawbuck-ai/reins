@@ -72,6 +72,11 @@ nothing else, so Claude Code's permission system is the one in charge. The `sawb
 deterministic, zero-LLM `promptwheel` check and the `@promptwheel/logbook` memory. No `npm install`
 and no manual `sawbuck attach` to start.
 
+Beside a model verifier: if you run superpowers' `verification-before-completion` or a Claude Code agent
+hook that asks whether the work is done, keep it. This plugin is the deterministic floor under it: the
+Stop hook re-runs the turn's commits from the source edits alone, so a green from an edited, skipped or
+deleted test, a changed config or a touched golden file reads as gamed, whatever the model concluded.
+
 ## What this plugin runs, writes, and sends (the full list)
 
 **Programs it runs.** The mod (`hooks/register.tsx`) runs none: it makes no process call of any
