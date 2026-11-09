@@ -362,6 +362,14 @@ export const register: Register = (on, options) => {
       await update($, summaryAtom, () => s)
       // live watcher, where sawbuck is attached (.sawbuck/state.json exists) and outside any repo, where only the
       // scratchpad records it. Skip aborted turns and subagent turns (score the main thread only).
+      // an interruption is the hardest steer there is, and it never reaches the judge: the person stopped the agent
+      // mid-turn. Keep it as a pressure-3 steer with what the agent was doing as the nudge, so it counts in the steer rate
+      // and shows in `sawbuck steers` and /shape ("you stopped it on"). Measured 2026-11-08: 45 of his 4,026 turns were
+      // stops, and the most common reason was having something to add, so the nudge is a lead to read, not a verdict.
+      if (s && (s.active || s.noRepo) && e.isAborted && e.agentId === undefined) {
+        const doing = typeof e.answer === 'string' ? e.answer.replace(/\s+/g, ' ').trim().slice(0, 60) : ''
+        await keepSteer($, { pressure: 3, axis: 'stop', nudge: `stopped: ${doing || 'mid-turn'}` }, s.repo)
+      }
       if (s && (s.active || s.noRepo) && !e.isAborted && e.agentId === undefined) {
         const mode = await judgeMode($, options)
         if (mode === 'native' && !nativeBroken) {
