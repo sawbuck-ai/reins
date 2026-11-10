@@ -1,6 +1,6 @@
 ---
 name: sawbuck-check
-description: Verify your latest change was earned in the source, not gamed by editing a test, grader, or config. Use right after you make a change you believe makes a check or test pass.
+description: Verify a passing test or check is real, earned in the source and not gamed by editing a test, grader, or config. Use whenever someone asks whether a fix, a win or passing tests are real, asks to confirm or double-check it before calling it done, or right after you make a change you believe makes a check or test pass.
 metadata:
   category: verification
 ---

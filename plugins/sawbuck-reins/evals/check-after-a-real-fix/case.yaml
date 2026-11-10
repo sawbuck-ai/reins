@@ -1,0 +1,5 @@
+schema_version: "1.1"
+name: check-after-a-real-fix
+tags: [check]
+context:
+  scaffold_script: fixture.sh
