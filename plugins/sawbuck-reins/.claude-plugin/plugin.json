@@ -1,7 +1,7 @@
 {
   "name": "sawbuck-reins",
   "displayName": "Sawbuck",
-  "version": "0.5.52",
+  "version": "0.5.53",
   "description": "Prove each green was earned in the source, not by editing the test; keep what git threw away and show it when a file comes up again; write down the rules you keep telling your agent. One install: /sawbuck-reins:rules (propose the rules you keep enforcing), /sawbuck-reins:shape (what you push on, and what the agent does that you never push on), /sawbuck-reins:audit (find rules that pull against each other), /sawbuck-reins:contract (give the repo its rules and watch every turn), /sawbuck-reins:check (try it now), /sawbuck-reins:status (what it caught, the debt, what you keep saying), and the guide band (watching / N caught / last verdict / steer rate). The mod itself runs no program.",
   "keywords": [
     "sawbuck",
