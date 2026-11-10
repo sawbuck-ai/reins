@@ -5,8 +5,8 @@ description: One step to set up Sawbuck: give this repo its rules and check ever
 Run exactly these two commands in the current repo, in order, and show the person their output verbatim. The first adds the rule to AGENTS.md, and to CLAUDE.md or .cursorrules if they exist.
 
 ```
-npx -y sawbuck@0.1.61 contract
-npx -y sawbuck@0.1.61 attach
+npx -y sawbuck@0.1.62 contract
+npx -y sawbuck@0.1.62 attach
 ```
 
 The first keeps any rules already here, adds your tests if there are none, and sets the protected paths. The second wires the hooks that check every turn. Running them twice changes nothing.
