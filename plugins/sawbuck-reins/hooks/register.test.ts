@@ -372,3 +372,45 @@ test('a stack trace pasted before the reply never reaches the judge: the prompt 
   expect(prompts[0]).not.toContain('server.js:42')
   expect(prompts[0]).not.toContain('TypeError')
 })
+
+// the judge's model is the person's pick in /plugin configure; Sonnet when unset
+const judgeRun = async ($: any, on: any, reply: string, answer = 'done', judgeText = '{"pressure":1,"axis":"scope","nudge":"x"}') => {
+  const models: string[] = [], prompts: string[] = [], writes: string[] = []
+  mock.env(on, {})
+  on('session.start', (_: any, e: any) => ({ cwd: e.cwd }))
+  on('fs.exists', (_: any, e: any) => ({ value: e.path.endsWith('/.sawbuck/state.json') }))
+  on('fs.read', (_: any, e: any) => { throw new Error(`ENOENT: ${e.path}`) })
+  on('fs.write', (_: any, e: any) => { writes.push(String(e.text || '')); return { value: undefined } })
+  on('model.complete', (_: any, e: any) => { models.push(e.model); prompts.push(e.prompt); return { value: { isAnswered: true, text: judgeText, usage: { input_tokens: 1, output_tokens: 1 } } } })
+  on('turn.complete', () => ({ text: '' }))
+  on('prompt.submit', (_: any, e: any) => ({ text: e.text }))
+  await $.session.start({ cwd: '/repo', surface: 'terminal', isInteractive: true })
+  await $.turn.complete({ answer, durationMs: 1, isAborted: false, turnId: 't1', reason: 'answer' })
+  await $.prompt.submit({ text: reply })
+  for (let i = 0; i < 50 && models.length === 0; i++) await new Promise((r) => setTimeout(r, 20))
+  await new Promise((r) => setTimeout(r, 60))
+  return { models, prompts, writes }
+}
+
+test('the judge model follows the person\'s pick: haiku', { options: { judgeModel: 'haiku' } }, async ($, on) => {
+  const { models } = await judgeRun($, on, 'no, change the approach.')
+  expect(models).toEqual(['claude-haiku-5-5'])
+})
+
+test('"no" alone is scored: it is a hard stop, not noise', async ($, on) => {
+  const { models } = await judgeRun($, on, 'no')
+  expect(models.length).toBe(1)
+})
+
+test('a long reply keeps its head and its tail for the judge, so a steer at the end is not cut off', async ($, on) => {
+  const long = 'Context. '.repeat(150) + 'So no, do not commit it yet.'
+  const { prompts } = await judgeRun($, on, long)
+  expect(prompts.length).toBe(1)
+  expect(prompts[0]).toMatch(/do not commit it yet/)
+})
+
+test('the parser reads a pressure written as a word, and a brace inside the nudge does not drop the pair', async ($, on) => {
+  const { writes } = await judgeRun($, on, 'rename it please', 'done', 'Sure: {"pressure":"two","axis":"naming","nudge":"use {name} form"}')
+  const tally = writes.find((w) => /"distribution"/.test(w)) || ''
+  expect(tally).toMatch(/"2":1/)
+})
