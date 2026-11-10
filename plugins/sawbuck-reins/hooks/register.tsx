@@ -51,7 +51,9 @@ function noise(t: string): boolean {
   const s = String(t).trim()
   if (!s) return true
   if (s.includes('<task-notification>') || s.startsWith('<task-id>')) return true
-  return s.replace(/\[Image #\d+\]/g, '').trim().length < 2   // "no" alone is a steer; one character is noise
+  const r = s.replace(/\[Image #\d+\]/g, '').trim()
+  // one character, or a bare go-ahead, is not a steer; "no" alone is (a hard stop), so it is scored
+  return r.length < 2 || /^(ok|k|kk|yes|ya|yep|y|go|sure|ty|thx)[.!]?$/i.test(r)
 }
 
 // EXACT copy of engine/judge.mjs PROMPT (the 600/800 slicing that lives in
@@ -209,6 +211,10 @@ async function recordNativePair($: any, s: { pressure: number } | null, span: nu
 // row trip nativeBroken and scoring stops for the session (a build or org that blocks model calls
 // fails every time, a one-off overloaded answer does not). A SOFT fail (isAnswered:false /
 // unparseable) stays native but still records the consumed pair so the count doesn't drift.
+// the judge's model, the person's choice in /plugin configure (Sonnet by default: kappa 0.66 against an Opus reading of
+// 200 real turns, Haiku 0.41; proof-bench/judge)
+const JUDGE_MODELS: Record<string, string> = { sonnet: 'claude-sonnet-5-5', haiku: 'claude-haiku-5-5', opus: 'claude-opus-5-5' }
+let judgeModel = JUDGE_MODELS.sonnet
 async function scoreNative($: any, prior: string, user: string, repo: string, attached: boolean): Promise<void> {
   let s: { pressure: number } | null = null
   try {
@@ -220,7 +226,7 @@ async function scoreNative($: any, prior: string, user: string, repo: string, at
     const bound = new Promise<never>((_, reject) => { timer = setTimeout(() => reject(new Error('judge timeout')), 30000) })
     const r: any = await Promise.race([
       $.model.complete({
-        model: 'claude-sonnet-5-5',
+        model: judgeModel,
         prompt: PROMPT(prior, user),
         maxTokens: 200,
         timeoutMs: 28000,
@@ -246,7 +252,8 @@ let scoring: Promise<void> = Promise.resolve()
 // attached = the record exists and detach has not marked it. `sawbuck detach` keeps .sawbuck/state.json as the record
 // (git-ignored) and writes detached: true into it; attach clears the flag. Existence alone said "watching" after a detach.
 async function attachedHere($: any): Promise<boolean> {
-  try { const st = JSON.parse(await $.fs.read('.sawbuck/state.json')); return !st.detached } catch { return false }
+  if (!(await present($, '.sawbuck/state.json'))) return false
+  try { const st = JSON.parse(await $.fs.read('.sawbuck/state.json')); return !st.detached } catch { return true }   // there but unreadable: attached
 }
 
 async function present($: any, path: string): Promise<boolean> {
@@ -342,6 +349,7 @@ async function decideOffer($: any): Promise<void> {
 }
 
 export const register: Register = (on, options) => {
+  judgeModel = JUDGE_MODELS[String((options && (options as any).judgeModel) || 'sonnet')] || JUDGE_MODELS.sonnet
   on('prompt.compose', async ($, e, next) => {
     const r = await next(e)
     await decideOffer($)

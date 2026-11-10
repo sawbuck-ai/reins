@@ -26,12 +26,23 @@
     "judge": {
       "type": "string",
       "title": "Live steering judge",
-      "description": "On by default: one call per turn through Claude Code's own model API, on your plan, using Sonnet, to show how much you steer. off stops it. /sawbuck-reins:rules and /sawbuck-reins:shape work either way.",
+      "description": "On by default: one call per turn through Claude Code's own model API, on your plan, to show how much you steer. The model is yours to pick below. off stops it. /sawbuck-reins:rules and /sawbuck-reins:shape work either way.",
       "options": [
         "native",
         "off"
       ],
       "default": "native"
+    },
+    "judgeModel": {
+      "type": "string",
+      "title": "Steering judge model",
+      "description": "Which model scores your turns for the steering readout. Sonnet is the default: it agreed with a careful reading of 200 real turns at kappa 0.66, Haiku at 0.41 (cheaper, noisier). Opus costs the most.",
+      "options": [
+        "sonnet",
+        "haiku",
+        "opus"
+      ],
+      "default": "sonnet"
     },
     "band": {
       "type": "string",
