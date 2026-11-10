@@ -11,7 +11,7 @@ When a change you made makes a check, test, or metric pass, confirm the win is r
 call it done. Run:
 
 ```
-npx -y sawbuck@0.1.59 check
+npx -y sawbuck@0.1.60 check
 ```
 
 It re-proves the result from your source edits alone, reverting the test, grader, config, and
@@ -22,6 +22,8 @@ survives the source-only re-run, then check again.
 
 If you follow superpowers' `verification-before-completion`, this is its RUN step for a test win: the test
 output says the suite is green; this says whether the green was earned in the source.
+
+If it says this shell cannot write a temp folder or .git, you are in a sandboxed shell: say so plainly, then judge from the diff yourself (did the commit change only tests, config, a grader or golden files, and not the source?). Under `sawbuck attach`, the Stop hook still checks the turn outside the sandbox.
 
 This is zero-config and never touches your working tree. It is the honest answer to "did that
 actually work, or did I just make the test stop complaining."

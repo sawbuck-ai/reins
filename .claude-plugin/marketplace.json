@@ -8,13 +8,13 @@
   "plugins": [
     {
       "name": "sawbuck-reins",
-      "version": "0.5.55",
+      "version": "0.5.56",
       "source": "./plugins/sawbuck-reins",
       "description": "Prove each green was earned in the source, not by editing the test; keep what git threw away and show it when a file comes up again; write down the rules you keep telling your agent. One install wires six slash commands: /sawbuck-reins:rules (the rules you keep enforcing), /sawbuck-reins:shape (what you push on), /sawbuck-reins:audit (rules that pull against each other), /sawbuck-reins:contract (give the repo its rules and watch every turn), /sawbuck-reins:check (verify now), /sawbuck-reins:status (what it caught), plus the sawbuck guide band (watching / N caught / last verdict / steer rate). The mod runs no program; the commands run the pinned sawbuck CLI through Claude's own Bash tool."
     },
     {
       "name": "sawbuck",
-      "version": "0.1.3",
+      "version": "0.1.4",
       "source": "./plugins/sawbuck",
       "description": "Sawbuck, commands only (the edition for Anthropic's plugin directory): the same six commands and two skills as sawbuck-reins, with no hooks, no mod and no pre-approved tools. Install one or the other, not both."
     }
