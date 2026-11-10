@@ -14,7 +14,9 @@ For at most 5 pairs, strongest first, show:
 
 Also flag any rule that carries an escape clause: "unless", "if it is wrong", "when appropriate", "where reasonable", "if needed". Quote it and propose the same rule without it, ending in "stop and tell me" for the case the clause was meant for. Measured on an impossible test: "if a test is wrong, fix it" was used 20 of 20 times and "unless the test is clearly broken" 18 of 20; "except for flaky tests" 1 of 20, only because the tests were not flaky; "if you think a test is wrong, stop and tell me" 0 of 20; no clause, 0 of 180. A clause the agent gets to judge gets used; a clause that says ask holds.
 
-If there are no pairs and no escape clauses, say "No rules here pull against each other, and none carries an escape clause." and stop.
+Also flag any rule that asks for a quality the agent has to judge ("keep it short", "be concise", "write clean code", "small commits"). Quote it and propose the nearest countable form ("reply in at most 3 lines", "one change per commit, under 100 lines"). Measured: a count was followed 24 of 24 times, the same wish as a quality 7 of 24.
+
+If there are no pairs, no escape clauses and no quality rules, say "No rules here pull against each other, none carries an escape clause, and each one is countable." and stop.
 
 Then ask which lines to add. Add only what they pick, next to the rules in the file that holds them, keeping everything else. Do not commit.
 
