@@ -285,7 +285,7 @@ test('the offer: a git repo with no contract gets one line once per directory, a
   expect([...store.keys()]).toEqual(['offered:/repo'])
 })
 
-test('outside a git repository: steers land in the store, no file is written, nothing reaches a prompt, and judge off means no call', async ($, on) => {
+test('outside a git repository: steers land in the store with their folder, no file is written, nothing reaches a prompt, and judge off means no call', async ($, on) => {
   const writes: string[] = []
   const models: unknown[] = []
   const store = new Map<string, unknown>()
@@ -309,6 +309,7 @@ test('outside a git repository: steers land in the store, no file is written, no
   expect(models.length).toBe(1)
   expect(writes).toEqual([])
   expect((store.get('steers') as any[])[0].nudge).toBe('keep changes small')
+  expect((store.get('steers') as any[])[0].dir).toBe('/notes')   // the folder, so ripples can join it to the repos under it
   expect(store.get('steerStats')).toEqual({ scored: 1, lost: 0 })
   const r = await $.prompt.compose({ model: 'm', promptModel: 'm', surfaces: [], tools: [], outputStyle: null, traits: [] })
   expect(JSON.stringify(r.sections).includes('keep changes small')).toBe(false)

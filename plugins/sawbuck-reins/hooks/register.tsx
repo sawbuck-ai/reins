@@ -145,7 +145,9 @@ async function keepSteer($: any, s: { pressure: number; axis?: string; nudge?: s
     await $.store.set('steerStats', stats)
     if (!s || s.pressure < 1 || !s.nudge) return
     const list: any = (await $.store.get('steers')) || []
-    list.push({ at: new Date().toISOString(), repo, session: SID, axis: s.axis || '', nudge: s.nudge, pressure: s.pressure })
+    // outside a repo, keep the folder (local, like the rest): `sawbuck ripples` joins it to the repos under it
+    let dir = ''; if (!repo) { try { dir = String(await $.session.cwd()) } catch { /* no folder, no join */ } }
+    list.push({ at: new Date().toISOString(), repo, ...(dir ? { dir } : {}), session: SID, axis: s.axis || '', nudge: s.nudge, pressure: s.pressure })
     await $.store.set('steers', list.slice(-MAX_STEERS))
   } catch { /* the scratchpad never blocks a turn */ }
 }
