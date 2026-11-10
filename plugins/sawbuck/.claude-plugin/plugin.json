@@ -2,7 +2,7 @@
   "name": "sawbuck",
   "displayName": "Sawbuck",
   "description": "Holds your coding agent to what's real. Your agent tried it once, it broke, you reverted it, and a month later a new session does it again. Sawbuck writes down what gets lost in your workflow: it re-runs the tests from the code alone so an edited test does not count, keeps what you reverted or undid and shows it before the agent touches that file again, and turns what you keep telling the agent into written rules. Six commands that run the sawbuck CLI; you approve each command the first time.",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "author": { "name": "Matthew Owens" },
   "homepage": "https://sawbuck.ai",
   "repository": "https://github.com/sawbuck-ai/reins",
