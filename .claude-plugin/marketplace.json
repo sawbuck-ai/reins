@@ -2,7 +2,7 @@
   "name": "sawbuck",
   "description": "Sawbuck for Claude Code: prove each green was earned in the source, keep what git threw away, and write down the rules you keep repeating.",
   "owner": {
-    "name": "Matthew Owens",
+    "name": "CodeWheel",
     "url": "https://github.com/sawbuck-ai"
   },
   "plugins": [
