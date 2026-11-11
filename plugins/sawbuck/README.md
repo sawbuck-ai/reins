@@ -7,6 +7,15 @@ This edition is commands and skills only, in plain Markdown. It ships no hooks, 
 each command asks Claude to run the `sawbuck` CLI from npm (`npx --prefer-offline --fetch-retries=0 --fetch-timeout=10000 -y sawbuck@0.1.64 ...`), and Claude Code asks you to
 approve each command the first time.
 
+## Install
+
+```
+/plugin install sawbuck --marketplace sawbuck-ai/reins
+```
+
+That is one step on Claude Code 2.1.275 or later. On an older version: `/plugin marketplace add sawbuck-ai/reins`, then
+`/plugin install sawbuck@sawbuck`. Install this edition or `sawbuck-reins`, not both.
+
 ## Commands
 
 - `/sawbuck:check` runs `sawbuck check`: re-runs your tests from the code changes alone and says whether a green was
