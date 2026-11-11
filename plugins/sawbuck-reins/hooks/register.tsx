@@ -448,11 +448,11 @@ export const register: Register = (on, options) => {
       const fill = (text: string) => async () => { try { await $.prompt.fill({ text }) } catch { /* no prompt box here */ } }
       return (
         <Box flexDirection="column">
-          <Text color="yellow" weight="bold">sawbuck · {at}the green on {f} came from changing the test · your call:</Text>
-          <Box>
-            <Button key="sawbuck-fix" onPress={fill(`Fix the source so ${f} passes as it was written. Do not change the test.`)}>Fix the source</Button>
-            <Button key="sawbuck-restore" onPress={fill(`Put ${f} back as it was (git checkout ${s.latest.base || 'HEAD~1'} -- ${f}), commit that, then fix the source so it passes.`)}>Put the test back</Button>
-            <Button key="sawbuck-accept" onPress={fill(`The test change in ${f} is right because <why>. Record that: ${SB_NPX} check --allow "<why>"`)}>Accept it</Button>
+          <Text color="yellow" weight="bold">sawbuck · {at}the green on {f} came from changing the test · your call (press 1, 2 or 3 in an empty prompt):</Text>
+          <Box gap={3}>
+            <Button key="sawbuck-fix" hotkey="1" plain onPress={fill(`Fix the source so ${f} passes as it was written. Do not change the test.`)}>Fix the source</Button>
+            <Button key="sawbuck-restore" hotkey="2" plain onPress={fill(`Put ${f} back as it was (git checkout ${s.latest.base || 'HEAD~1'} -- ${f}), commit that, then fix the source so it passes.`)}>Put the test back</Button>
+            <Button key="sawbuck-accept" hotkey="3" plain onPress={fill(`The test change in ${f} is right because <why>. Record that: ${SB_NPX} check --allow "<why>"`)}>Accept it</Button>
           </Box>
         </Box>
       )
