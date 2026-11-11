@@ -456,3 +456,33 @@ test('no gamed verdict standing: no buttons in the band', async ($, on) => {
   const ui = await mountBand($)
   expect(await ui.findAll({ type: 'Button' })).toHaveLength(0)
 })
+
+// The band is one row that every mod shares. Anthropic's Blast Radius draws its Proceed and Cancel there when the
+// terminal is too narrow for a pane, and refuses the held command after ten minutes with no answer. A band that takes
+// the row for itself hides those buttons, so sawbuck adds its line and keeps what is beneath.
+const otherModBand = (on: any) => on('ui.render', ($: any, e: any) => {
+  const { Box, Text, Button } = $.ui.resolve(e)
+  return Box({ children: [Text({ children: 'held: rm -rf build' }), Button({ key: 'proceed', label: 'Proceed', hotkey: '1', onPress: () => {} }), Button({ key: 'cancel', label: 'Cancel', hotkey: '2', onPress: () => {} })] })
+})
+
+test('another mod drawing in the band beneath sawbuck is still drawn, with sawbuck\'s line beside it', async ($, on) => {
+  bandWith(on, { kind: 'verified', file: 'src/add.js', sha: 'x' })
+  otherModBand(on)
+  await $.session.start({ cwd: '/repo', surface: 'terminal', isInteractive: true })
+  await $.turn.complete({ answer: 'done', durationMs: 1, isAborted: false, turnId: 't1', reason: 'answer' })
+  const ui = await mountBand($)
+  expect((await ui.find({ type: 'Text', text: /held: rm -rf build/ }))?.text).toBe('held: rm -rf build')
+  expect(await ui.findAll({ type: 'Button' })).toHaveLength(2)
+  expect((await ui.find({ type: 'Text', text: /^sawbuck · / }))?.text).toMatch(/1 caught/)
+})
+
+test('a gamed verdict beside another mod\'s band: both sets of buttons are there, and sawbuck\'s still fill the prompt', async ($, on) => {
+  const fills = bandWith(on, { kind: 'gamed', file: 'test/add.test.js', base: 'abcdef1234567890', sha: 'x' })
+  otherModBand(on)
+  await $.session.start({ cwd: '/repo', surface: 'terminal', isInteractive: true })
+  await $.turn.complete({ answer: 'done', durationMs: 1, isAborted: false, turnId: 't1', reason: 'answer' })
+  const ui = await mountBand($)
+  expect(await ui.findAll({ type: 'Button' })).toHaveLength(5)
+  await $.ui.press({ plugin: 'sawbuck-reins', key: 'sawbuck-fix' })
+  expect(fills[0]).toBe('Fix the source so test/add.test.js passes as it was written. Do not change the test.')
+})

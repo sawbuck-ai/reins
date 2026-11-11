@@ -427,8 +427,14 @@ export const register: Register = (on, options) => {
     } catch { /* $.env is best-effort; default to showing the band */ }
 
     const { Box, Text } = $.ui.resolve(e)
+    // The band is one row that every mod shares. Sawbuck adds its line under what is beneath (another mod's band, or the
+    // engine's own, which is empty unless a survey is up) and takes nothing away. Taking the row whole would hide the
+    // other mod's buttons: Blast Radius draws Proceed and Cancel here in a narrow terminal, and refuses its held command
+    // after ten minutes with no answer.
+    const beneath = await next(e)
+    const under = (line: any) => <Box flexDirection="column">{beneath}{line}</Box>
     if (s.noRepo) {
-      return (
+      return under(
         <Box>
           <Text dimColor>sawbuck · no repo here{s.repeat ? ' · ' + s.repeat : ''}</Text>
         </Box>
@@ -446,7 +452,7 @@ export const register: Register = (on, options) => {
       const { Button } = $.ui.resolve(e) as any
       const f = s.latest.file
       const fill = (text: string) => async () => { try { await $.prompt.fill({ text }) } catch { /* no prompt box here */ } }
-      return (
+      return under(
         <Box flexDirection="column">
           <Text color="yellow" weight="bold">sawbuck · {at}the green on {f} came from changing the test · your call (press 1, 2 or 3 in an empty prompt):</Text>
           <Box gap={3}>
@@ -458,7 +464,7 @@ export const register: Register = (on, options) => {
       )
     }
     if (s.caught > 0) {
-      return (
+      return under(
         <Box>
           <Text color="yellow" weight="bold">sawbuck · {at}{s.caught} caught</Text>
           {s.latest ? <Text dimColor> · {s.latest.kind} on {s.latest.file}</Text> : null}
@@ -467,20 +473,20 @@ export const register: Register = (on, options) => {
       )
     }
     if (s.active) {
-      return (
+      return under(
         <Box>
           <Text dimColor>sawbuck · {at}watching{icon ? ' · ' + icon : ''}{steerSeg}{s.repeat ? ' · ' + s.repeat : ''}{s.signed ? '' : ' · /sawbuck-reins:contract to add rules'}</Text>
         </Box>
       )
     }
     if (s.armed) {
-      return (
+      return under(
         <Box>
           <Text dimColor>sawbuck · {at}one step: /sawbuck-reins:contract</Text>
         </Box>
       )
     }
-    return (
+    return under(
       <Box>
         <Text dimColor>sawbuck · memory · npx sawbuck context for history</Text>
       </Box>
