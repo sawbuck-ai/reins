@@ -415,3 +415,44 @@ test('the parser reads a pressure written as a word, and a brace inside the nudg
   const tally = writes.find((w) => /"distribution"/.test(w)) || ''
   expect(tally).toMatch(/"2":1/)
 })
+
+// a gamed green standing on the last commit: the band offers the person's three ways out as buttons that fill the prompt
+const bandWith = (on: any, latest: any) => {
+  const fills: string[] = []
+  mock.env(on, {})
+  on('session.start', (_: any, e: any) => ({ cwd: e.cwd }))
+  on('session.repo', () => ({ value: { root: '/repo' } }))
+  on('fs.exists', (_: any, e: any) => ({ value: /\.sawbuck\/(state|results)\.json$|package\.json$/.test(e.path) }))
+  on('fs.read', (_: any, e: any) => {
+    if (e.path.endsWith('.sawbuck/state.json')) return { value: '{}' }
+    if (e.path.endsWith('.sawbuck/results.json')) return { value: JSON.stringify({ gamed: 1, latest }) }
+    throw new Error(`ENOENT: ${e.path}`)
+  })
+  on('fs.write', () => ({ value: undefined }))
+  on('model.complete', () => ({ value: { isAnswered: false, reason: 'api-error', status: null } }))
+  on('prompt.fill', (_: any, e: any) => { fills.push(e.text); return { isFilled: true } })
+  on('turn.complete', () => ({ text: '' }))
+  return fills
+}
+const mountBand = ($: any) => $.ui.mount({ plugin: 'sawbuck-reins', surface: 'terminal', component: 'AbovePrompt', props: { hasSurvey: false, isWorking: false } })
+
+test('a gamed green on the last commit: the band offers three buttons that fill the prompt, and sends nothing', async ($, on) => {
+  const fills = bandWith(on, { kind: 'gamed', file: 'test/add.test.js', base: 'abcdef1234567890', sha: 'x' })
+  await $.session.start({ cwd: '/repo', surface: 'terminal', isInteractive: true })
+  await $.turn.complete({ answer: 'done', durationMs: 1, isAborted: false, turnId: 't1', reason: 'answer' })
+  const ui = await mountBand($)
+  expect(await ui.findAll({ type: 'Button' })).toHaveLength(3)
+  expect((await ui.find({ type: 'Text', text: /came from changing the test/ }))?.text).toMatch(/test\/add\.test\.js/)
+  for (const key of ['sawbuck-fix', 'sawbuck-restore', 'sawbuck-accept']) await $.ui.press({ plugin: 'sawbuck-reins', key })
+  expect(fills[0]).toBe('Fix the source so test/add.test.js passes as it was written. Do not change the test.')
+  expect(fills[1]).toMatch(/git checkout abcdef123456 -- test\/add\.test\.js/)
+  expect(fills[2]).toMatch(/sawbuck@\d+\.\d+\.\d+ check --allow "<why>"/)
+})
+
+test('no gamed verdict standing: no buttons in the band', async ($, on) => {
+  bandWith(on, { kind: 'verified', file: 'src/add.js', sha: 'x' })
+  await $.session.start({ cwd: '/repo', surface: 'terminal', isInteractive: true })
+  await $.turn.complete({ answer: 'done', durationMs: 1, isAborted: false, turnId: 't1', reason: 'answer' })
+  const ui = await mountBand($)
+  expect(await ui.findAll({ type: 'Button' })).toHaveLength(0)
+})

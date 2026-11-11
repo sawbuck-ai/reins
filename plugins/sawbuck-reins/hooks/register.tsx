@@ -215,6 +215,8 @@ async function recordNativePair($: any, s: { pressure: number } | null, span: nu
 // unparseable) stays native but still records the consumed pair so the count doesn't drift.
 // the judge's model, the person's choice in /plugin configure (Sonnet by default: kappa 0.66 against an Opus reading of
 // 200 real turns, Haiku 0.41; proof-bench/judge)
+// the CLI this plugin pins, in the fail-fast npx form its commands use (wave.sh checks every sawbuck@ pin agrees)
+const SB_NPX = 'npx --prefer-offline --fetch-retries=0 --fetch-timeout=10000 -y sawbuck@0.1.64'
 const JUDGE_MODELS: Record<string, string> = { sonnet: 'claude-sonnet-5-5', haiku: 'claude-haiku-5-5', opus: 'claude-opus-5-5' }
 let judgeModel = JUDGE_MODELS.sonnet
 async function scoreNative($: any, prior: string, user: string, repo: string, attached: boolean): Promise<void> {
@@ -300,7 +302,7 @@ async function readSummary($: any): Promise<Summary | null> {
     try {
       const r = JSON.parse(await $.fs.read('.sawbuck/results.json'))
       caught = (r.regressions || 0) + (r.gamed || 0) + (r.mandates || 0)
-      if (r.latest && r.latest.file) latest = { kind: String(r.latest.kind || 'caught'), file: String(r.latest.file) }
+      if (r.latest && r.latest.file) latest = { kind: String(r.latest.kind || 'caught'), file: String(r.latest.file), base: r.latest.base ? String(r.latest.base).slice(0, 12) : '' }
       const m = r.lastMandate
       if (m && m.file && (!r.latest || String(m.at) > String(r.latest.at || ''))) latest = { kind: 'protected path', file: String(m.file) }
     } catch {
@@ -437,6 +439,24 @@ export const register: Register = (on, options) => {
     const steerSeg = s.steer != null ? ` · steer ${s.steer}%` : ''
     const at = s.repo ? s.repo + ' · ' : ''
 
+    // a gamed green standing on the last commit: the person decides, so the band offers the three ways out as buttons.
+    // Each fills the prompt box and sends nothing: the person reads it, edits it, and presses Enter. Accept goes through
+    // the agent's sawbuck check --allow, which the hold asks the person about before it runs.
+    if (s.latest && s.latest.kind === 'gamed' && !e.props.isWorking) {
+      const { Button } = $.ui.resolve(e) as any
+      const f = s.latest.file
+      const fill = (text: string) => async () => { try { await $.prompt.fill({ text }) } catch { /* no prompt box here */ } }
+      return (
+        <Box flexDirection="column">
+          <Text color="yellow" weight="bold">sawbuck · {at}the green on {f} came from changing the test · your call:</Text>
+          <Box>
+            <Button key="sawbuck-fix" onPress={fill(`Fix the source so ${f} passes as it was written. Do not change the test.`)}>Fix the source</Button>
+            <Button key="sawbuck-restore" onPress={fill(`Put ${f} back as it was (git checkout ${s.latest.base || 'HEAD~1'} -- ${f}), commit that, then fix the source so it passes.`)}>Put the test back</Button>
+            <Button key="sawbuck-accept" onPress={fill(`The test change in ${f} is right because <why>. Record that: ${SB_NPX} check --allow "<why>"`)}>Accept it</Button>
+          </Box>
+        </Box>
+      )
+    }
     if (s.caught > 0) {
       return (
         <Box>
