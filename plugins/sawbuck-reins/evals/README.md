@@ -2,7 +2,7 @@
 
 Run from the plugin folder (it runs real model calls on your account; the fixture scripts build small git repos):
 
-    claude plugin eval . --scaffold --allow-tools "Bash(npx -y sawbuck@*)" --runs 2 --no-publish
+    claude plugin eval . --scaffold --allow-tools "Bash(npx --prefer-offline --fetch-retries=0 --fetch-timeout=10000 -y sawbuck@*)" --runs 2 --no-publish
 
 Cases: the check skill fires and calls a test edit gamed; it fires and calls a real fix earned; it stays quiet on an
 unrelated ask; the steering skill fires on a steering question.
