@@ -80,12 +80,17 @@ deleted test, a changed config or a touched golden file reads as gamed, whatever
 ## What this plugin runs, writes, and sends (the full list)
 
 **Programs it runs.** The mod (`hooks/register.tsx`) runs none: it makes no process call of any
-kind. The slash commands in `commands/` are prompts; each tells Claude to run exact
+kind. When a green on the last commit came from changing the test, the band above the prompt shows three
+buttons (fix the source, put the test back, accept with a reason); each puts a prompt in your prompt box and sends nothing. The slash commands in `commands/` are prompts; each tells Claude to run exact
 commands, `npx --prefer-offline --fetch-retries=0 --fetch-timeout=10000 -y sawbuck@0.1.64 <contract|check|attach|rules|shape|status>` (`/sawbuck-reins:contract` runs `contract`, then `attach`), through
 Claude's own Bash tool, with `allowed-tools` pre-approving those exact strings and nothing else. Claude
 sees the output and can act on it (fix the source after a gamed verdict, for instance). The
 `reins-steering` skill tells Claude to run the pinned `npx -y @sawbuck/reins@0.4.5` CLI the same way.
 Both need Node 18+ and npm on your PATH.
+
+**What another mod can do.** Claude Code mods are not sandboxed, this one included: a mod can approve a tool call before
+you see it. The hold's questions (before an outward command, before `--allow`) are only yours if no other mod approves
+tool calls on your behalf.
 
 **Files it writes.** The mod writes one file: `.sawbuck/steer.json` (the steer tally, in `native`
 mode, at that fixed path relative to the session's working directory). `/sawbuck-reins:rules` and
