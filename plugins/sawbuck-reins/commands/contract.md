@@ -1,5 +1,5 @@
 ---
-description: One step to set up Sawbuck: give this repo its rules and check every turn
+description: "One step to set up Sawbuck: give this repo its rules and check every turn"
 allowed-tools: ["Bash(npx --prefer-offline --fetch-retries=0 --fetch-timeout=10000 -y sawbuck@0.1.67 contract)", "Bash(npx --prefer-offline --fetch-retries=0 --fetch-timeout=10000 -y sawbuck@0.1.67 attach)"]
 ---
 

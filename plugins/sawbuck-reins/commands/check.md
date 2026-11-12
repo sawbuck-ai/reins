@@ -1,5 +1,5 @@
 ---
-description: Verify your latest change right now: was the win earned in the source, or gamed?
+description: "Verify your latest change right now: was the win earned in the source, or gamed?"
 allowed-tools: ["Bash(npx --prefer-offline --fetch-retries=0 --fetch-timeout=10000 -y sawbuck@0.1.67 check)"]
 ---
 

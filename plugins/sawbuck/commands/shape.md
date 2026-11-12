@@ -1,5 +1,5 @@
 ---
-description: Draw your steering shape: what you push on, and what the agent does that you never push on
+description: "Draw your steering shape: what you push on, and what the agent does that you never push on"
 ---
 
 Tell the person first, in one line: this reads a sample of their own messages, and short excerpts of up to 120 past turns, from Claude Code history and sends them to the model once.

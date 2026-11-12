@@ -1,5 +1,5 @@
 ---
-description: One step to set up Sawbuck: give this repo its rules and check every turn
+description: "One step to set up Sawbuck: give this repo its rules and check every turn"
 ---
 
 Run exactly these two commands in the current repo, in order, and show the person their output verbatim. The first adds the rule to AGENTS.md, and to CLAUDE.md or .cursorrules if they exist.

@@ -1,5 +1,5 @@
 ---
-description: Everything sawbuck has here in one view: what it caught, the debt, and what you keep saying
+description: "Everything sawbuck has here in one view: what it caught, the debt, and what you keep saying"
 allowed-tools: ["Bash(npx --prefer-offline --fetch-retries=0 --fetch-timeout=10000 -y sawbuck@0.1.67 status)"]
 ---
 

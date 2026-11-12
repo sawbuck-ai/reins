@@ -1,5 +1,5 @@
 ---
-description: Everything sawbuck has here in one view: what it caught, the debt, and what you keep saying
+description: "Everything sawbuck has here in one view: what it caught, the debt, and what you keep saying"
 ---
 
 Run exactly this command in the current repo and show the person its output verbatim:

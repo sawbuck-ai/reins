@@ -1,5 +1,5 @@
 ---
-description: Verify your latest change right now: was the win earned in the source, or gamed?
+description: "Verify your latest change right now: was the win earned in the source, or gamed?"
 ---
 
 Run exactly this command in the current repo and show the person its output verbatim:

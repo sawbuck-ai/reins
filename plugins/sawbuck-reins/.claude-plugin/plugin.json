@@ -22,36 +22,24 @@
   "author": {
     "name": "CodeWheel"
   },
+  "types": "./types/index.d.ts",
   "userConfig": {
     "judge": {
       "type": "string",
       "title": "Live steering judge",
-      "description": "On by default: one call per turn through Claude Code's own model API, on your plan, to show how much you steer. The model is yours to pick below. off stops it. /sawbuck-reins:rules and /sawbuck-reins:shape work either way.",
-      "options": [
-        "native",
-        "off"
-      ],
+      "description": "On by default: one call per turn through Claude Code's own model API, on your plan, to show how much you steer. The model is yours to pick below. Type native or off: off stops it. /sawbuck-reins:rules and /sawbuck-reins:shape work either way.",
       "default": "native"
     },
     "judgeModel": {
       "type": "string",
       "title": "Steering judge model",
-      "description": "Which model scores your turns for the steering readout. Sonnet is the default: it agreed with a careful reading of 200 real turns at kappa 0.66, Haiku at 0.41 (cheaper, noisier). Opus costs the most.",
-      "options": [
-        "sonnet",
-        "haiku",
-        "opus"
-      ],
+      "description": "Which model scores your turns for the steering readout. Type sonnet, haiku or opus. Sonnet is the default: it agreed with a careful reading of 200 real turns at kappa 0.66, Haiku at 0.41 (cheaper, noisier). Opus costs the most.",
       "default": "sonnet"
     },
     "band": {
       "type": "string",
       "title": "Guide band",
-      "description": "Show the guide band above your prompt. Set to off if you show sawbuck in your own statusline instead (sawbuck statusline, below the prompt), so it does not appear twice.",
-      "options": [
-        "on",
-        "off"
-      ],
+      "description": "Show the guide band above your prompt. Type on or off. Set it to off if you show sawbuck in your own statusline instead (sawbuck statusline, below the prompt), so it does not appear twice.",
       "default": "on"
     }
   }

@@ -1,5 +1,5 @@
 ---
-description: Draw your steering shape: what you push on, and what the agent does that you never push on
+description: "Draw your steering shape: what you push on, and what the agent does that you never push on"
 allowed-tools: ["Bash(npx --prefer-offline --fetch-retries=0 --fetch-timeout=10000 -y sawbuck@0.1.67 shape --prepare)", "Bash(npx --prefer-offline --fetch-retries=0 --fetch-timeout=10000 -y sawbuck@0.1.67 shape --check ~/.sawbuck/shape-labels.json --png)", "Read(~/.sawbuck/shape-input.txt)", "Write(~/.sawbuck/shape-labels.json)", "Read(~/.sawbuck/shape-turns.txt)", "Write(~/.sawbuck/shape-notsaid.json)", "Edit(~/.claude/CLAUDE.md)", "Write(~/.claude/CLAUDE.md)"]
 ---
 

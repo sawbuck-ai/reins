@@ -343,6 +343,7 @@ test('the memory band names no command that is gone: it points at the CLI for hi
   on('fs.exists', (_, e) => ({ value: e.path.endsWith('.git') || e.path.endsWith('LOGBOOK.md') }))
   on('fs.read', (_, e) => { throw new Error(`ENOENT: ${e.path}`) })
   on('turn.complete', () => ({ text: '' }))
+  on('ui.render', ($: any, e: any) => $.ui.resolve(e).Box({ children: [] }))   // the engine's own band, empty (see emptyBand below)
   await $.session.start({ cwd: '/repo', surface: 'terminal', isInteractive: true })
   await $.turn.complete({ answer: 'done', durationMs: 1, isAborted: false, turnId: 't1', reason: 'answer' })
   const ui = await $.ui.mount({ plugin: 'sawbuck-reins', surface: 'terminal', component: 'AbovePrompt', props: { hasSurvey: false, isWorking: false } as any })
@@ -435,9 +436,13 @@ const bandWith = (on: any, latest: any) => {
   return fills
 }
 const mountBand = ($: any) => $.ui.mount({ plugin: 'sawbuck-reins', surface: 'terminal', component: 'AbovePrompt', props: { hasSurvey: false, isWorking: false } })
+// The engine's own band, empty: what is beneath every mod when no survey is up. The test kit in Claude Code before 2.1.321
+// has no bottom of its own for ui.render, so a band test that brings none cannot run there (proof-bench/plugin-install).
+const emptyBand = (on: any) => on('ui.render', ($: any, e: any) => $.ui.resolve(e).Box({ children: [] }))
 
 test('a gamed green on the last commit: the band offers three buttons that fill the prompt, and sends nothing', async ($, on) => {
   const fills = bandWith(on, { kind: 'gamed', file: 'test/add.test.js', base: 'abcdef1234567890', sha: 'x' })
+  emptyBand(on)
   await $.session.start({ cwd: '/repo', surface: 'terminal', isInteractive: true })
   await $.turn.complete({ answer: 'done', durationMs: 1, isAborted: false, turnId: 't1', reason: 'answer' })
   const ui = await mountBand($)
@@ -451,6 +456,7 @@ test('a gamed green on the last commit: the band offers three buttons that fill 
 
 test('no gamed verdict standing: no buttons in the band', async ($, on) => {
   bandWith(on, { kind: 'verified', file: 'src/add.js', sha: 'x' })
+  emptyBand(on)
   await $.session.start({ cwd: '/repo', surface: 'terminal', isInteractive: true })
   await $.turn.complete({ answer: 'done', durationMs: 1, isAborted: false, turnId: 't1', reason: 'answer' })
   const ui = await mountBand($)
@@ -485,4 +491,40 @@ test('a gamed verdict beside another mod\'s band: both sets of buttons are there
   expect(await ui.findAll({ type: 'Button' })).toHaveLength(5)
   await $.ui.press({ plugin: 'sawbuck-reins', key: 'sawbuck-fix' })
   expect(fills[0]).toBe('Fix the source so test/add.test.js passes as it was written. Do not change the test.')
+})
+
+// The three settings are plain text in the manifest. A list of allowed values there (`options`) made every Claude Code
+// older than 2.1.271 refuse to install the plugin: a tester hit that on 2026-11-12 (proof-bench/plugin-install). With no
+// list, what a person types reaches the mod as typed, so the mod reads each setting loosely.
+test('the judge setting typed by hand as " Off " stops the judge: no model is called', { options: { judge: ' Off ' } }, async ($, on) => {
+  const { models } = await judgeRun($, on, 'no, change the approach.')
+  expect(models).toEqual([])
+})
+
+test('the judge model typed by hand as "Haiku" is haiku', { options: { judgeModel: 'Haiku' } }, async ($, on) => {
+  const { models } = await judgeRun($, on, 'no, change the approach.')
+  expect(models).toEqual(['claude-haiku-5-5'])
+})
+
+test('a judge model that is no model we know is Sonnet, the default', { options: { judgeModel: 'the big one' } }, async ($, on) => {
+  const { models } = await judgeRun($, on, 'no, change the approach.')
+  expect(models).toEqual(['claude-sonnet-5-5'])
+})
+
+test('the band setting typed by hand as "OFF" hides the band', { options: { band: 'OFF' } }, async ($, on) => {
+  bandWith(on, { kind: 'verified', file: 'src/add.js', sha: 'x' })
+  emptyBand(on)
+  await $.session.start({ cwd: '/repo', surface: 'terminal', isInteractive: true })
+  await $.turn.complete({ answer: 'done', durationMs: 1, isAborted: false, turnId: 't1', reason: 'answer' })
+  const ui = await mountBand($)
+  expect(await ui.findAll({ type: 'Text', text: /sawbuck/ })).toHaveLength(0)
+})
+
+test('the band setting left as "on" shows the band', { options: { band: 'on' } }, async ($, on) => {
+  bandWith(on, { kind: 'verified', file: 'src/add.js', sha: 'x' })
+  emptyBand(on)
+  await $.session.start({ cwd: '/repo', surface: 'terminal', isInteractive: true })
+  await $.turn.complete({ answer: 'done', durationMs: 1, isAborted: false, turnId: 't1', reason: 'answer' })
+  const ui = await mountBand($)
+  expect((await ui.find({ type: 'Text', text: /^sawbuck · / }))?.text).toMatch(/1 caught/)
 })

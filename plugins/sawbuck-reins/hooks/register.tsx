@@ -152,10 +152,19 @@ async function keepSteer($: any, s: { pressure: number; axis?: string; nudge?: s
   } catch { /* the scratchpad never blocks a turn */ }
 }
 
+// The three settings (judge, judgeModel, band) are plain text in the manifest: a list of allowed values there made every
+// Claude Code older than 2.1.271 refuse to install the plugin. So what a person types reaches the mod as typed, and each
+// setting is read loosely: any case, spaces dropped, and a word that is not known means the default.
+const setting = (options: any, name: string): string => {
+  const v = options ? options[name] : undefined
+  return v == null ? '' : String(v).trim().toLowerCase()
+}
+const saysOff = (v: string): boolean => v === 'off' || v === 'no' || v === 'false' || v === '0' || v === 'none'
+
 // Which judge to use: on unless turned off. SAWBUCK_JUDGE in the shell wins (a CLI backend means the user scores with the
 // reins CLI, so a local-ollama setup is never billed for native on top); else userConfig.
 async function judgeMode($: any, options: any): Promise<'native' | 'off'> {
-  const cfg = options && options.judge === 'off' ? 'off' : 'native'
+  const cfg = saysOff(setting(options, 'judge')) ? 'off' : 'native'
   try {
     const envv = await $.env.get('SAWBUCK_JUDGE')
     const v = envv == null ? '' : String(envv).trim().toLowerCase()
@@ -353,7 +362,7 @@ async function decideOffer($: any): Promise<void> {
 }
 
 export const register: Register = (on, options) => {
-  judgeModel = JUDGE_MODELS[String((options && (options as any).judgeModel) || 'sonnet')] || JUDGE_MODELS.sonnet
+  judgeModel = JUDGE_MODELS[(/haiku|opus|sonnet/.exec(setting(options, 'judgeModel')) || ['sonnet'])[0]]
   on('prompt.compose', async ($, e, next) => {
     const r = await next(e)
     await decideOffer($)
@@ -419,7 +428,7 @@ export const register: Register = (on, options) => {
     // opt out of the above-prompt band (e.g. you show sawbuck in your own statusline instead).
     // Primary switch is the `band` userConfig (reliable, applies on reload, no restart); the
     // SAWBUCK_BAND env is a no-config fallback.
-    if (options && options.band === 'off') return next(e)
+    if (saysOff(setting(options, 'band'))) return next(e)
     try {
       const bv = await $.env.get('SAWBUCK_BAND')
       const v = bv == null ? '' : String(bv).trim().toLowerCase()
