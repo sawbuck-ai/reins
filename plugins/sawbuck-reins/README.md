@@ -16,7 +16,10 @@ Claude runs through its own Bash tool. The mod itself runs no program.
 
 (`sawbuck` is the marketplace name defined in `.claude-plugin/marketplace.json`.)
 
-Claude Code asks three things on install: a **scope** (choose **user** so the band follows you across your repos), the **guide band** (on by default; set it off if you show sawbuck in your own statusline instead, the judge still runs), and the **steering judge** (it defaults to a zero-setup `native` one, a small Claude call per scored turn on your own plan; turn it off, or score with the reins CLI instead, see below).
+Run `claude update` first. The plugin installs on Claude Code 2.1.100 (April 2026) or newer. The band above the
+prompt needs 2.1.299 or newer (October 2026). On an older one you get the six commands without the band.
+
+Claude Code asks three things on install: a **scope** (choose **user** so the band follows you across your repos), the **guide band** (on by default; set it off if you show sawbuck in your own statusline instead, the judge still runs), and the **steering judge** (it defaults to a zero-setup `native` one, a small Claude call per scored turn on your own plan; turn it off, or score with the reins CLI instead, see below). Each setting is a word you type: `on` or `off` for the band, `native` or `off` for the judge, and `sonnet`, `haiku` or `opus` for the judge's model. A word it does not know means the default.
 
 ## Getting started
 

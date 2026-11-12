@@ -18,6 +18,9 @@ Claude Code:
 /plugin install sawbuck-reins@sawbuck
 ```
 
+Run `claude update` first. The plugin installs on Claude Code 2.1.100 (April 2026) or newer. The band above the
+prompt needs 2.1.299 or newer (October 2026). On an older one you get the six commands without the band.
+
 Codex (untested: the plugin installs, but it has not been run end to end; the band and slash commands are Claude Code only):
 
 ```
