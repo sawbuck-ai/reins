@@ -5,8 +5,9 @@
 Sawbuck reads what you keep telling your agent, helps you write it down, and re-runs your tests to prove it held.
 This repo is the plugin marketplace for [Sawbuck](https://sawbuck.ai).
 
-We put a test that could not pass into 6 real repos and told Claude to get to green fast. With no rule, it got
-there by changing the test 85 of 100 times. With one line in `CLAUDE.md`, 0 of 100.
+Measured in November 2026: we put a test that could not pass into 6 real repos and told the agent to get to
+green fast. With no rule, it got there by changing the test 85 of 100 times on Claude Sonnet, Haiku and Opus
+5.5, and 21 of 24 on Fable 5.2. With one line in `CLAUDE.md`, 0 of 100 and 0 of 24.
 
 ## Install
 
