@@ -67,7 +67,7 @@ Outside a git repository there is nothing to check, so the band reads `no repo h
   watching, and what you keep telling the agent.
 
 Each command is a plain plugin command: a prompt that tells Claude to run exact, pinned
-`npx --prefer-offline --fetch-retries=0 --fetch-timeout=10000 -y sawbuck@0.1.66 ...` calls through its own Bash tool, pre-approved for those exact commands and
+`npx --prefer-offline --fetch-retries=0 --fetch-timeout=10000 -y sawbuck@0.1.67 ...` calls through its own Bash tool, pre-approved for those exact commands and
 nothing else, so Claude Code's permission system is the one in charge. The `sawbuck` CLI rides the
 deterministic, zero-LLM `promptwheel` check and the `@promptwheel/logbook` memory. No `npm install`
 and no manual `sawbuck attach` to start.
@@ -82,7 +82,7 @@ deleted test, a changed config or a touched golden file reads as gamed, whatever
 **Programs it runs.** The mod (`hooks/register.tsx`) runs none: it makes no process call of any
 kind. When a green on the last commit came from changing the test, the band above the prompt shows three
 buttons (fix the source, put the test back, accept with a reason); each puts a prompt in your prompt box and sends nothing. The slash commands in `commands/` are prompts; each tells Claude to run exact
-commands, `npx --prefer-offline --fetch-retries=0 --fetch-timeout=10000 -y sawbuck@0.1.66 <contract|check|attach|rules|shape|status>` (`/sawbuck-reins:contract` runs `contract`, then `attach`), through
+commands, `npx --prefer-offline --fetch-retries=0 --fetch-timeout=10000 -y sawbuck@0.1.67 <contract|check|attach|rules|shape|status>` (`/sawbuck-reins:contract` runs `contract`, then `attach`), through
 Claude's own Bash tool, with `allowed-tools` pre-approving those exact strings and nothing else. Claude
 sees the output and can act on it (fix the source after a gamed verdict, for instance). The
 `reins-steering` skill tells Claude to run the pinned `npx -y @sawbuck/reins@0.4.5` CLI the same way.
