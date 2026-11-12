@@ -66,6 +66,8 @@ what the plugin runs, writes, and sends is in [the plugin README](plugins/sawbuc
 - `engine/`: `@sawbuck/reins` on npm, the steering judge CLI that the `reins-steering` skill runs.
 - `.claude-plugin/marketplace.json` and `.agents/plugins/marketplace.json`: the two marketplace
   manifests, one per harness.
+- `scripts/install-check.sh`: installs both plugins on old and current Claude Code, with no model and no login.
+  Run it before you change a manifest or a command header. `engine/test/plugin-files.test.mjs` is its fast half.
 
 ## Links
 
