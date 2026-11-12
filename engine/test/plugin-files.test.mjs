@@ -7,6 +7,9 @@
 //     allowed values, is read only by 2.1.271 and newer.
 //   - A command or skill header that is not strict YAML: 2.1.221 and older drop the whole header, the description and
 //     the pre-approved commands with it. A value that holds a colon needs quotes.
+//   - A hooks file (hooks/hooks.json) with no `hooks` record: 2.1.241 and older read it as command hooks and refuse
+//     it. The plugin still installs and its commands load, and Claude Code lists it as "failed to load". 0.5.62 went
+//     out like that: the check then asked "did it install" and never "did it load".
 //
 // This is the fast half, run with the unit tests on every push. The real check is scripts/install-check.sh, which
 // installs both plugins on old and current Claude Code.
@@ -116,6 +119,16 @@ for (const p of PLUGINS) {
   test(`${p}: every command and skill header is strict YAML (an old Claude Code drops a header it cannot parse)`, () => {
     const problems = headerFiles(p).flatMap((f) => headerProblems(read('plugins', p, f)).map((why) => `plugins/${p}/${f}: ${why}`));
     assert.deepEqual(problems, []);
+  });
+
+  test(`${p}: a hooks file holds a \`hooks\` record beside its modules (an old Claude Code refuses the file without one)`, () => {
+    const file = join(ROOT, 'plugins', p, 'hooks', 'hooks.json');
+    if (!existsSync(file)) return;
+    const h = JSON.parse(readFileSync(file, 'utf8'));
+    assert.ok(h.hooks && typeof h.hooks === 'object' && !Array.isArray(h.hooks),
+      `plugins/${p}/hooks/hooks.json has no "hooks" record. Claude Code 2.1.241 and older read this file as command hooks and refuse it without one `
+      + '("Hook load failed ... expected record, received undefined"): the plugin installs, and Claude Code lists it as "failed to load". '
+      + 'Keep "hooks": {} beside "modules".');
   });
 
   test(`${p}: every file the manifest and the hooks file name is there`, () => {
