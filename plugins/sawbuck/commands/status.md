@@ -5,7 +5,7 @@ description: "Everything sawbuck has here in one view: what it caught, the debt,
 Run exactly this command in the current repo and show the person its output verbatim:
 
 ```
-npx --prefer-offline --fetch-retries=0 --fetch-timeout=10000 -y sawbuck@0.1.67 status
+npx --prefer-offline --fetch-retries=0 --fetch-timeout=10000 -y sawbuck@0.1.68 status
 ```
 
 It shows what the check has caught over time, the suppression debt live now, the steer rate, anything they keep telling the agent, and whether the hooks are wired in this repo. Add nothing to it.

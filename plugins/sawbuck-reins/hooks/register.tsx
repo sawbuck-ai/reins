@@ -225,7 +225,7 @@ async function recordNativePair($: any, s: { pressure: number } | null, span: nu
 // the judge's model, the person's choice in /plugin configure (Sonnet by default: kappa 0.66 against an Opus reading of
 // 200 real turns, Haiku 0.41; proof-bench/judge)
 // the CLI this plugin pins, in the fail-fast npx form its commands use (wave.sh checks every sawbuck@ pin agrees)
-const SB_NPX = 'npx --prefer-offline --fetch-retries=0 --fetch-timeout=10000 -y sawbuck@0.1.67'
+const SB_NPX = 'npx --prefer-offline --fetch-retries=0 --fetch-timeout=10000 -y sawbuck@0.1.68'
 const JUDGE_MODELS: Record<string, string> = { sonnet: 'claude-sonnet-5-5', haiku: 'claude-haiku-5-5', opus: 'claude-opus-5-5' }
 let judgeModel = JUDGE_MODELS.sonnet
 async function scoreNative($: any, prior: string, user: string, repo: string, attached: boolean): Promise<void> {
@@ -340,7 +340,7 @@ async function readSummary($: any): Promise<Summary | null> {
 }
 
 // The mod runs no program. The slash commands live in commands/ as plugin commands: each tells
-// Claude to run one exact, pinned `npx --prefer-offline --fetch-retries=0 --fetch-timeout=10000 -y sawbuck@0.1.67 ...` through its own Bash tool, under Claude
+// Claude to run one exact, pinned `npx --prefer-offline --fetch-retries=0 --fetch-timeout=10000 -y sawbuck@0.1.68 ...` through its own Bash tool, under Claude
 // Code's permission system, so Claude sees the verdict and can act on it.
 // One offer per repository, ever: in a git repo with no rules, one line in the system prompt asks Claude to
 // offer to sign it after doing the work. Decided in prompt.compose, which runs before prompt.submit, and kept for
