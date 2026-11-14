@@ -173,3 +173,20 @@ test('no pinned sawbuck line tells npm to prefer what it has kept (a returning u
   const loose = lines.filter((x) => !/--fetch-retries=0 --fetch-timeout=\d+ -y sawbuck@/.test(x.l));
   assert.deepEqual(loose.map((x) => `${x.f}:${x.i}`), [], 'these pinned lines have lost --fetch-retries=0 --fetch-timeout=<ms>');
 });
+
+// The update words (2026-11-14). The READMEs told a person on an older plugin to update it with "/plugin marketplace
+// update sawbuck, then install it again". Nothing had run those words. In a shell on Claude Code 2.1.241 to 2.1.325,
+// "install again" answers "already installed" and the old plugin stays; `plugin update` alone says "already at the
+// latest version", because nothing refreshed the marketplace. What updated on every version tried (2.1.100 to 2.1.325,
+// both plugins, from the real remote) is the marketplace update followed by the plugin update. So a README that tells
+// a person to update names those two commands, for its own plugin, in that order.
+test('a README that tells a person to update the plugin gives the two commands that update it', () => {
+  const docs = [['README.md', 'sawbuck-reins'], ['plugins/sawbuck-reins/README.md', 'sawbuck-reins'], ['plugins/sawbuck/README.md', 'sawbuck']];
+  for (const [f, plugin] of docs) {
+    const t = read(f).replace(/\s+/g, ' ');
+    assert.ok(/No matching version found/.test(t), `${f} no longer has the paragraph this test is about`);
+    assert.ok(!/install (it )?again/i.test(t), `${f} tells a person to install again: on Claude Code 2.1.241 and newer that leaves the old plugin in place`);
+    const a = t.indexOf('claude plugin marketplace update sawbuck'), b = t.indexOf(`claude plugin update ${plugin}@sawbuck`);
+    assert.ok(a >= 0 && b > a, `${f} must give \`claude plugin marketplace update sawbuck\`, then \`claude plugin update ${plugin}@sawbuck\``);
+  }
+});

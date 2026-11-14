@@ -20,8 +20,9 @@ Run `claude update` first. The plugin installs on Claude Code 2.1.100 (April 202
 prompt needs 2.1.299 or newer (October 2026). On an older one the plugin installs without the band.
 
 If a command answers `No matching version found for sawbuck@...`, the plugin is 0.5.64 or older and this machine ran
-an earlier Sawbuck. Those commands told npm not to look for new versions. Update the plugin (`/plugin marketplace
-update sawbuck`, then install it again), or run `npx -y sawbuck@latest --version` once in a terminal.
+an earlier Sawbuck. Those commands told npm not to look for new versions. Update the plugin: in a terminal, run
+`claude plugin marketplace update sawbuck`, then `claude plugin update sawbuck-reins@sawbuck`, and start Claude Code
+again. Or run `npx -y sawbuck@latest --version` once in a terminal.
 
 Claude Code asks three things on install: a **scope** (choose **user** so the band follows you across your repos), the **guide band** (on by default; set it off if you show sawbuck in your own statusline instead, the judge still runs), and the **steering judge** (it defaults to a zero-setup `native` one, a small Claude call per scored turn on your own plan; turn it off, or score with the reins CLI instead, see below). Each setting is a word you type: `on` or `off` for the band, `native` or `off` for the judge, and `sonnet`, `haiku` or `opus` for the judge's model. A word it does not know means the default.
 

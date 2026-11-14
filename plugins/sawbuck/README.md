@@ -8,7 +8,9 @@ each command asks Claude to run the `sawbuck` CLI from npm (`npx --fetch-retries
 approve each command the first time.
 
 If a command answers `No matching version found for sawbuck@...`, this plugin is 0.1.11 or older and this machine ran
-an earlier Sawbuck. Update the plugin, or run `npx -y sawbuck@latest --version` once in a terminal.
+an earlier Sawbuck. Update the plugin: in a terminal, run `claude plugin marketplace update sawbuck`, then
+`claude plugin update sawbuck@sawbuck`, and start Claude Code again. Or run `npx -y sawbuck@latest --version` once in a
+terminal.
 
 ## Install
 
