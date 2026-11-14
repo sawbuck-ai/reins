@@ -19,6 +19,10 @@ Claude runs through its own Bash tool. The mod itself runs no program.
 Run `claude update` first. The plugin installs on Claude Code 2.1.100 (April 2026) or newer. The band above the
 prompt needs 2.1.299 or newer (October 2026). On an older one the plugin installs without the band.
 
+If a command answers `No matching version found for sawbuck@...`, the plugin is 0.5.64 or older and this machine ran
+an earlier Sawbuck. Those commands told npm not to look for new versions. Update the plugin (`/plugin marketplace
+update sawbuck`, then install it again), or run `npx -y sawbuck@latest --version` once in a terminal.
+
 Claude Code asks three things on install: a **scope** (choose **user** so the band follows you across your repos), the **guide band** (on by default; set it off if you show sawbuck in your own statusline instead, the judge still runs), and the **steering judge** (it defaults to a zero-setup `native` one, a small Claude call per scored turn on your own plan; turn it off, or score with the reins CLI instead, see below). Each setting is a word you type: `on` or `off` for the band, `native` or `off` for the judge, and `sonnet`, `haiku` or `opus` for the judge's model. A word it does not know means the default.
 
 ## Getting started
@@ -70,7 +74,7 @@ Outside a git repository there is nothing to check, so the band reads `no repo h
   watching, and what you keep telling the agent.
 
 Each command is a plain plugin command: a prompt that tells Claude to run exact, pinned
-`npx --prefer-offline --fetch-retries=0 --fetch-timeout=10000 -y sawbuck@0.1.68 ...` calls through its own Bash tool, pre-approved for those exact commands and
+`npx --fetch-retries=0 --fetch-timeout=10000 -y sawbuck@0.1.68 ...` calls through its own Bash tool, pre-approved for those exact commands and
 nothing else, so Claude Code's permission system is the one in charge. The `sawbuck` CLI rides the
 deterministic, zero-LLM `promptwheel` check and the `@promptwheel/logbook` memory. No `npm install`
 and no manual `sawbuck attach` to start.
@@ -85,7 +89,7 @@ deleted test, a changed config or a touched golden file reads as gamed, whatever
 **Programs it runs.** The mod (`hooks/register.tsx`) runs none: it makes no process call of any
 kind. When a green on the last commit came from changing the test, the band above the prompt shows three
 buttons (fix the source, put the test back, accept with a reason); each puts a prompt in your prompt box and sends nothing. The slash commands in `commands/` are prompts; each tells Claude to run exact
-commands, `npx --prefer-offline --fetch-retries=0 --fetch-timeout=10000 -y sawbuck@0.1.68 <contract|check|attach|rules|shape|status>` (`/sawbuck-reins:contract` runs `contract`, then `attach`), through
+commands, `npx --fetch-retries=0 --fetch-timeout=10000 -y sawbuck@0.1.68 <contract|check|attach|rules|shape|status>` (`/sawbuck-reins:contract` runs `contract`, then `attach`), through
 Claude's own Bash tool, with `allowed-tools` pre-approving those exact strings and nothing else. Claude
 sees the output and can act on it (fix the source after a gamed verdict, for instance). The
 `reins-steering` skill tells Claude to run the pinned `npx -y @sawbuck/reins@0.4.5` CLI the same way.

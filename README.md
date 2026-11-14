@@ -21,6 +21,10 @@ Claude Code:
 Run `claude update` first. The plugin installs on Claude Code 2.1.100 (April 2026) or newer. The band above the
 prompt needs 2.1.299 or newer (October 2026). On an older one the plugin installs without the band.
 
+If a command answers `No matching version found for sawbuck@...`, the plugin is 0.5.64 or older and this machine ran
+an earlier Sawbuck. Those commands told npm not to look for new versions. Update the plugin (`/plugin marketplace
+update sawbuck`, then install it again), or run `npx -y sawbuck@latest --version` once in a terminal.
+
 Codex (untested: the plugin installs, but it has not been run end to end; the band and slash commands are Claude Code only):
 
 ```

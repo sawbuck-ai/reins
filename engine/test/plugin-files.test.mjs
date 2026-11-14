@@ -154,3 +154,22 @@ test('the READMEs name the Claude Code versions the install check runs on, and t
   const n = (v) => v.split('.').map(Number).reduce((a, x) => a * 100000 + x, 0);
   assert.ok(n(root[0]) <= n(root[1]), `the band cannot need an older Claude Code (${root[1]}) than the install does (${root[0]})`);
 });
+
+// The pinned line (2026-11-13). Every command, skill and band button gives Claude one exact line to run:
+// `npx ... -y sawbuck@<version> <command>`. It used to carry `--prefer-offline`, which tells npm to use the list of
+// versions it has kept without asking whether the list is still right. A person who had run an earlier sawbuck then got
+// "No matching version found for sawbuck@<new>" from every plugin command after a plugin update, and nothing in normal
+// use repaired it: every line carried the flag. Measured on npm 10.8.2, 10.9.9 and 11.19.1, the same on each. Without
+// the flag npm asks the registry once, and a home that last saw the older version finds the new one.
+// The real check is in the release's plugin check: the pinned line, run in a home that last saw the version before.
+test('no pinned sawbuck line tells npm to prefer what it has kept (a returning user would not find a new version)', () => {
+  const walk = (dir) => readdirSync(join(ROOT, dir), { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? (e.name === 'node_modules' || (e.name === 'results' && /evals$/.test(dir)) ? [] : walk(join(dir, e.name))) : [join(dir, e.name)]));
+  const files = walk('plugins').filter((f) => /\.(md|tsx?|json|ya?ml)$/.test(f));
+  const lines = files.flatMap((f) => read(f).split('\n').map((l, i) => ({ f, i: i + 1, l })).filter((x) => /\bnpx(?: -{1,2}[\w=-]+)* sawbuck@[\d*]/.test(x.l)));   // npx, its flags, then the pin (a version, or * in a pattern; `@latest` in the README's repair line is not a pin)
+  assert.ok(lines.length >= 30, `found only ${lines.length} pinned lines under plugins/: this test has lost its subject`);
+  const kept = lines.filter((x) => /--prefer-offline|--offline\b/.test(x.l));
+  assert.deepEqual(kept.map((x) => `${x.f}:${x.i}`), [], 'these lines tell npm to use its kept list of versions');
+  // what keeps a dead network from hanging the command stays on every one
+  const loose = lines.filter((x) => !/--fetch-retries=0 --fetch-timeout=\d+ -y sawbuck@/.test(x.l));
+  assert.deepEqual(loose.map((x) => `${x.f}:${x.i}`), [], 'these pinned lines have lost --fetch-retries=0 --fetch-timeout=<ms>');
+});
