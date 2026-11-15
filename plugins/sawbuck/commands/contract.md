@@ -5,8 +5,8 @@ description: "One step to set up Sawbuck: give this repo its rules and check eve
 Run exactly these two commands in the current repo, in order, and show the person their output verbatim. The first adds the rule to AGENTS.md, and to CLAUDE.md or .cursorrules if they exist.
 
 ```
-npx --fetch-retries=0 --fetch-timeout=10000 -y sawbuck@0.1.69 contract
-npx --fetch-retries=0 --fetch-timeout=10000 -y sawbuck@0.1.69 attach
+npx --fetch-retries=0 --fetch-timeout=10000 -y sawbuck@0.1.70 contract
+npx --fetch-retries=0 --fetch-timeout=10000 -y sawbuck@0.1.70 attach
 ```
 
 The first keeps any rules already here, adds your tests if there are none, and sets the protected paths. The second wires the hooks that check every turn. Running them twice changes nothing.

@@ -4,7 +4,7 @@ Your agent tried it once. It broke. You reverted it. A month later, a new sessio
 what gets lost in your workflow and holds your agent to it.
 
 This edition is commands and skills only, in plain Markdown. It ships no hooks, no scripts and no pre-approved tools:
-each command asks Claude to run the `sawbuck` CLI from npm (`npx --fetch-retries=0 --fetch-timeout=10000 -y sawbuck@0.1.69 ...`), and Claude Code asks you to
+each command asks Claude to run the `sawbuck` CLI from npm (`npx --fetch-retries=0 --fetch-timeout=10000 -y sawbuck@0.1.70 ...`), and Claude Code asks you to
 approve each command the first time.
 
 If a command answers `No matching version found for sawbuck@...`, this plugin is 0.1.11 or older and this machine ran
