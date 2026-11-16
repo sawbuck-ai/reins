@@ -3,7 +3,7 @@
 Your agent tried it once. It broke. You reverted it. A month later, a new session does it again. Sawbuck writes down
 what gets lost in your workflow and holds your agent to it.
 
-This edition is commands and skills only, in plain Markdown. It ships no hooks, no scripts and no pre-approved tools:
+This edition is four commands and one skill, in plain Markdown. It ships no hooks, no scripts and no pre-approved tools:
 each command asks Claude to run the `sawbuck` CLI from npm (`npx --fetch-retries=0 --fetch-timeout=10000 -y sawbuck@0.1.72 ...`), and Claude Code asks you to
 approve each command the first time. It is made for Claude Code in a git repository. In a chat with no repo it has
 nothing to check.
@@ -31,13 +31,10 @@ That is one step on Claude Code 2.1.275 or later. On an older version: `/plugin 
 
 - `/sawbuck:check` runs `sawbuck check`: re-runs your tests from the code changes alone and says whether a green was
   earned in the source or came from editing a test, a grader or a config. Writes nothing.
-- `/sawbuck:status` runs `sawbuck status`: what Sawbuck caught here, the debt in the tree, what you keep saying. Writes nothing.
+- `/sawbuck:status` runs `sawbuck status`: what Sawbuck caught here and the debt in the tree. Writes nothing.
 - `/sawbuck:contract` runs `sawbuck contract` then `sawbuck attach`. `contract` writes `promptwheel.config.json` and a
   short rules block in `AGENTS.md`, which you review and commit. `attach` writes Claude Code hooks into
   `.claude/settings.local.json` (kept out of git status) so every turn is checked; `sawbuck detach` removes them.
-- `/sawbuck:rules` reads your own messages to Claude Code on this machine and proposes the rules you keep enforcing,
-  each with two of your quotes. You pick which to keep; it writes only what you accept, into the repo's CLAUDE.md.
-- `/sawbuck:shape` reads a sample of your messages and draws what you push on. The gathered text is deleted after.
 - `/sawbuck:audit` reads your agent rule files and points out rules that pull against each other. Edits only with your yes.
 
 ## What it fetches, reads, writes, hands on and sends
@@ -47,28 +44,25 @@ version this plugin names, with the two packages it is built on (`promptwheel` a
 request is npm's own and carries nothing of yours.
 
 **Reads.** Your repo, its git history and its reflog. To check a change it runs your repo's own test command in a
-throwaway copy of the repo. For `/sawbuck:rules` and `/sawbuck:shape` only: what you typed to Claude Code on this
-machine (the session files under `~/.claude/projects`), with copies and anything that looks like a secret left out.
+throwaway copy of the repo. `/sawbuck:audit` reads your agent rule files (`CLAUDE.md`, `AGENTS.md`, `.cursorrules`,
+and `~/.claude/CLAUDE.md`). No command in this edition reads your past sessions.
 
 **Writes.** `/sawbuck:check` and `/sawbuck:status` write nothing. `/sawbuck:contract` writes the files named above, a
 local record under `.sawbuck/` and `.git/sawbuck/` that is kept out of git status, and one line in
 `~/.sawbuck/registry.json` saying this repo is attached. Once attached, the hooks keep the first 240 characters of
 your latest prompt in `.sawbuck/state.json`, replaced at every prompt. If you undo the agent's change, those words are
 saved with the undo, so the agent can be shown later why it was undone. At the end of a turn the hooks read the
-agent's last message to see whether it asked you about a test. That is not kept. `/sawbuck:rules` and
-`/sawbuck:shape` put their working files under `~/.sawbuck/` and delete the gathered messages when the run ends. A
-rule you accept goes into the file you choose. It is also handed once to the notes kept on this machine: Claude
-Code's own notes for the repo, a claude-mem worker if one runs here, and a Markdown folder if you named one.
+agent's last message to see whether it asked you about a test. That is not kept. `/sawbuck:audit` changes a rule file only
+where you say yes.
 
 **Hands on.** Once attached, when Sawbuck catches a gamed green, finds a reverted attempt in git or records an
 undo, it hands that finding on, once, to the notes kept on this machine: a note in Claude Code's own notes folder for
 the repo (`~/.claude/projects/<repo>/memory/`), a claude-mem worker if one runs here, and a Markdown folder if you
 named one in `sawbuck.config.json`. The note for an undo holds what you typed before it, up to 240 characters.
-`/sawbuck:rules` also reads the notes Claude Code keeps for the repo, to offer them to you as rules. `SAWBUCK_SHARE=none` in your shell turns this off.
+Sawbuck reads nothing back from them. `SAWBUCK_SHARE=none` in your shell turns this off.
 
 **Sends.** Nothing goes to us or to any other service. There is no telemetry, no account and no API key, and the check
-never calls a model. What `/sawbuck:rules` and `/sawbuck:shape` gather is read by the model once, inside your own
-Claude Code session, like anything else you show Claude. The one thing that can leave your machine through Sawbuck is
+never calls a model. The one thing that can leave your machine through Sawbuck is
 a record you choose to push to your own git remote with `sawbuck ledger push`.
 
 ## Updating
@@ -88,5 +82,6 @@ one watching your repo.
 Bugs and questions: https://github.com/sawbuck-ai/reins/issues. How the check works: https://sawbuck.ai/check.
 Privacy: https://sawbuck.ai/privacy. License: Apache-2.0, in this folder.
 
-The full plugin, with the live band and per-turn steering readout, is `sawbuck-reins` in the same marketplace.
+The full plugin is `sawbuck-reins` in the same marketplace (`sawbuck-ai/reins`). It adds the live band, a per-turn
+steering readout, and two commands that read your own past sessions to propose the rules you keep enforcing.
 Source of the CLI: https://github.com/sawbuck-ai/sawbuck

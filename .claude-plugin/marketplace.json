@@ -16,7 +16,7 @@
       "name": "sawbuck",
       "version": "0.1.17",
       "source": "./plugins/sawbuck",
-      "description": "Sawbuck, commands only (the edition for Anthropic's plugin directory): the same six commands and two skills as sawbuck-reins, with no hooks, no mod and no pre-approved tools. Install one or the other, not both."
+      "description": "Sawbuck, commands only (the edition for Anthropic's plugin directory): check, contract, status and audit, with no hooks, no mod and no pre-approved tools. It reads no past sessions: the commands that do (rules, shape) are in sawbuck-reins. Install one or the other, not both."
     }
   ]
 }

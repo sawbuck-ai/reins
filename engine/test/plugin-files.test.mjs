@@ -79,7 +79,8 @@ const headerFiles = (p) => {
 
 test('this file finds the plugins it is here to check', () => {
   assert.ok(PLUGINS.includes('sawbuck-reins') && PLUGINS.includes('sawbuck'), `found ${JSON.stringify(PLUGINS)} under plugins/`);
-  for (const p of PLUGINS) assert.ok(headerFiles(p).length >= 6, `${p}: found only ${headerFiles(p).length} command and skill files`);
+  // the full plugin holds six commands and two skills; the commands-only edition four and one
+  for (const p of PLUGINS) assert.ok(headerFiles(p).length >= 5, `${p}: found only ${headerFiles(p).length} command and skill files`);
 });
 
 test('the header check itself: it flags what old Claude Code drops, and passes what every parser reads', () => {
@@ -314,4 +315,21 @@ test('each plugin README says where a finding is handed on, and how to turn that
     assert.ok(/Claude Code's own notes folder for the repo/.test(t), `plugins/${p}/README.md does not say a finding goes into Claude Code's own notes folder`);
     assert.ok(/SAWBUCK_SHARE=none/.test(t), `plugins/${p}/README.md does not name the switch (SAWBUCK_SHARE=none)`);
   }
+});
+
+// The directory's policy, 1.G: software in it "must not query or extract data from Claude's memory, chat history,
+// conversation summaries" and must not "use conversation content to build user profiles". The rules and shape
+// commands and the steering skill read what a person typed in past sessions, which is their whole use. They stay in
+// sawbuck-reins, from our own marketplace. The commands-only edition is the one written for the directory, so it
+// holds none of them, and nothing copied over from the full plugin may bring one back.
+test('the commands-only edition reads no past sessions', () => {
+  const files = folderFiles('sawbuck');
+  const names = files.map((f) => f.replace(/^plugins\/sawbuck\//, ''));
+  assert.deepEqual(names.filter((f) => /^commands\//.test(f)).sort(), ['commands/audit.md', 'commands/check.md', 'commands/contract.md', 'commands/status.md']);
+  assert.deepEqual(names.filter((f) => /^skills\//.test(f)).sort(), ['skills/sawbuck-check/SKILL.md']);
+  for (const f of files.filter((x) => /\/(commands|skills)\//.test(x))) {
+    const t = read(f);
+    for (const [re, what] of [[/\.claude\/projects|\.codex\/sessions/, 'the folder past sessions are kept in'], [/@sawbuck\/reins/, 'the steering CLI'], [/sawbuck@\d+\.\d+\.\d+ (rules|shape|steers|share)\b/, 'a command that reads or passes on what the person typed'], [/\/sawbuck:(rules|shape)\b/, 'a command this edition does not hold']]) assert.ok(!re.test(t), `${f} names ${what}`);
+  }
+  assert.ok(/reads no past sessions|No command in this edition reads your past sessions/.test(read('plugins', 'sawbuck', 'README.md')), 'the README no longer says so');
 });
