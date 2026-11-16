@@ -224,7 +224,7 @@ async function recordNativePair($: any, s: { pressure: number } | null, span: nu
 // unparseable) stays native but still records the consumed pair so the count doesn't drift.
 // the judge's model, the person's choice in /plugin configure (Sonnet by default: kappa 0.66 against an Opus reading of
 // 200 real turns, Haiku 0.41; proof-bench/judge)
-// the CLI this plugin pins, in the npx form its commands use (wave.sh checks every sawbuck@ pin agrees). No
+// the CLI this plugin pins, in the pinned form its commands use (wave.sh checks every sawbuck@ pin agrees). No
 // --prefer-offline: with it npm never asks whether its kept list of versions is still right, and a person who ran an
 // earlier sawbuck got "No matching version found" for a new pin (2026-11-13; engine/test/plugin-files.test.mjs).
 const SB_NPX = 'npx --fetch-retries=0 --fetch-timeout=10000 -y sawbuck@0.1.72'

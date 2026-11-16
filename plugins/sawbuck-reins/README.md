@@ -22,10 +22,11 @@ prompt needs 2.1.299 or newer (October 2026). On an older one the plugin install
 If a command answers `No matching version found for sawbuck@...`, the plugin is 0.5.64 or older and this machine ran
 an earlier Sawbuck. Those commands told npm not to look for new versions. Update the plugin: in a terminal, run
 `claude plugin marketplace update sawbuck`, then `claude plugin update sawbuck-reins@sawbuck`, and start Claude Code
-again. Or run `npx -y sawbuck@latest --version` once in a terminal.
+again.
 
 The plugin's own lines name the Sawbuck version they run. A `sawbuck` you installed yourself (`npm i -g sawbuck`)
-is a separate copy and does not update with the plugin: it answers a bare `sawbuck` and `npx sawbuck`.
+is a separate copy and does not update with the plugin: it answers a bare `sawbuck`, and any line that names no
+version.
 `npm i -g sawbuck@latest` updates it. From Sawbuck 0.1.72 on you are told when that copy is older than the one
 watching your repo.
 
@@ -35,7 +36,7 @@ Claude Code asks three things on install: a **scope** (choose **user** so the ba
 
 You don't need to remember a command. The first time you use Claude Code in a git repository with no rules, Claude finishes what you asked and then offers once to add them. Say yes and it runs `/sawbuck-reins:contract`: every turn checks protected paths, and every commit is re-proved. Say anything else and it won't ask again in that directory. Nothing is written or run without that yes, and it never commits for you.
 
-Plain setup writes the rule and protected paths. `npx -y sawbuck contract --full` adds supply-chain guards, a repo lock and a CI check, starting as notes; add `--strict` to block.
+Plain setup writes the rule and protected paths. `npx --fetch-retries=0 --fetch-timeout=10000 -y sawbuck@0.1.72 contract --full` adds supply-chain guards, a repo lock and a CI check, starting as notes; add `--strict` to block.
 
 Outside a git repository there is nothing to check, so the band reads `no repo here` and no file is written. The steer judge still runs there unless `judge` is off, keeping your corrections in the plugin store on this machine.
 
@@ -82,7 +83,7 @@ Outside a git repository there is nothing to check, so the band reads `no repo h
 Each command is a plain plugin command: a prompt that tells Claude to run exact, pinned
 `npx --fetch-retries=0 --fetch-timeout=10000 -y sawbuck@0.1.72 ...` calls through its own Bash tool, pre-approved for those exact commands and
 nothing else, so Claude Code's permission system is the one in charge. The `sawbuck` CLI rides the
-deterministic, zero-LLM `promptwheel` check and the `@promptwheel/logbook` memory. No `npm install`
+deterministic, zero-LLM `promptwheel` check and the `@promptwheel/logbook` history. No `npm install`
 and no manual `sawbuck attach` to start.
 
 Beside a model verifier: if you run superpowers' `verification-before-completion` or a Claude Code agent
@@ -119,9 +120,9 @@ or the repo's `CLAUDE.md`, `AGENTS.md` or `.cursorrules`. `sawbuck attach` adds 
 The other commands and skills,
 through the CLIs Claude runs, write inside the repo you attached: the same `steer.json` when the
 reins CLI scores, the `sawbuck` CLI's own
-record (`.sawbuck/state.json`, `activity.jsonl`, `results.json`), and the memory engine's cache of
+record (`.sawbuck/state.json`, `activity.jsonl`, `results.json`), and the logbook's cache of
 that repo's own git history (`events.jsonl`, `LOGBOOK.md`), which includes the commit author names
-already in the git log. All of it is kept out of `git status`. `sawbuck detach` removes the hooks and the receipt; signed contract files stay because they are yours to review, and the record stays too, still out of `git status`, until `--purge` deletes it and the exclude lines.
+already in the git log. All of it is kept out of `git status`. One thing is written outside the repo: when Sawbuck catches a gamed green, finds a reverted attempt in git or records an undo, it hands that finding on, once, to the notes kept on this machine (a note in Claude Code's own notes folder for the repo, `~/.claude/projects/<repo>/memory/`; a claude-mem worker if one runs here; a Markdown folder if you named one in `sawbuck.config.json`). The note for an undo holds what you typed before it, up to 240 characters. `SAWBUCK_SHARE=none` in your shell turns that off. `sawbuck detach` removes the hooks and the receipt; signed contract files stay because they are yours to review, and the record stays too, still out of `git status`, until `--purge` deletes it and the exclude lines.
 To verify a change, the check also runs the repo's own test or metric command (from
 `promptwheel.config.json`, or the detected test script) in throwaway git worktrees, exactly as you
 would run it yourself; that is the only code it executes that is not one of the two pinned packages. `/sawbuck-reins:contract` runs `sawbuck attach`, which writes these on purpose:

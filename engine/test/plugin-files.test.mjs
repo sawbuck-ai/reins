@@ -15,7 +15,8 @@
 // installs both plugins on old and current Claude Code.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -188,5 +189,129 @@ test('a README that tells a person to update the plugin gives the two commands t
     assert.ok(!/install (it )?again/i.test(t), `${f} tells a person to install again: on Claude Code 2.1.241 and newer that leaves the old plugin in place`);
     const a = t.indexOf('claude plugin marketplace update sawbuck'), b = t.indexOf(`claude plugin update ${plugin}@sawbuck`);
     assert.ok(a >= 0 && b > a, `${f} must give \`claude plugin marketplace update sawbuck\`, then \`claude plugin update ${plugin}@sawbuck\``);
+  }
+});
+
+// --- what Anthropic's plugin directory asks of a folder before it lists it (2026-11-15) -----------------------------
+// The directory reads one plugin folder at a time, and a person who installs from it gets only that folder. Its
+// written checks (claude.com/docs/plugins/pre-submission-checklist) and its policy ask for the things below. From
+// 2.1.323 on `claude plugin validate` runs a part of them. These are the ones a new file or a changed sentence can
+// break on any push with nobody looking: found by reading both folders against the checklist, the day we first meant
+// to submit. Neither folder carried the license; the commands-only edition named no support or privacy page; and both
+// READMEs gave a person lines for npx with no version, or `@latest`, which the checklist blocks.
+const folderFiles = (p) => {
+  const dir = join('plugins', p);
+  try {   // the committed files: a checkout also holds what Claude Code and the evals write there, and none of it ships
+    const out = execFileSync('git', ['-C', ROOT, 'ls-files', '-z', '--', dir], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).split('\0').filter(Boolean);
+    if (out.length) return out;
+  } catch { /* not a git checkout: a copy laid out for a test */ }
+  const skip = (d, name) => name === 'node_modules' || (name === 'results' && /evals$/.test(d)) || (name === 'types' && /\.claude-plugin$/.test(d));
+  const walk = (d) => readdirSync(join(ROOT, d), { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? (skip(d, e.name) ? [] : walk(join(d, e.name))) : [join(d, e.name)]));
+  return walk(dir);
+};
+const IMAGE = /\.(png|jpe?g|gif|webp)$/i;
+
+test('each plugin folder carries the license and the notice (an install from the directory gets only that folder)', () => {
+  for (const p of PLUGINS) for (const f of ['LICENSE', 'NOTICE']) {
+    assert.ok(existsSync(join(ROOT, 'plugins', p, f)), `plugins/${p}/${f} is missing: the folder is all a person gets, and Apache-2.0 asks that the license go with it`);
+    assert.equal(read('plugins', p, f), read(f), `plugins/${p}/${f} is not the same text as the repo's ${f}`);
+  }
+});
+
+test('each manifest names its license, its author, and where to get help, the documentation and the privacy page', () => {
+  for (const p of PLUGINS) {
+    const m = manifest(p);
+    assert.equal(m.license, 'Apache-2.0', `${p}: license`);
+    assert.ok(m.author && typeof m.author.name === 'string' && m.author.name, `${p}: author.name`);
+    for (const k of ['description', 'version']) assert.ok(typeof m[k] === 'string' && m[k], `${p}: plugin.json has no ${k}`);
+    for (const k of ['homepage', 'repository', 'documentationUrl', 'supportUrl', 'privacyPolicyUrl']) assert.ok(typeof m[k] === 'string' && /^https:\/\/\S+$/.test(m[k]), `${p}: plugin.json has no https link for ${k} (the directory's policy asks for a support channel, documentation and a privacy page)`);
+  }
+});
+
+// A launcher downloads a package and runs it. The directory blocks one that names no exact version (a bare name, a
+// range, `@latest`). Our own measure says the same from the other side: a line with no version in it is answered by
+// whatever older copy the machine holds (sawbuck 0.1.72). The word alone in a sentence is not a command, and a pin
+// written as a pattern (in a test, or a permission rule) is not one either.
+const LAUNCHER = /\b(npx|bunx|uvx|pnpm dlx|yarn dlx|pipx run)\b([^\n`]*)/g;
+export const looseLaunchers = (text) => {
+  const out = [];
+  for (const m of text.matchAll(LAUNCHER)) {
+    const pkg = m[2].trim().split(/\s+/).find((w) => w && !w.startsWith('-'));
+    if (!pkg) continue;
+    if (/@[^@/]*[\\*]/.test(pkg)) continue;
+    if (!/^(@[\w.-]+\/)?[\w.-]+@\d+\.\d+\.\d+[)'".,;:]*$/.test(pkg)) out.push(`${m[1]} ${pkg}`);
+  }
+  return out;
+};
+
+test('the launcher check tells a pinned line from a loose one', () => {
+  const loose = (s) => assert.equal(looseLaunchers(s).length, 1, `should be loose: ${s}`);
+  const fine = (s) => assert.deepEqual(looseLaunchers(s), [], `should be fine: ${s}`);
+  loose('Or run `npx -y sawbuck@latest --version` once in a terminal.');
+  loose('it answers a bare `sawbuck` and `npx sawbuck`.');
+  loose('`npx -y sawbuck contract --full` adds supply-chain guards');
+  loose('npx --fetch-retries=0 --fetch-timeout=10000 -y sawbuck@^0.1.72 check');
+  loose('uvx ruff check .');
+  loose('the npx form its commands use');
+  fine('npx --fetch-retries=0 --fetch-timeout=10000 -y sawbuck@0.1.72 check');
+  fine('`npx -y @sawbuck/reins@0.4.5 cues --append`');
+  fine('a line for `npx` that names no version');
+  fine('--allowed-tools "Bash(npx --fetch-retries=0 --fetch-timeout=10000 -y sawbuck@*)"');
+  fine('assert.match(line, /npx -y sawbuck@\\d+\\.\\d+\\.\\d+ context/)');
+  fine('`npm i -g sawbuck@latest` updates it.');
+});
+
+test('every launcher line in a plugin folder names an exact version', () => {
+  for (const p of PLUGINS) {
+    const bad = folderFiles(p).filter((f) => !IMAGE.test(f)).flatMap((f) => read(f).split('\n').flatMap((l, i) => looseLaunchers(l).map((x) => `${f}:${i + 1}: ${x}`)));
+    assert.deepEqual(bad, [], `these lines run a package with no exact version: the directory blocks them, and on a machine with an older copy they run that copy`);
+  }
+});
+
+test('each plugin README is long enough to be a listing and has a section on what the plugin reads, writes and sends', () => {
+  for (const p of PLUGINS) {
+    const t = read('plugins', p, 'README.md');
+    let fence = false;
+    const prose = t.split('\n').filter((l) => { if (l.trim().startsWith('```')) { fence = !fence; return false; } return !fence; }).join('\n');
+    assert.ok((prose.match(/\S+/g) || []).length >= 40, `plugins/${p}/README.md has fewer than 40 words outside code blocks`);
+    assert.ok(/^#+ .*\bwrites\b.*\bsends\b/im.test(t), `plugins/${p}/README.md has no heading that says what it writes and sends: the directory's scan looks for what a plugin does and does not say`);
+  }
+});
+
+test('the commands-only edition gives three things to try (the directory asks for three working examples)', () => {
+  const t = read('plugins', 'sawbuck', 'README.md');
+  const at = t.indexOf('## Three things to try');
+  assert.ok(at >= 0, 'no "Three things to try" section');
+  const body = t.slice(at).split(/\n## /)[1] !== undefined ? t.slice(at).split(/\n## /)[0] : t.slice(at);
+  assert.equal((body.match(/^\d\. /gm) || []).length, 3, 'the section does not hold three numbered examples');
+});
+
+test('no file in a plugin folder is one the directory holds or refuses', () => {
+  const KIND = /\.(md|json|tsx?|sh|ya?ml|txt|png)$|(^|\/)(LICENSE|NOTICE|\.gitignore)$/;
+  for (const p of PLUGINS) {
+    const files = folderFiles(p);
+    assert.ok(files.length > 5 && files.length <= 512, `${p}: ${files.length} files (the directory holds a folder of more than 512)`);
+    for (const f of files) {
+      assert.ok(KIND.test(f), `${f}: not text, a PNG or a license file. The directory holds any other kind for a reviewer`);
+      assert.ok(IMAGE.test(f) || statSync(join(ROOT, f)).size <= 256 * 1024, `${f} is over 256 KiB`);
+      for (const part of f.split('/')) {
+        assert.ok(!/[:<>"|?*\\]|[. ]$/.test(part) && !/^(con|prn|aux|nul|com\d|lpt\d)(\..*)?$/i.test(part), `${f}: a name Windows cannot hold`);
+        assert.ok(!['.DS_Store', 'Thumbs.db', 'desktop.ini', '__MACOSX'].includes(part), `${f}: a system file`);
+      }
+    }
+    const low = files.map((f) => f.toLowerCase());
+    assert.equal(new Set(low).size, low.length, `${p}: two names differ only by capitals`);
+  }
+});
+
+// With the hooks on, sawbuck hands what it finds (a gamed green, a reverted attempt, an undo with the person's words)
+// to the notes kept on the machine, and one of those is Claude Code's own notes folder for the repo. Seen by running
+// a gamed turn in an empty home, 2026-11-15: the note was there, and neither plugin README said so. The directory's
+// scan looks for what a plugin does and does not say, so both READMEs name it, and the switch that turns it off.
+test('each plugin README says where a finding is handed on, and how to turn that off', () => {
+  for (const p of PLUGINS) {
+    const t = read('plugins', p, 'README.md').replace(/\s+/g, ' ');
+    assert.ok(/Claude Code's own notes folder for the repo/.test(t), `plugins/${p}/README.md does not say a finding goes into Claude Code's own notes folder`);
+    assert.ok(/SAWBUCK_SHARE=none/.test(t), `plugins/${p}/README.md does not name the switch (SAWBUCK_SHARE=none)`);
   }
 });
