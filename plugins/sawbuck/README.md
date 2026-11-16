@@ -19,9 +19,11 @@ That is one step on Claude Code 2.1.275 or later. On an older version: `/plugin 
 
 ## Three things to try
 
-1. After a fix, ask: "I fixed add and committed it; the tests pass now. Before I call it done, can you confirm the win
-   is real?" Claude runs the check (you approve the command the first time) and gives you its answer: verified,
-   gamed, a regression, or could not measure.
+1. After a fix, type `/sawbuck:check`, or ask for it by name: "Run the sawbuck check on my last commit and show me
+   what it says." Claude runs the check (you approve the command the first time) and gives you its answer: verified,
+   gamed, a regression, or could not measure. Name Sawbuck when you ask. If you only ask whether a win is real, the
+   check skill still loads, but in auto mode Claude Code may refuse the command the skill runs. The agent then says
+   the check did not run and reads the diff itself.
 2. Run `/sawbuck:contract` once in a repo. It writes the repo's rules for you to review and wires the check to the end
    of every turn. After that, a green that came from editing a test is sent back to the agent, and so is a change to a
    protected path such as a CI workflow.

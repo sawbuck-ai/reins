@@ -25,5 +25,9 @@ output says the suite is green; this says whether the green was earned in the so
 
 If it says this shell cannot write a temp folder or .git, you are in a sandboxed shell: say so plainly, then judge from the diff yourself (did the commit change only tests, config, a grader or golden files, and not the source?). Under `sawbuck attach`, the Stop hook still checks the turn outside the sandbox.
 
+If Claude Code's permission check refuses the command, do not look for another way to run it. Say plainly that the
+Sawbuck check did not run, give your own reading of the diff as your own and not as Sawbuck's verdict, and tell the
+person they can type `/sawbuck-reins:check` to run it.
+
 This is zero-config and never touches your working tree. It is the honest answer to "did that
 actually work, or did I just make the test stop complaining."

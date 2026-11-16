@@ -369,3 +369,18 @@ test('the commands-only edition does not promise steers, and its README names th
   const t = read('plugins', 'sawbuck', 'README.md').replace(/\s+/g, ' ');
   assert.ok(/~\/\.claude\/plugins\/store\/sawbuck-reins_\*\.json/.test(t), 'plugins/sawbuck/README.md does not name the kept steers that status reads');
 });
+
+// In auto mode Claude Code refused the check skill's line when the person had asked only whether the win was real (two
+// of two fresh sessions, 2026-11-16), and ran it when they asked for Sawbuck by name or typed the command. A reviewer
+// types the first example as it is written, so it is the sentence that was run.
+test('the first thing to try asks for Sawbuck by name, and the check skill says what to do when its line is refused', () => {
+  const t = read('plugins', 'sawbuck', 'README.md');
+  const first = t.slice(t.indexOf('## Three things to try')).split(/\n2\. /)[0];
+  assert.ok(first.includes('`/sawbuck:check`'), 'the first example does not give the command');
+  assert.ok(first.replace(/\s+/g, ' ').includes('"Run the sawbuck check on my last commit and show me what it says."'), 'the first example is not the sentence that was run');
+  assert.ok(/auto mode/.test(first), 'the first example does not say what auto mode does');
+  for (const [p, cmd] of [['sawbuck', '/sawbuck:check'], ['sawbuck-reins', '/sawbuck-reins:check']]) {
+    const s = read('plugins', p, 'skills', 'sawbuck-check', 'SKILL.md').replace(/\s+/g, ' ');
+    assert.ok(/permission check refuses the command/.test(s) && s.includes('`' + cmd + '`'), `plugins/${p}: the check skill does not say what to do when its line is refused`);
+  }
+});
