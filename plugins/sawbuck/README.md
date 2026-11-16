@@ -5,7 +5,7 @@ what gets lost in your workflow and holds your agent to it.
 
 This edition is four commands and one skill, in plain Markdown. It ships no hooks, no scripts and no pre-approved tools:
 each command asks Claude to run the `sawbuck` CLI from npm (`npx --fetch-retries=0 --fetch-timeout=10000 -y sawbuck@0.1.72 ...`), and Claude Code asks you to
-approve each command the first time. It is made for Claude Code in a git repository. In a chat with no repo it has
+approve each command the first time (in auto mode it decides for you). It is made for Claude Code in a git repository. In a chat with no repo it has
 nothing to check.
 
 ## Install
@@ -66,7 +66,9 @@ where you say yes.
 undo, it hands that finding on, once, to the notes kept on this machine: a note in Claude Code's own notes folder for
 the repo (`~/.claude/projects/<repo>/memory/`), a claude-mem worker if one runs here, and a Markdown folder if you
 named one in `sawbuck.config.json`. The note for an undo holds the first line of the undone change and what you
-typed before it, up to 240 characters. Sawbuck reads nothing back from them. `SAWBUCK_SHARE=none` in your shell
+typed before it, up to 240 characters. Sawbuck reads nothing back from them. What the tool that holds a note does
+with it is up to that tool: Claude Code may read a note in its own notes folder in a later session, as it reads its
+own notes, and that goes where your Claude Code traffic already goes. `SAWBUCK_SHARE=none` in your shell
 turns this off. A note handed on stays where it was put until you delete it: `sawbuck detach --purge` deletes the
 record in the repo and does not remove those notes.
 

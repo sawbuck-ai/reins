@@ -317,6 +317,8 @@ test('each plugin README says where a finding is handed on, and how to turn that
     // run on the packed 0.1.72 (2026-11-16): `sawbuck detach --purge` deletes the record in the repo and leaves the notes
     assert.ok(/stays where it was put/.test(t) && /--purge/.test(t), `plugins/${p}/README.md does not say a note handed on outlives a purge`);
     assert.ok(/first line of the undone change/.test(t), `plugins/${p}/README.md does not say the undo note holds a line of the change`);
+    // a note in Claude Code's notes folder is Claude Code's to read: it can go where the person's Claude Code traffic goes
+    assert.ok(/Claude Code may read a note in its own notes folder in a later session/.test(t), `plugins/${p}/README.md does not say what happens to a note afterwards`);
   }
 });
 
