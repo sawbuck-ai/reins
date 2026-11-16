@@ -122,12 +122,13 @@ through the CLIs Claude runs, write inside the repo you attached: the same `stee
 reins CLI scores, the `sawbuck` CLI's own
 record (`.sawbuck/state.json`, `activity.jsonl`, `results.json`), and the logbook's cache of
 that repo's own git history (`events.jsonl`, `LOGBOOK.md`), which includes the commit author names
-already in the git log. All of it is kept out of `git status`. One thing is written outside the repo: when Sawbuck catches a gamed green, finds a reverted attempt in git or records an undo, it hands that finding on, once, to the notes kept on this machine (a note in Claude Code's own notes folder for the repo, `~/.claude/projects/<repo>/memory/`; a claude-mem worker if one runs here; a Markdown folder if you named one in `sawbuck.config.json`). The note for an undo holds what you typed before it, up to 240 characters. `SAWBUCK_SHARE=none` in your shell turns that off. `sawbuck detach` removes the hooks and the receipt; signed contract files stay because they are yours to review, and the record stays too, still out of `git status`, until `--purge` deletes it and the exclude lines.
+already in the git log. All of it is kept out of `git status`. Besides that registry line, one thing is written outside the repo: when Sawbuck catches a gamed green, finds a reverted attempt in git or records an undo, it hands that finding on, once, to the notes kept on this machine (a note in Claude Code's own notes folder for the repo, `~/.claude/projects/<repo>/memory/`; a claude-mem worker if one runs here; a Markdown folder if you named one in `sawbuck.config.json`). The note for an undo holds the first line of the undone change and what you typed before it, up to 240 characters. `SAWBUCK_SHARE=none` in your shell turns that off. A note handed on stays where it was put until you delete it; `sawbuck detach --purge` does not remove it. `sawbuck detach` removes the hooks and the receipt; signed contract files stay because they are yours to review, and the record stays too, still out of `git status`, until `--purge` deletes it and the exclude lines.
 To verify a change, the check also runs the repo's own test or metric command (from
 `promptwheel.config.json`, or the detected test script) in throwaway git worktrees, exactly as you
 would run it yourself; that is the only code it executes that is not one of the two pinned packages. `/sawbuck-reins:contract` runs `sawbuck attach`, which writes these on purpose:
 `.claude/settings.local.json` in that repo (adds the UserPromptSubmit, SessionStart and Stop hooks
-that run `sawbuck turn` and the check), the repo's git exclude file (`.git/info/exclude`, or where
+that run `sawbuck turn` and the check, a PreToolUse hook on Bash that runs `sawbuck hold`, and PreToolUse and
+PostToolUse hooks on the edit tools that run `sawbuck undo`), the repo's git exclude file (`.git/info/exclude`, or where
 git keeps it for a worktree; keeps `.sawbuck/` out of `git status`), an attach receipt under the
 repo's git dir (`.git/sawbuck/attach.json`, what it created, so detach can undo exactly that), and
 in a signed repo `.sawbuck/state.json` (the turn baseline). `sawbuck attach --dry-run` lists them. It then runs one verification check at attach time, a `promptwheel run` on the last
@@ -164,3 +165,10 @@ band and is not sent anywhere. `turn.complete` stashes the agent's answer for th
 `ui.render` draws the band above the prompt. None of them block a turn. In a git repo with no contract the band names the one step and the offer adds its one line; otherwise they stay silent
 in repos where Sawbuck is not attached. The mod registers no commands, tools, or agents; the six
 commands are files in `commands/`.
+
+## Help
+
+Bugs and questions: https://github.com/sawbuck-ai/reins/issues. Privacy: https://sawbuck.ai/privacy.
+License: Apache-2.0, in this folder.
+
+A security problem goes to us in private, not into a public issue: https://github.com/sawbuck-ai/reins/security/advisories/new

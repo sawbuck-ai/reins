@@ -80,5 +80,6 @@ what the plugin runs, writes, and sends is in [the plugin README](plugins/sawbuc
 - Sawbuck: https://sawbuck.ai (the check at /check, contracts at /contracts)
 - The CLI: https://github.com/sawbuck-ai/sawbuck (`npm i -g sawbuck`, or `npx sawbuck check` with no install)
 - The engine the check runs on: https://github.com/promptwheel-ai/promptwheel
+- A security problem: in private, see [SECURITY.md](SECURITY.md)
 
 Apache-2.0.

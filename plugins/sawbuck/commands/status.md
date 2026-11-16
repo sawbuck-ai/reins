@@ -1,5 +1,5 @@
 ---
-description: "Everything sawbuck has here in one view: what it caught, the debt, and what you keep saying"
+description: "Everything sawbuck has here in one view: what it caught, the debt in the tree, and what git threw away"
 ---
 
 Run exactly this command in the current repo and show the person its output verbatim:
@@ -8,4 +8,4 @@ Run exactly this command in the current repo and show the person its output verb
 npx --fetch-retries=0 --fetch-timeout=10000 -y sawbuck@0.1.72 status
 ```
 
-It shows what the check has caught over time, the suppression debt live now, the steer rate, anything they keep telling the agent, and whether the hooks are wired in this repo. Add nothing to it.
+It shows what the check has caught over time, the suppression debt live now, the attempts git threw away, and whether the hooks are wired in this repo. Add nothing to it.

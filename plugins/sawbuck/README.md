@@ -45,10 +45,15 @@ request is npm's own and carries nothing of yours.
 
 **Reads.** Your repo, its git history and its reflog. To check a change it runs your repo's own test command in a
 throwaway copy of the repo. `/sawbuck:audit` reads your agent rule files (`CLAUDE.md`, `AGENTS.md`, `.cursorrules`,
-and `~/.claude/CLAUDE.md`). No command in this edition reads your past sessions.
+and `~/.claude/CLAUDE.md`). No command in this edition reads your past sessions. Once attached, the hooks run
+at each prompt, before each shell command and each file edit the agent makes, after each edit, and when a turn
+ends. They read the prompt, the command, the file being edited and the agent's last message. If the full plugin
+`sawbuck-reins` ever ran on this machine, `/sawbuck:status` also reads the steers its judge kept
+(`~/.claude/plugins/store/sawbuck-reins_*.json`) and shows the ones you repeated.
 
 **Writes.** `/sawbuck:check` and `/sawbuck:status` write nothing. `/sawbuck:contract` writes the files named above, a
-local record under `.sawbuck/` and `.git/sawbuck/` that is kept out of git status, and one line in
+local record under `.sawbuck/` and `.git/sawbuck/` that is kept out of git status (it holds, among other things,
+a copy of each file as it was before the agent's first edit to it in a session, so an undo can be seen), and one line in
 `~/.sawbuck/registry.json` saying this repo is attached. Once attached, the hooks keep the first 240 characters of
 your latest prompt in `.sawbuck/state.json`, replaced at every prompt. If you undo the agent's change, those words are
 saved with the undo, so the agent can be shown later why it was undone. At the end of a turn the hooks read the
@@ -58,8 +63,10 @@ where you say yes.
 **Hands on.** Once attached, when Sawbuck catches a gamed green, finds a reverted attempt in git or records an
 undo, it hands that finding on, once, to the notes kept on this machine: a note in Claude Code's own notes folder for
 the repo (`~/.claude/projects/<repo>/memory/`), a claude-mem worker if one runs here, and a Markdown folder if you
-named one in `sawbuck.config.json`. The note for an undo holds what you typed before it, up to 240 characters.
-Sawbuck reads nothing back from them. `SAWBUCK_SHARE=none` in your shell turns this off.
+named one in `sawbuck.config.json`. The note for an undo holds the first line of the undone change and what you
+typed before it, up to 240 characters. Sawbuck reads nothing back from them. `SAWBUCK_SHARE=none` in your shell
+turns this off. A note handed on stays where it was put until you delete it: `sawbuck detach --purge` deletes the
+record in the repo and does not remove those notes.
 
 **Sends.** Nothing goes to us or to any other service. There is no telemetry, no account and no API key, and the check
 never calls a model. The one thing that can leave your machine through Sawbuck is
@@ -81,6 +88,8 @@ one watching your repo.
 
 Bugs and questions: https://github.com/sawbuck-ai/reins/issues. How the check works: https://sawbuck.ai/check.
 Privacy: https://sawbuck.ai/privacy. License: Apache-2.0, in this folder.
+
+A security problem goes to us in private, not into a public issue: https://github.com/sawbuck-ai/reins/security/advisories/new
 
 The full plugin is `sawbuck-reins` in the same marketplace (`sawbuck-ai/reins`). It adds the live band, a per-turn
 steering readout, and two commands that read your own past sessions to propose the rules you keep enforcing.

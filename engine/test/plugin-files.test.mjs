@@ -314,7 +314,19 @@ test('each plugin README says where a finding is handed on, and how to turn that
     const t = read('plugins', p, 'README.md').replace(/\s+/g, ' ');
     assert.ok(/Claude Code's own notes folder for the repo/.test(t), `plugins/${p}/README.md does not say a finding goes into Claude Code's own notes folder`);
     assert.ok(/SAWBUCK_SHARE=none/.test(t), `plugins/${p}/README.md does not name the switch (SAWBUCK_SHARE=none)`);
+    // run on the packed 0.1.72 (2026-11-16): `sawbuck detach --purge` deletes the record in the repo and leaves the notes
+    assert.ok(/stays where it was put/.test(t) && /--purge/.test(t), `plugins/${p}/README.md does not say a note handed on outlives a purge`);
+    assert.ok(/first line of the undone change/.test(t), `plugins/${p}/README.md does not say the undo note holds a line of the change`);
   }
+});
+
+// `sawbuck attach` wires six hooks. The full README's "full list" named three of them until 0.5.70.
+test('each plugin README names every moment a hook runs once the repo is attached', () => {
+  const full = read('plugins', 'sawbuck-reins', 'README.md').replace(/\s+/g, ' ');
+  for (const ev of ['UserPromptSubmit', 'SessionStart', 'Stop', 'PreToolUse', 'PostToolUse']) assert.ok(full.includes(ev), `plugins/sawbuck-reins/README.md does not name the ${ev} hook`);
+  assert.ok(/sawbuck hold/.test(full) && /sawbuck undo/.test(full), 'plugins/sawbuck-reins/README.md does not say what the tool hooks run');
+  const ed = read('plugins', 'sawbuck', 'README.md').replace(/\s+/g, ' ');
+  assert.ok(/at each prompt, before each shell command and each file edit the agent makes, after each edit, and when a turn ends/.test(ed), 'plugins/sawbuck/README.md does not say when the hooks run');
 });
 
 // The directory's policy, 1.G: software in it "must not query or extract data from Claude's memory, chat history,
@@ -332,4 +344,28 @@ test('the commands-only edition reads no past sessions', () => {
     for (const [re, what] of [[/\.claude\/projects|\.codex\/sessions/, 'the folder past sessions are kept in'], [/@sawbuck\/reins/, 'the steering CLI'], [/sawbuck@\d+\.\d+\.\d+ (rules|shape|steers|share)\b/, 'a command that reads or passes on what the person typed'], [/\/sawbuck:(rules|shape)\b/, 'a command this edition does not hold']]) assert.ok(!re.test(t), `${f} names ${what}`);
   }
   assert.ok(/reads no past sessions|No command in this edition reads your past sessions/.test(read('plugins', 'sawbuck', 'README.md')), 'the README no longer says so');
+});
+
+// The directory's terms ask for a way to take in a security report, and a public issue is not one. GitHub's private
+// reporting is switched on for this repo; SECURITY.md at the root names its form. Each plugin README names it too,
+// because an install from the directory gets only the plugin's own folder.
+const PRIVATE_REPORT = 'https://github.com/sawbuck-ai/reins/security/advisories/new';
+test('a security problem has a private way in: SECURITY.md at the root, and a line in each plugin README', () => {
+  assert.ok(existsSync(join(ROOT, 'SECURITY.md')), 'SECURITY.md at the root of the repo');
+  const policy = read('SECURITY.md');
+  assert.ok(policy.includes(PRIVATE_REPORT), 'SECURITY.md names the private report form of this repo');
+  assert.doesNotMatch(policy, /sawbuck@\d/, 'no version in SECURITY.md: the wave holds every sawbuck@x.y.z in this repo to the release');
+  assert.doesNotMatch(policy, /[\w.+-]+@[\w-]+\.[a-z]{2,}/i, 'no address of a person in SECURITY.md');
+  for (const p of PLUGINS) assert.ok(read('plugins', p, 'README.md').includes(PRIVATE_REPORT), `${p}: the README says where a security problem goes`);
+  assert.ok(read('README.md').includes('SECURITY.md'), 'the repo README points at SECURITY.md');
+});
+
+// `sawbuck status` prints "You keep saying" from the steers the full plugin's judge kept in Claude Code's plugin store
+// (steers.mjs). This edition has no judge, so its status command must not promise that, and its README says what
+// status reads when the full plugin was ever run on the machine.
+test('the commands-only edition does not promise steers, and its README names the kept steers status reads', () => {
+  const cmd = read('plugins', 'sawbuck', 'commands', 'status.md');
+  assert.doesNotMatch(cmd, /keep saying|keep telling|steer rate/i, 'plugins/sawbuck/commands/status.md promises what only the full plugin has');
+  const t = read('plugins', 'sawbuck', 'README.md').replace(/\s+/g, ' ');
+  assert.ok(/~\/\.claude\/plugins\/store\/sawbuck-reins_\*\.json/.test(t), 'plugins/sawbuck/README.md does not name the kept steers that status reads');
 });
