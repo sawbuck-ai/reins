@@ -227,7 +227,7 @@ async function recordNativePair($: any, s: { pressure: number } | null, span: nu
 // the CLI this plugin pins, in the pinned form its commands use (wave.sh checks every sawbuck@ pin agrees). No
 // --prefer-offline: with it npm never asks whether its kept list of versions is still right, and a person who ran an
 // earlier sawbuck got "No matching version found" for a new pin (2026-11-13; engine/test/plugin-files.test.mjs).
-const SB_NPX = 'npx --fetch-retries=0 --fetch-timeout=10000 -y sawbuck@0.1.72'
+const SB_NPX = 'npx --fetch-retries=0 --fetch-timeout=10000 -y sawbuck@0.1.73'
 // the same pin as a person would type it. A line with no version in it runs whatever copy their machine holds.
 const SB_PIN = SB_NPX.replace(/ --fetch-retries=\d+ --fetch-timeout=\d+/, '')
 const JUDGE_MODELS: Record<string, string> = { sonnet: 'claude-sonnet-5-5', haiku: 'claude-haiku-5-5', opus: 'claude-opus-5-5' }
@@ -315,7 +315,9 @@ async function readSummary($: any): Promise<Summary | null> {
     try {
       const r = JSON.parse(await $.fs.read('.sawbuck/results.json'))
       caught = (r.regressions || 0) + (r.gamed || 0) + (r.mandates || 0)
-      if (r.latest && r.latest.file) latest = { kind: String(r.latest.kind || 'caught'), file: String(r.latest.file), base: r.latest.base ? String(r.latest.base).slice(0, 12) : '' }
+      // goalposts (sawbuck 0.1.73 on): every file the gamed change moved that the source-only re-run does not take, so
+      // "put the test back" names each of them and not only the first
+      if (r.latest && r.latest.file) latest = { kind: String(r.latest.kind || 'caught'), file: String(r.latest.file), base: r.latest.base ? String(r.latest.base).slice(0, 12) : '', goalposts: Array.isArray(r.latest.goalposts) ? r.latest.goalposts.map(String).slice(0, 6) : [] }
       const m = r.lastMandate
       if (m && m.file && (!r.latest || String(m.at) > String(r.latest.at || ''))) latest = { kind: 'protected path', file: String(m.file) }
     } catch {
@@ -344,7 +346,7 @@ async function readSummary($: any): Promise<Summary | null> {
 }
 
 // The mod runs no program. The slash commands live in commands/ as plugin commands: each tells
-// Claude to run one exact, pinned `npx --fetch-retries=0 --fetch-timeout=10000 -y sawbuck@0.1.72 ...` through its own Bash tool, under Claude
+// Claude to run one exact, pinned `npx --fetch-retries=0 --fetch-timeout=10000 -y sawbuck@0.1.73 ...` through its own Bash tool, under Claude
 // Code's permission system, so Claude sees the verdict and can act on it.
 // One offer per repository, ever: in a git repo with no rules, one line in the system prompt asks Claude to
 // offer to sign it after doing the work. Decided in prompt.compose, which runs before prompt.submit, and kept for
@@ -464,14 +466,18 @@ export const register: Register = (on, options) => {
     if (s.latest && s.latest.kind === 'gamed' && !e.props.isWorking) {
       const { Button } = $.ui.resolve(e) as any
       const f = s.latest.file
+      const posts = (s.latest.goalposts && s.latest.goalposts.length ? s.latest.goalposts : [f]).join(' ')
+      // A reason is for the span it is given for (sawbuck 0.1.73). The line names where the verdict's span begins, so
+      // it is the same line in a turn that made one commit and in one that made more; a record with no base keeps the old line.
+      const span = s.latest.base ? `--base ${s.latest.base} ` : ''
       const fill = (text: string) => async () => { try { await $.prompt.fill({ text }) } catch { /* no prompt box here */ } }
       return under(
         <Box flexDirection="column">
           <Text color="yellow" weight="bold">sawbuck · {at}the green on {f} came from changing the test · your call (press 1, 2 or 3 in an empty prompt):</Text>
           <Box gap={3}>
             <Button key="sawbuck-fix" hotkey="1" plain onPress={fill(`Fix the source so ${f} passes as it was written. Do not change the test.`)}>Fix the source</Button>
-            <Button key="sawbuck-restore" hotkey="2" plain onPress={fill(`Put ${f} back as it was (git checkout ${s.latest.base || 'HEAD~1'} -- ${f}), commit that, then fix the source so it passes.`)}>Put the test back</Button>
-            <Button key="sawbuck-accept" hotkey="3" plain onPress={fill(`The test change in ${f} is right because <why>. Record that: ${SB_NPX} check --allow "<why>"`)}>Accept it</Button>
+            <Button key="sawbuck-restore" hotkey="2" plain onPress={fill(`Put ${posts} back as it was (git checkout ${s.latest.base || 'HEAD~1'} -- ${posts}), commit that, then fix the source so it passes.`)}>Put the test back</Button>
+            <Button key="sawbuck-accept" hotkey="3" plain onPress={fill(`The test change in ${f} is right because <why>. Record that: ${SB_NPX} check ${span}--allow "<why>"`)}>Accept it</Button>
           </Box>
         </Box>
       )

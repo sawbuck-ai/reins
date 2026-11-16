@@ -1,6 +1,6 @@
 export type Summary = {
   caught: number
-  latest: { kind: string; file: string; base?: string } | null
+  latest: { kind: string; file: string; base?: string; goalposts?: string[] } | null
   armed: boolean
   active: boolean
   mem: boolean

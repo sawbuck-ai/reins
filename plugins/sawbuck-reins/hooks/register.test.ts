@@ -454,7 +454,30 @@ test('a gamed green on the last commit: the band offers three buttons that fill 
   for (const key of ['sawbuck-fix', 'sawbuck-restore', 'sawbuck-accept']) await $.ui.press({ plugin: 'sawbuck-reins', key })
   expect(fills[0]).toBe('Fix the source so test/add.test.js passes as it was written. Do not change the test.')
   expect(fills[1]).toMatch(/git checkout abcdef123456 -- test\/add\.test\.js/)
-  expect(fills[2]).toMatch(/sawbuck@\d+\.\d+\.\d+ check --allow "<why>"/)
+  // the reason is given for the span the verdict stands on (sawbuck 0.1.73): the line names where it begins, so it
+  // also works in a turn that made more than one commit. Without the span a reason for the last commit cleared nothing there.
+  expect(fills[2]).toMatch(/sawbuck@\d+\.\d+\.\d+ check --base abcdef123456 --allow "<why>"/)
+})
+
+test('a gamed green that moved more than one goalpost: "put the test back" names each file the record lists', async ($, on) => {
+  const fills = bandWith(on, { kind: 'gamed', file: 'test/add.test.js', base: 'abcdef1234567890', sha: 'x', goalposts: ['package.json', 'test/add.test.js'] })
+  emptyBand(on)
+  await $.session.start({ cwd: '/repo', surface: 'terminal', isInteractive: true })
+  await $.turn.complete({ answer: 'done', durationMs: 1, isAborted: false, turnId: 't1', reason: 'answer' })
+  await mountBand($)
+  for (const key of ['sawbuck-restore', 'sawbuck-accept']) await $.ui.press({ plugin: 'sawbuck-reins', key })
+  expect(fills[0]).toMatch(/git checkout abcdef123456 -- package\.json test\/add\.test\.js\)/)
+  expect(fills[1]).toMatch(/check --base abcdef123456 --allow "<why>"/)
+})
+
+test('a gamed record with no base (an old record): the accept line has no span, as before', async ($, on) => {
+  const fills = bandWith(on, { kind: 'gamed', file: 'test/add.test.js', sha: 'x' })
+  emptyBand(on)
+  await $.session.start({ cwd: '/repo', surface: 'terminal', isInteractive: true })
+  await $.turn.complete({ answer: 'done', durationMs: 1, isAborted: false, turnId: 't1', reason: 'answer' })
+  await mountBand($)
+  await $.ui.press({ plugin: 'sawbuck-reins', key: 'sawbuck-accept' })
+  expect(fills[0]).toMatch(/sawbuck@\d+\.\d+\.\d+ check --allow "<why>"/)
 })
 
 test('no gamed verdict standing: no buttons in the band', async ($, on) => {
