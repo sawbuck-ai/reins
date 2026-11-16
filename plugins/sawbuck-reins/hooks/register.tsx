@@ -228,6 +228,8 @@ async function recordNativePair($: any, s: { pressure: number } | null, span: nu
 // --prefer-offline: with it npm never asks whether its kept list of versions is still right, and a person who ran an
 // earlier sawbuck got "No matching version found" for a new pin (2026-11-13; engine/test/plugin-files.test.mjs).
 const SB_NPX = 'npx --fetch-retries=0 --fetch-timeout=10000 -y sawbuck@0.1.72'
+// the same pin as a person would type it. A line with no version in it runs whatever copy their machine holds.
+const SB_PIN = SB_NPX.replace(/ --fetch-retries=\d+ --fetch-timeout=\d+/, '')
 const JUDGE_MODELS: Record<string, string> = { sonnet: 'claude-sonnet-5-5', haiku: 'claude-haiku-5-5', opus: 'claude-opus-5-5' }
 let judgeModel = JUDGE_MODELS.sonnet
 async function scoreNative($: any, prior: string, user: string, repo: string, attached: boolean): Promise<void> {
@@ -499,7 +501,7 @@ export const register: Register = (on, options) => {
     }
     return under(
       <Box>
-        <Text dimColor>sawbuck · memory · npx sawbuck context for history</Text>
+        <Text dimColor>sawbuck · history · {SB_PIN} context</Text>
       </Box>
     )
   })
