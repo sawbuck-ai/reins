@@ -336,7 +336,7 @@ test('the scratchpad keeps the newest 2000 steers', async ($, on) => {
   expect(list[1999].nudge).toBe('newest one')
 })
 
-test('the memory band names no command that is gone: it points at the CLI for history', async ($, on) => {
+test('the history band names no command that is gone: it points at the CLI, by the version this plugin pins', async ($, on) => {
   mock.env(on, { SAWBUCK_JUDGE: 'off' })
   on('session.start', (_, e) => ({ cwd: e.cwd }))
   on('session.cwd', () => ({ value: '/repo' }))
@@ -347,9 +347,12 @@ test('the memory band names no command that is gone: it points at the CLI for hi
   await $.session.start({ cwd: '/repo', surface: 'terminal', isInteractive: true })
   await $.turn.complete({ answer: 'done', durationMs: 1, isAborted: false, turnId: 't1', reason: 'answer' })
   const ui = await $.ui.mount({ plugin: 'sawbuck-reins', surface: 'terminal', component: 'AbovePrompt', props: { hasSurvey: false, isWorking: false } as any })
-  const band = await ui.find({ type: 'Text', text: /memory/ })
-  expect(band?.text).toContain('sawbuck context')
+  const band = await ui.find({ type: 'Text', text: /history/ })
+  // a line with no version in it runs whatever copy the machine holds (an old global install answered it in a real
+  // session, 2026-11-15), so the hint names the pin, in the short form a person types
+  expect(band?.text).toMatch(/npx -y sawbuck@\d+\.\d+\.\d+ context/)
   expect(band?.text).not.toContain('/sawbuck-reins:context')
+  expect(band?.text).not.toContain('memory')
 })
 
 test('a stack trace pasted before the reply never reaches the judge: the prompt carries the words, not the frames', async ($, on) => {
