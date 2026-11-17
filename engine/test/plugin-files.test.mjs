@@ -310,17 +310,20 @@ test('no file in a plugin folder is one the directory holds or refuses', () => {
 // a gamed turn in an empty home, 2026-11-15: the note was there, and neither plugin README said so. The directory's
 // scan looks for what a plugin does and does not say, so both READMEs name it, and the switch that turns it off.
 test('the full plugin README says where a finding is handed on and how to turn that off; the commands-only one says nothing is handed on', () => {
-  // sawbuck 0.2.0: a plain attach hands nothing on and keeps none of what a person types; the full plugin attaches with --words
+  // sawbuck 0.2.0: a plain attach hands nothing on and keeps none of what a person types, and neither plugin's setup turns that on
   { const t = read('plugins', 'sawbuck', 'README.md').replace(/\s+/g, ' ');
     assert.ok(/\*\*Hands on\.\*\* Nothing\./.test(t), 'plugins/sawbuck/README.md does not say it hands nothing on');
     assert.ok(/keep none of what you type/.test(t) && /an undo is recorded without your words/.test(t), 'plugins/sawbuck/README.md does not say none of what a person types is kept');
     assert.ok(/a reason you give to `sawbuck check --allow`/.test(t), 'plugins/sawbuck/README.md does not name the one thing of the person\'s that is kept');
     assert.ok(/sawbuck attach --words/.test(t) && /--purge/.test(t), 'plugins/sawbuck/README.md does not say what turns the keeping on, and what removes it');
     assert.doesNotMatch(read('plugins', 'sawbuck', 'commands', 'contract.md'), /--words/, 'the commands-only setup attaches without --words'); }
-  assert.match(read('plugins', 'sawbuck-reins', 'commands', 'contract.md'), / attach --words\n/, 'the full plugin attaches with --words');
+  // storing what a person types is never a default (his word, 2026-11-17): the full plugin's setup attaches the plain way too
+  { const c = read('plugins', 'sawbuck-reins', 'commands', 'contract.md');
+    assert.match(c, / attach\n```/, 'the full plugin attaches the plain way'); assert.doesNotMatch(c, /"Bash\([^"]*attach --words\)"/, 'and its setup may not run attach --words unasked');
+    assert.match(c, /Do not turn on the keeping of their words for them/); }
   for (const p of ['sawbuck-reins']) {
     const t = read('plugins', p, 'README.md').replace(/\s+/g, ' ');
-    assert.ok(/`\/sawbuck-reins:contract` attaches with `--words`/.test(t), `plugins/${p}/README.md does not say its setup is what keeps a person's words`);
+    assert.ok(/Setup keeps none of what you type/.test(t) && /`sawbuck attach --words`, typed by you, turns the keeping on/.test(t), `plugins/${p}/README.md does not say that setup keeps nothing and what turns the keeping on`);
     assert.ok(/Claude Code's own notes folder for the repo/.test(t), `plugins/${p}/README.md does not say a finding goes into Claude Code's own notes folder`);
     assert.ok(/SAWBUCK_SHARE=none/.test(t), `plugins/${p}/README.md does not name the switch (SAWBUCK_SHARE=none)`);
     // until sawbuck 0.2.0 `sawbuck detach --purge` deleted the record in the repo and left the notes (run on the packed 0.1.72, 2026-11-16)
@@ -379,7 +382,7 @@ test('the commands-only edition does not promise steers, and its README names th
   assert.doesNotMatch(cmd, /keep saying|keep telling|steer rate/i, 'plugins/sawbuck/commands/status.md promises what only the full plugin has');
   const t = read('plugins', 'sawbuck', 'README.md').replace(/\s+/g, ' ');
   assert.ok(/~\/\.claude\/plugins\/store\/sawbuck-reins_\*\.json/.test(t), 'plugins/sawbuck/README.md does not name the kept steers');
-  assert.ok(/reads no steers that the full plugin `sawbuck-reins` kept .*unless the repo was attached with `--words`/.test(t), 'plugins/sawbuck/README.md does not say when status reads them');
+  assert.ok(/reads no steers that the full plugin `sawbuck-reins` kept .*unless the repo was attached with `--words` \(by `sawbuck attach --words`, typed by you\)/.test(t), 'plugins/sawbuck/README.md does not say when status reads them');
   assert.match(read('plugins', 'sawbuck-reins', 'commands', 'status.md'), / status --words\n/, 'the full plugin asks status for them');
 });
 

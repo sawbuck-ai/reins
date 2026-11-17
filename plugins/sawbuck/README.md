@@ -51,8 +51,8 @@ and `~/.claude/CLAUDE.md`). No command in this edition reads your past sessions.
 at each prompt, before each shell command and each file edit the agent makes, after each edit, and when a turn
 ends. They read the prompt, the command, the file being edited and the agent's last message, and keep none of
 what you type (see Writes). `/sawbuck:status` reads no steers that the full plugin `sawbuck-reins` kept
-(`~/.claude/plugins/store/sawbuck-reins_*.json`), unless the repo was attached with `--words` (that plugin's own
-setup, or `sawbuck attach --words` typed by you).
+(`~/.claude/plugins/store/sawbuck-reins_*.json`), unless the repo was attached with `--words` (by `sawbuck attach --words`,
+typed by you).
 
 **Writes.** `/sawbuck:check` and `/sawbuck:status` write nothing. `/sawbuck:contract` writes the files named above, a
 local record under `.sawbuck/` and `.git/sawbuck/` that is kept out of git status (it holds, among other things,
@@ -64,10 +64,10 @@ purpose. At the end of a turn the hooks read the agent's last message to see whe
 is not kept. `/sawbuck:audit` changes a rule file only where you say yes.
 
 **Hands on.** Nothing. The hooks this edition sets up hand no finding on to any notes, in Claude Code's notes folder
-or anywhere else. That is something you turn on yourself with `sawbuck attach --words`, and the full plugin
-`sawbuck-reins` sets up: then your words are kept with an undo, and a note for each gamed green, reverted attempt and
-undo is written to Claude Code's own notes folder for the repo. `sawbuck attach --no-words` turns it off again, and
-`sawbuck detach --purge` removes the record and the notes Sawbuck wrote.
+or anywhere else. That is something only you turn on, with `sawbuck attach --words`: then your words are kept with an
+undo, and a note for each gamed green, reverted attempt and undo is written to Claude Code's own notes folder for the
+repo. `sawbuck attach --no-words` turns it off again, and `sawbuck detach --purge` removes the record and the notes
+Sawbuck wrote.
 
 **Sends.** Nothing goes to us or to any other service. There is no telemetry, no account and no API key, and the check
 never calls a model. The one thing that can leave your machine through Sawbuck is
