@@ -227,7 +227,7 @@ async function recordNativePair($: any, s: { pressure: number } | null, span: nu
 // the CLI this plugin pins, in the pinned form its commands use (wave.sh checks every sawbuck@ pin agrees). No
 // --prefer-offline: with it npm never asks whether its kept list of versions is still right, and a person who ran an
 // earlier sawbuck got "No matching version found" for a new pin (2026-11-13; engine/test/plugin-files.test.mjs).
-const SB_NPX = 'npx --fetch-retries=0 --fetch-timeout=10000 -y sawbuck@0.1.73'
+const SB_NPX = 'npx --fetch-retries=0 --fetch-timeout=10000 -y sawbuck@0.1.74'
 // the same pin as a person would type it. A line with no version in it runs whatever copy their machine holds.
 const SB_PIN = SB_NPX.replace(/ --fetch-retries=\d+ --fetch-timeout=\d+/, '')
 const JUDGE_MODELS: Record<string, string> = { sonnet: 'claude-sonnet-5-5', haiku: 'claude-haiku-5-5', opus: 'claude-opus-5-5' }
@@ -346,7 +346,7 @@ async function readSummary($: any): Promise<Summary | null> {
 }
 
 // The mod runs no program. The slash commands live in commands/ as plugin commands: each tells
-// Claude to run one exact, pinned `npx --fetch-retries=0 --fetch-timeout=10000 -y sawbuck@0.1.73 ...` through its own Bash tool, under Claude
+// Claude to run one exact, pinned `npx --fetch-retries=0 --fetch-timeout=10000 -y sawbuck@0.1.74 ...` through its own Bash tool, under Claude
 // Code's permission system, so Claude sees the verdict and can act on it.
 // One offer per repository, ever: in a git repo with no rules, one line in the system prompt asks Claude to
 // offer to sign it after doing the work. Decided in prompt.compose, which runs before prompt.submit, and kept for

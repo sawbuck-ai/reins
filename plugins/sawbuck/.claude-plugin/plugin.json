@@ -2,7 +2,7 @@
   "name": "sawbuck",
   "displayName": "Sawbuck",
   "description": "Holds your coding agent to what's real. Your agent tried it once, it broke, you reverted it, and a month later a new session does it again. Sawbuck re-runs the tests from the code alone so an edited test does not count, sends a gamed green back to the agent when the turn ends, and keeps what you reverted or undid and shows it before the agent touches that file again. Four commands that run the sawbuck CLI; you approve each command the first time.",
-  "version": "0.1.18",
+  "version": "0.1.19",
   "author": { "name": "CodeWheel" },
   "homepage": "https://sawbuck.ai",
   "repository": "https://github.com/sawbuck-ai/reins",
