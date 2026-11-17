@@ -56,9 +56,10 @@ typed by you).
 
 **Writes.** `/sawbuck:check` and `/sawbuck:status` write nothing. `/sawbuck:contract` writes the files named above, a
 local record under `.sawbuck/` and `.git/sawbuck/` that is kept out of git status (it holds, among other things,
-a copy of each file as it was before the agent's first edit to it in a session, so an undo can be seen), and one line in
-`~/.sawbuck/registry.json` saying this repo is attached. Once attached, the hooks keep none of what you type: no
-prompt text, and an undo is recorded without your words (the file, the time and the first line of the undone change).
+a copy of each file the agent changed in a session, as it was before, so an undo can be seen; a session's copies are
+removed two weeks after its last prompt), and one line in `~/.sawbuck/registry.json` saying this repo is attached.
+Once attached, the hooks keep none of what you type: no prompt text, and an undo is recorded without your words (the
+file, the time, the first line of the undone change, and a mark for each of its other lines: a hash, not the text).
 One thing of yours is kept: a reason you give to `sawbuck check --allow`, because you hand it to that command on
 purpose. At the end of a turn the hooks read the agent's last message to see whether it asked you about a test. That
 is not kept. `/sawbuck:audit` changes a rule file only where you say yes.
