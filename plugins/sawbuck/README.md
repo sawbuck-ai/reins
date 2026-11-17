@@ -49,28 +49,24 @@ request is npm's own and carries nothing of yours.
 throwaway copy of the repo. `/sawbuck:audit` reads your agent rule files (`CLAUDE.md`, `AGENTS.md`, `.cursorrules`,
 and `~/.claude/CLAUDE.md`). No command in this edition reads your past sessions. Once attached, the hooks run
 at each prompt, before each shell command and each file edit the agent makes, after each edit, and when a turn
-ends. They read the prompt, the command, the file being edited and the agent's last message. If the full plugin
-`sawbuck-reins` ever ran on this machine, `/sawbuck:status` also reads the steers its judge kept
-(`~/.claude/plugins/store/sawbuck-reins_*.json`) and shows the ones you repeated.
+ends. They read the prompt, the command, the file being edited and the agent's last message, and keep none of
+what you type (see Writes). `/sawbuck:status` reads no steers that the full plugin `sawbuck-reins` kept, unless the
+repo was attached with `--words` (that plugin's own setup, or `sawbuck attach --words` typed by you).
 
 **Writes.** `/sawbuck:check` and `/sawbuck:status` write nothing. `/sawbuck:contract` writes the files named above, a
 local record under `.sawbuck/` and `.git/sawbuck/` that is kept out of git status (it holds, among other things,
 a copy of each file as it was before the agent's first edit to it in a session, so an undo can be seen), and one line in
-`~/.sawbuck/registry.json` saying this repo is attached. Once attached, the hooks keep the first 240 characters of
-your latest prompt in `.sawbuck/state.json`, replaced at every prompt. If you undo the agent's change, those words are
-saved with the undo, so the agent can be shown later why it was undone. At the end of a turn the hooks read the
-agent's last message to see whether it asked you about a test. That is not kept. `/sawbuck:audit` changes a rule file only
-where you say yes.
+`~/.sawbuck/registry.json` saying this repo is attached. Once attached, the hooks keep none of what you type: no
+prompt text, and an undo is recorded without your words (the file, the time and the first line of the undone change).
+One thing of yours is kept: a reason you give to `sawbuck check --allow`, because you hand it to that command on
+purpose. At the end of a turn the hooks read the agent's last message to see whether it asked you about a test. That
+is not kept. `/sawbuck:audit` changes a rule file only where you say yes.
 
-**Hands on.** Once attached, when Sawbuck catches a gamed green, finds a reverted attempt in git or records an
-undo, it hands that finding on, once, to the notes kept on this machine: a note in Claude Code's own notes folder for
-the repo (`~/.claude/projects/<repo>/memory/`), a claude-mem worker if one runs here, and a Markdown folder if you
-named one in `sawbuck.config.json`. The note for an undo holds the first line of the undone change and what you
-typed before it, up to 240 characters. Sawbuck reads nothing back from them. What the tool that holds a note does
-with it is up to that tool: Claude Code may read a note in its own notes folder in a later session, as it reads its
-own notes, and that goes where your Claude Code traffic already goes. `SAWBUCK_SHARE=none` in your shell
-turns this off. A note handed on stays where it was put until you delete it: `sawbuck detach --purge` deletes the
-record in the repo and does not remove those notes.
+**Hands on.** Nothing. The hooks this edition sets up hand no finding on to any notes, in Claude Code's notes folder
+or anywhere else. That is something you turn on yourself with `sawbuck attach --words`, and the full plugin
+`sawbuck-reins` sets up: then your words are kept with an undo, and a note for each gamed green, reverted attempt and
+undo is written to Claude Code's own notes folder for the repo. `sawbuck attach --no-words` turns it off again, and
+`sawbuck detach --purge` removes the record and the notes Sawbuck wrote.
 
 **Sends.** Nothing goes to us or to any other service. There is no telemetry, no account and no API key, and the check
 never calls a model. The one thing that can leave your machine through Sawbuck is
