@@ -421,7 +421,7 @@ test('the parser reads a pressure written as a word, and a brace inside the nudg
 })
 
 // a gamed green standing on the last commit: the band offers the person's three ways out as buttons that fill the prompt
-const bandWith = (on: any, latest: any) => {
+const bandWith = (on: any, latest: any, open?: any[]) => {
   const fills: string[] = []
   mock.env(on, {})
   on('session.start', (_: any, e: any) => ({ cwd: e.cwd }))
@@ -429,7 +429,7 @@ const bandWith = (on: any, latest: any) => {
   on('fs.exists', (_: any, e: any) => ({ value: /\.sawbuck\/(state|results)\.json$|package\.json$/.test(e.path) }))
   on('fs.read', (_: any, e: any) => {
     if (e.path.endsWith('.sawbuck/state.json')) return { value: '{}' }
-    if (e.path.endsWith('.sawbuck/results.json')) return { value: JSON.stringify({ gamed: 1, latest }) }
+    if (e.path.endsWith('.sawbuck/results.json')) return { value: JSON.stringify({ gamed: 1, latest, ...(open ? { open } : {}) }) }
     throw new Error(`ENOENT: ${e.path}`)
   })
   on('fs.write', () => ({ value: undefined }))
@@ -457,6 +457,19 @@ test('a gamed green on the last commit: the band offers three buttons that fill 
   // the reason is given for the span the verdict stands on (sawbuck 0.1.73): the line names where it begins, so it
   // also works in a turn that made more than one commit. Without the span a reason for the last commit cleared nothing there.
   expect(fills[2]).toMatch(/sawbuck@\d+\.\d+\.\d+ check --base abcdef123456 --allow "<why>"/)
+})
+
+test('a test change an earlier turn left open: the band keeps offering the three ways out after a later turn of its own verdict (sawbuck 0.2.0)', async ($, on) => {
+  const fills = bandWith(on, { kind: 'verified', file: 'NOTES.md', sha: 'y' }, [{ sha: 'abc12345', base: 'abcdef1234567890', file: 'test/add.test.js', goalposts: ['test/add.test.js'] }])
+  emptyBand(on)
+  await $.session.start({ cwd: '/repo', surface: 'terminal', isInteractive: true })
+  await $.turn.complete({ answer: 'done', durationMs: 1, isAborted: false, turnId: 't1', reason: 'answer' })
+  const ui = await mountBand($)
+  expect(await ui.findAll({ type: 'Button' })).toHaveLength(3)
+  expect((await ui.find({ type: 'Text', text: /came from changing the test/ }))?.text).toMatch(/test\/add\.test\.js/)
+  for (const key of ['sawbuck-restore', 'sawbuck-accept']) await $.ui.press({ plugin: 'sawbuck-reins', key })
+  expect(fills[0]).toMatch(/git checkout abcdef123456 -- test\/add\.test\.js/)
+  expect(fills[1]).toMatch(/check --base abcdef123456 --allow "<why>"/)
 })
 
 test('a gamed green that moved more than one goalpost: "put the test back" names each file the record lists', async ($, on) => {

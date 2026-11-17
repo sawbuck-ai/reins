@@ -318,6 +318,10 @@ async function readSummary($: any): Promise<Summary | null> {
       // goalposts (sawbuck 0.1.73 on): every file the gamed change moved that the source-only re-run does not take, so
       // "put the test back" names each of them and not only the first
       if (r.latest && r.latest.file) latest = { kind: String(r.latest.kind || 'caught'), file: String(r.latest.file), base: r.latest.base ? String(r.latest.base).slice(0, 12) : '', goalposts: Array.isArray(r.latest.goalposts) ? r.latest.goalposts.map(String).slice(0, 6) : [] }
+      // a test change an earlier turn left open (sawbuck 0.2.0 keeps the list in the record, newest last): the band keeps
+      // offering the three ways out for it, whatever a later turn's own verdict was. No later turn is sent back for it.
+      const o = Array.isArray(r.open) && r.open.length ? r.open[r.open.length - 1] : null
+      if (o && o.file && !(latest && latest.kind === 'gamed')) latest = { kind: 'gamed', file: String(o.file), base: o.base ? String(o.base).slice(0, 12) : '', goalposts: Array.isArray(o.goalposts) ? o.goalposts.map(String).slice(0, 6) : [] }
       const m = r.lastMandate
       if (m && m.file && (!r.latest || String(m.at) > String(r.latest.at || ''))) latest = { kind: 'protected path', file: String(m.file) }
     } catch {
@@ -460,7 +464,7 @@ export const register: Register = (on, options) => {
     const steerSeg = s.steer != null ? ` · steer ${s.steer}%` : ''
     const at = s.repo ? s.repo + ' · ' : ''
 
-    // a gamed green standing on the last commit: the person decides, so the band offers the three ways out as buttons.
+    // a gamed green on the last commit, or one an earlier turn left open: the person decides, so the band offers the three ways out as buttons.
     // Each fills the prompt box and sends nothing: the person reads it, edits it, and presses Enter. Accept goes through
     // the agent's sawbuck check --allow, which the hold asks the person about before it runs.
     if (s.latest && s.latest.kind === 'gamed' && !e.props.isWorking) {
