@@ -4,7 +4,7 @@ Your agent tried it once. It broke. You reverted it. A month later, a new sessio
 what gets lost in your workflow and holds your agent to it.
 
 This edition is four commands and one skill, in plain Markdown. It ships no hooks, no scripts and no pre-approved tools:
-each command asks Claude to run the `sawbuck` CLI from npm (`npx --fetch-retries=0 --fetch-timeout=10000 -y sawbuck@0.1.74 ...`), and Claude Code asks you to
+each command asks Claude to run the `sawbuck` CLI from npm (`npx --fetch-retries=0 --fetch-timeout=10000 -y sawbuck@0.2.0 ...`), and Claude Code asks you to
 approve each command the first time (in auto mode it decides for you). It is made for Claude Code in a git repository. In a chat with no repo it has
 nothing to check.
 
@@ -50,8 +50,9 @@ throwaway copy of the repo. `/sawbuck:audit` reads your agent rule files (`CLAUD
 and `~/.claude/CLAUDE.md`). No command in this edition reads your past sessions. Once attached, the hooks run
 at each prompt, before each shell command and each file edit the agent makes, after each edit, and when a turn
 ends. They read the prompt, the command, the file being edited and the agent's last message, and keep none of
-what you type (see Writes). `/sawbuck:status` reads no steers that the full plugin `sawbuck-reins` kept, unless the
-repo was attached with `--words` (that plugin's own setup, or `sawbuck attach --words` typed by you).
+what you type (see Writes). `/sawbuck:status` reads no steers that the full plugin `sawbuck-reins` kept
+(`~/.claude/plugins/store/sawbuck-reins_*.json`), unless the repo was attached with `--words` (that plugin's own
+setup, or `sawbuck attach --words` typed by you).
 
 **Writes.** `/sawbuck:check` and `/sawbuck:status` write nothing. `/sawbuck:contract` writes the files named above, a
 local record under `.sawbuck/` and `.git/sawbuck/` that is kept out of git status (it holds, among other things,

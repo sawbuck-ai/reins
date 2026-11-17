@@ -254,7 +254,7 @@ test('the launcher check tells a pinned line from a loose one', () => {
   loose('npx --fetch-retries=0 --fetch-timeout=10000 -y sawbuck@^0.1.72 check');
   loose('uvx ruff check .');
   loose('the npx form its commands use');
-  fine('npx --fetch-retries=0 --fetch-timeout=10000 -y sawbuck@0.1.74 check');
+  fine('npx --fetch-retries=0 --fetch-timeout=10000 -y sawbuck@0.2.0 check');
   fine('`npx -y @sawbuck/reins@0.4.5 cues --append`');
   fine('a line for `npx` that names no version');
   fine('--allowed-tools "Bash(npx --fetch-retries=0 --fetch-timeout=10000 -y sawbuck@*)"');
@@ -309,13 +309,22 @@ test('no file in a plugin folder is one the directory holds or refuses', () => {
 // to the notes kept on the machine, and one of those is Claude Code's own notes folder for the repo. Seen by running
 // a gamed turn in an empty home, 2026-11-15: the note was there, and neither plugin README said so. The directory's
 // scan looks for what a plugin does and does not say, so both READMEs name it, and the switch that turns it off.
-test('each plugin README says where a finding is handed on, and how to turn that off', () => {
-  for (const p of PLUGINS) {
+test('the full plugin README says where a finding is handed on and how to turn that off; the commands-only one says nothing is handed on', () => {
+  // sawbuck 0.2.0: a plain attach hands nothing on and keeps none of what a person types; the full plugin attaches with --words
+  { const t = read('plugins', 'sawbuck', 'README.md').replace(/\s+/g, ' ');
+    assert.ok(/\*\*Hands on\.\*\* Nothing\./.test(t), 'plugins/sawbuck/README.md does not say it hands nothing on');
+    assert.ok(/keep none of what you type/.test(t) && /an undo is recorded without your words/.test(t), 'plugins/sawbuck/README.md does not say none of what a person types is kept');
+    assert.ok(/a reason you give to `sawbuck check --allow`/.test(t), 'plugins/sawbuck/README.md does not name the one thing of the person\'s that is kept');
+    assert.ok(/sawbuck attach --words/.test(t) && /--purge/.test(t), 'plugins/sawbuck/README.md does not say what turns the keeping on, and what removes it');
+    assert.doesNotMatch(read('plugins', 'sawbuck', 'commands', 'contract.md'), /--words/, 'the commands-only setup attaches without --words'); }
+  assert.match(read('plugins', 'sawbuck-reins', 'commands', 'contract.md'), / attach --words\n/, 'the full plugin attaches with --words');
+  for (const p of ['sawbuck-reins']) {
     const t = read('plugins', p, 'README.md').replace(/\s+/g, ' ');
+    assert.ok(/`\/sawbuck-reins:contract` attaches with `--words`/.test(t), `plugins/${p}/README.md does not say its setup is what keeps a person's words`);
     assert.ok(/Claude Code's own notes folder for the repo/.test(t), `plugins/${p}/README.md does not say a finding goes into Claude Code's own notes folder`);
     assert.ok(/SAWBUCK_SHARE=none/.test(t), `plugins/${p}/README.md does not name the switch (SAWBUCK_SHARE=none)`);
-    // run on the packed 0.1.72 (2026-11-16): `sawbuck detach --purge` deletes the record in the repo and leaves the notes
-    assert.ok(/stays where it was put/.test(t) && /--purge/.test(t), `plugins/${p}/README.md does not say a note handed on outlives a purge`);
+    // until sawbuck 0.2.0 `sawbuck detach --purge` deleted the record in the repo and left the notes (run on the packed 0.1.72, 2026-11-16)
+    assert.ok(/stays where it was put until you delete it or run `sawbuck detach --purge`/.test(t), `plugins/${p}/README.md does not say how a note handed on is removed`);
     assert.ok(/first line of the undone change/.test(t), `plugins/${p}/README.md does not say the undo note holds a line of the change`);
     // a note in Claude Code's notes folder is Claude Code's to read: it can go where the person's Claude Code traffic goes
     assert.ok(/Claude Code may read a note in its own notes folder in a later session/.test(t), `plugins/${p}/README.md does not say what happens to a note afterwards`);
@@ -365,11 +374,13 @@ test('a security problem has a private way in: SECURITY.md at the root, and a li
 // `sawbuck status` prints "You keep saying" from the steers the full plugin's judge kept in Claude Code's plugin store
 // (steers.mjs). This edition has no judge, so its status command must not promise that, and its README says what
 // status reads when the full plugin was ever run on the machine.
-test('the commands-only edition does not promise steers, and its README names the kept steers status reads', () => {
+test('the commands-only edition does not promise steers, and its README names the kept steers and says status reads them only where the repo is attached with --words', () => {
   const cmd = read('plugins', 'sawbuck', 'commands', 'status.md');
   assert.doesNotMatch(cmd, /keep saying|keep telling|steer rate/i, 'plugins/sawbuck/commands/status.md promises what only the full plugin has');
   const t = read('plugins', 'sawbuck', 'README.md').replace(/\s+/g, ' ');
-  assert.ok(/~\/\.claude\/plugins\/store\/sawbuck-reins_\*\.json/.test(t), 'plugins/sawbuck/README.md does not name the kept steers that status reads');
+  assert.ok(/~\/\.claude\/plugins\/store\/sawbuck-reins_\*\.json/.test(t), 'plugins/sawbuck/README.md does not name the kept steers');
+  assert.ok(/reads no steers that the full plugin `sawbuck-reins` kept .*unless the repo was attached with `--words`/.test(t), 'plugins/sawbuck/README.md does not say when status reads them');
+  assert.match(read('plugins', 'sawbuck-reins', 'commands', 'status.md'), / status --words\n/, 'the full plugin asks status for them');
 });
 
 // In auto mode Claude Code refused the check skill's line when the person had asked only whether the win was real (two
