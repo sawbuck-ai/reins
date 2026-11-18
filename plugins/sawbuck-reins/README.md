@@ -36,7 +36,7 @@ Claude Code asks three things on install: a **scope** (choose **user** so the ba
 
 You don't need to remember a command. The first time you use Claude Code in a git repository with no rules, Claude finishes what you asked and then offers once to add them. Say yes and it runs `/sawbuck-reins:contract`: every turn checks protected paths, and every commit is re-proved. Say anything else and it won't ask again in that directory. Nothing is written or run without that yes, and it never commits for you.
 
-Plain setup writes the rule and protected paths. `npx --fetch-retries=0 --fetch-timeout=10000 -y sawbuck@0.2.0 contract --full` adds supply-chain guards, a repo lock and a CI check, starting as notes; add `--strict` to block.
+Plain setup writes the rule and protected paths. `npx --fetch-retries=0 --fetch-timeout=10000 -y sawbuck@0.2.1 contract --full` adds supply-chain guards, a repo lock and a CI check, starting as notes; add `--strict` to block.
 
 Outside a git repository there is nothing to check, so the band reads `no repo here` and no file is written. The steer judge still runs there unless `judge` is off, keeping your corrections in the plugin store on this machine.
 
@@ -81,7 +81,7 @@ Outside a git repository there is nothing to check, so the band reads `no repo h
   watching, and what you keep telling the agent.
 
 Each command is a plain plugin command: a prompt that tells Claude to run exact, pinned
-`npx --fetch-retries=0 --fetch-timeout=10000 -y sawbuck@0.2.0 ...` calls through its own Bash tool, pre-approved for those exact commands and
+`npx --fetch-retries=0 --fetch-timeout=10000 -y sawbuck@0.2.1 ...` calls through its own Bash tool, pre-approved for those exact commands and
 nothing else, so Claude Code's permission system is the one in charge. The `sawbuck` CLI rides the
 deterministic, zero-LLM `promptwheel` check and the `@promptwheel/logbook` history. No `npm install`
 and no manual `sawbuck attach` to start.
@@ -96,7 +96,7 @@ deleted test, a changed config or a touched golden file reads as gamed, whatever
 **Programs it runs.** The mod (`hooks/register.tsx`) runs none: it makes no process call of any
 kind. When a green on the last commit came from changing the test, the band above the prompt shows three
 buttons (fix the source, put the test back, accept with a reason); each puts a prompt in your prompt box and sends nothing. The slash commands in `commands/` are prompts; each tells Claude to run exact
-commands, `npx --fetch-retries=0 --fetch-timeout=10000 -y sawbuck@0.2.0 <contract|check|attach|rules|shape|status>` (`/sawbuck-reins:contract` runs `contract`, then `attach`), through
+commands, `npx --fetch-retries=0 --fetch-timeout=10000 -y sawbuck@0.2.1 <contract|check|attach|rules|shape|status>` (`/sawbuck-reins:contract` runs `contract`, then `attach`), through
 Claude's own Bash tool, with `allowed-tools` pre-approving those exact strings and nothing else. Claude
 sees the output and can act on it (fix the source after a gamed verdict, for instance). The
 `reins-steering` skill tells Claude to run the pinned `npx -y @sawbuck/reins@0.4.5` CLI the same way.
