@@ -4,7 +4,7 @@ Your agent tried it once. It broke. You reverted it. A month later, a new sessio
 what gets lost in your workflow and holds your agent to it.
 
 This edition is four commands and one skill, in plain Markdown. It ships no hooks, no scripts and no pre-approved tools:
-each command asks Claude to run the `sawbuck` CLI from npm (`npx --fetch-retries=0 --fetch-timeout=10000 -y sawbuck@0.2.2 ...`), and Claude Code asks you to
+each command asks Claude to run the `sawbuck` CLI from npm (`npx --fetch-retries=0 --fetch-timeout=10000 -y sawbuck@0.2.3 ...`), and Claude Code asks you to
 approve each command the first time (in auto mode it decides for you). It is made for Claude Code in a git repository. In a chat with no repo it has
 nothing to check.
 
