@@ -254,7 +254,7 @@ test('the launcher check tells a pinned line from a loose one', () => {
   loose('npx --fetch-retries=0 --fetch-timeout=10000 -y sawbuck@^0.1.72 check');
   loose('uvx ruff check .');
   loose('the npx form its commands use');
-  fine('npx --fetch-retries=0 --fetch-timeout=10000 -y sawbuck@0.2.3 check');
+  fine('npx --fetch-retries=0 --fetch-timeout=10000 -y sawbuck@0.2.4 check');
   fine('`npx -y @sawbuck/reins@0.4.5 cues --append`');
   fine('a line for `npx` that names no version');
   fine('--allowed-tools "Bash(npx --fetch-retries=0 --fetch-timeout=10000 -y sawbuck@*)"');
