@@ -11,7 +11,7 @@ When a change you made makes a check, test, or metric pass, confirm the win is r
 call it done. Run:
 
 ```
-npx --fetch-retries=0 --fetch-timeout=10000 -y sawbuck@0.2.4 check
+npx --fetch-retries=0 --fetch-timeout=10000 -y sawbuck@0.2.5 check
 ```
 
 It re-proves the result from your source edits alone, reverting the test, grader, config, and
