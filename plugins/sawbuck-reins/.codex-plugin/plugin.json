@@ -1,7 +1,7 @@
 {
   "name": "sawbuck-reins",
   "version": "0.5.46",
-  "description": "Catch your coding agent gaming a check, and read how you steer. Not yet run end to end in Codex.",
+  "description": "Write down the rules your agent follows, and prove they held. Not yet run end to end in Codex.",
   "author": {
     "name": "CodeWheel"
   },

@@ -2,7 +2,7 @@
 
 This repo is the plugin for Sawbuck. The tool, the docs and the star button are at [github.com/sawbuck-ai/sawbuck](https://github.com/sawbuck-ai/sawbuck).
 
-**Agents follow written rules. The one that matters is rarely written.**
+**Write down the rules your agent follows, and prove they held.**
 
 Sawbuck reads what you keep telling your agent, helps you write it down, and re-runs your tests to prove it held.
 This repo is the plugin marketplace for [Sawbuck](https://sawbuck.ai).
