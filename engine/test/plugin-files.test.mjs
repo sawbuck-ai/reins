@@ -400,3 +400,13 @@ test('the first thing to try asks for Sawbuck by name, and the check skill says 
     assert.ok(/permission check refuses the command/.test(s) && s.includes('`' + cmd + '`'), `plugins/${p}: the check skill does not say what to do when its line is refused`);
   }
 });
+
+// Since sawbuck 0.2.5 a command run outside a git repository says how to start one ("To start one: git init, then
+// sawbuck contract") and waits for nothing where nobody can answer. Claude is the one reading that line here, and
+// starting a repository in someone's folder is the person's call: each command that can meet such a folder says so.
+test('a command that can meet a folder with no repository tells Claude to ask the person before it starts one', () => {
+  for (const f of ['sawbuck-reins/commands/contract.md', 'sawbuck-reins/commands/check.md', 'sawbuck/commands/contract.md', 'sawbuck/commands/check.md']) {
+    const t = read('plugins', ...f.split('/'));
+    assert.match(t, /If the output says the folder is not a git repository yet, do not run `git init` yourself\. Ask the person whether to start one here, and run it only if they say yes\./, f);
+  }
+});

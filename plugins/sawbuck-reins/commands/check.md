@@ -9,4 +9,6 @@ Run exactly this command in the current repo and show the person its output verb
 npx --fetch-retries=0 --fetch-timeout=10000 -y sawbuck@0.2.4 check
 ```
 
+If the output says the folder is not a git repository yet, do not run `git init` yourself. Ask the person whether to start one here, and run it only if they say yes.
+
 It re-proves the latest change from the source edits alone (the test, grader, config, and golden files reverted) with a deterministic, zero-LLM re-run, and says whether the win was earned, was gamed, is a regression, or could not be measured. If it says gamed, say so plainly and fix the source so the result survives a source-only re-run, then run it again. Do not edit the test to make it pass.
