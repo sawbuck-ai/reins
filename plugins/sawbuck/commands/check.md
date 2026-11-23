@@ -5,7 +5,7 @@ description: "Verify your latest change right now: was the win earned in the sou
 Run exactly this command in the current repo and show the person its output verbatim:
 
 ```
-npx --fetch-retries=0 --fetch-timeout=10000 -y sawbuck@0.2.5 check
+npx --fetch-retries=0 --fetch-timeout=10000 -y sawbuck@0.2.6 check
 ```
 
 If the output says the folder is not a git repository yet, do not run `git init` yourself. Ask the person whether to start one here, and run it only if they say yes.

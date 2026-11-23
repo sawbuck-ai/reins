@@ -2,7 +2,7 @@
   "name": "sawbuck",
   "displayName": "Sawbuck",
   "description": "Write down the rules your agent follows, and prove they held. Four commands that run the sawbuck CLI: check, contract, status and audit. You approve each command the first time. No hooks, no mod, and it reads no past sessions.",
-  "version": "0.1.25",
+  "version": "0.1.26",
   "author": { "name": "CodeWheel" },
   "homepage": "https://sawbuck.ai",
   "repository": "https://github.com/sawbuck-ai/reins",
